@@ -1,0 +1,123 @@
+
+This dataset (sub-directory) contains the beginning of a project to
+have some useful samples showing how to use various utilities.
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------
+$$$INDEX This member
+ADRDSSU  DFSMSdss - DATA SET SERVICES
+AMASPZAP Super Zap for wizards only - you break it you fired
+AMBLIST  List lmod, obj, lpa
+BATCH    Ways to run TSO, ISPF, and USS as batch jobs
+BMC4DB2  BMC DB2 Utilities
+CPPUPDTE The supported IPOUPDTE, mass JCL changer
+CUNMITG1 UNICODE translation services
+DFHCSDUP CICS CSD Update
+DITTO    Add on data duplication utility
+DSNTEP2  DB2 Dynamic SQL - DML
+DSNTIAD  DB2 Dynamic SQL - DDL
+DSNTIAUL DB2 Dynamic Unload
+EDGINERS DFHRMM (IBM TAPE SUBSYSTEM SOFTWARE)
+FDR      Innovations Fast Dump Restore solution
+FTP      File Transfer Programs - TCP/IP, Direct Connect, Netview/FTP
+HCD      Hardware Configuration Dialog and HCM setup jobs
+ICKDSF   Device Support Facilities
+IDCAMS   Access Method Services
+IEBCOMPR Compare data
+IEBCOPY  Library Copy
+IEBDG    Test Data Generator
+IEBEDIT  Edit Job Stream
+IEBGENER Sequential Copy/Generate Data Set
+IEBIMAGE Create Printer Image
+IEBPTPCH Print-Punch
+IEBUPDTE Update Data Set
+IEFBR14  And why you shouldn't be using it
+IEHATLAS See ICKDSF instead
+IEHINITT Initialize Tape
+IEHLIST  List System Data
+IEHMOVE  Move System Data
+IEHPROGM Program Maintenance
+IEWBLINK Linkage Editor
+IFASMFDP System Management Facilities Dump Program
+IFHSTATR List ESV Data
+IPCS     Interactive Problem Control System (SVC dump processor)
+ISRSUPC  ISPF SuperC Compare
+IXCMIAPU Couple data set utility
+JOBCARD  JOBCARD sample
+RACF     RACF data base unload
+SDSF     Spool Display and Search Facility
+SMPE     System Maintenance Program/ Extended
+SORT     IBM SORT, SYNCSORT
+SRCHFOR  Finds strings in members of a PDS
+TRSMAIN  TRSMAIN for compressing and uncompressing
+
+
+=======================================================================
+
+The original concept was good, the design was left unassigned, the
+contributions were few, and the bulk of the samples come from the
+outdated UTILITIES manual. I have been updating them to work in
+an SMS environment and with how z/OS works these days.
+
+  Know how and where to look for samples and examples:
+
+  - SYS1.SAMPLIB
+  - Other products hlq.**.*samp
+  - In manuals
+      SC26-7414-02 z/OS DFSMSdfp Utilities
+  - On the web (see below)
+
+  Know the difference between a sample and an example.
+
+  - A sample is complete code that worked somewhere at sometime.
+
+  - An example is a theoretical snippet that may not work as shown
+    and may never have ever been in any running code.
+
+The organization (naming standards) of the members is still undergoing
+a trial and error process to come up with a way to quickly identify
+the utility and the purpose. I had been leaning towards many members,
+using the first three characters of the utility name and up to five
+characters to show a minor characteristic. Dan Denver, a co-worker,
+shared his HSM hints member with me and I am now of the belief I should
+have one member per component.
+
+And even this design may change if I get around to writing the
+%UTILITY edit macro to embed a utility STEP, similar to how the
+MODEL command works.
+
+On the web:
+===========
+In addition to making softcopy documents available on CD-ROM, IBM
+provides access to unlicensed z/OS softcopy documents on the Internet.
+To find z/OS documents on the Internet, first go to the z/OS home page:
+http://www.ibm.com/servers/eserver/zseries/zos
+
+Now in knowing how to look, start at the beginning:
+
+On January 16th, 2007 I was able to navigate to books this way
+http://www.ibm.com
+(I was redirected to http://www.ibm.com/us)
+Find the 'Products' link under the IBM logo
+Find the 'system z (Mainframe)' link under Systems & Servers
+Find the 'Operating systems' link under Mainframe servers
+Find the /z/OS' link
+Find the 'Library' link
+Find the VxRy link for the level of the system you are using.
+Find the Element or feature you need (MVS)
+
+Brought me to:
+http://www-03.ibm.com/servers/eserver/zseries/zos/bkserv/r7pdf/mvs.html
+and for the JCL User's Guide:
+http://publibz.boulder.ibm.com/epubs/pdf/iea2b540.pdf
+and under DFSMS for the DFSMSdfp Utilities Manual:
+http://publibz.boulder.ibm.com/epubs/pdf/dgt2u120.pdf
+
+Since websites and their links change, it is more important to
+know how to find them than to rely on a static link off some other
+web site's page. Even the instructions above may now be out of date.
+The point of having the instructions above is to show how one might
+go about finding information.
+
+=======================================================================
+

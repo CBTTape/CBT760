@@ -1,0 +1,604 @@
+//***FILE 760 is collection of PC and z/OS based tools geared for
+//*           both novices and gurus alike. A good portion of the
+//*           collection is geared towards transporting data from
+//*           one platform to the other using FTP at some point.
+//*           The bulk of this work was compiled or written by:
+//*
+//*     email:  "Kenneth E Tomiak"<CBT_Ken@KTomiak.biz>
+//*     AOL IM: KenTomiak
+//*
+//*     Never, never, never run anything you have not examined!
+//*     -------------------------------------------------------
+//*
+//*     STANDARD GLOBAL DISCLAIMER
+//*     ==========================
+//*     The author explicitly disavows any claim whatsoever about
+//*     the correctness or functionality of these files, and
+//*     disclaims liability for anything and everything bad that
+//*     might happen in connection with, before, during, or after
+//*     using it. I have tried to make it work right, and I am
+//*     personally pretty confident that it does, but everybody
+//*     makes mistakes, so if you use it, you do so at your own
+//*     risk.
+//*
+//*     Note: Member/file lists are not in ascending sequence. I tried
+//*           to list objects in the sequence you ought to review them
+//*           and then near related entities. So, if B calls A, then
+//*           B is listed first and then A. And then in ascending
+//*           EBCDIC sequence. My sympathy if that is too hard for you
+//*           to follow.
+//*
+//* ===================================================================
+//* ===================================================================
+//*
+//* PC-based
+//*
+//*     ..\     - The directory you unzipped this to.
+//*     =============================================
+//*
+//*     Never, never, never run anything you have not examined!
+//*     -------------------------------------------------------
+//*
+//*       add2path - Add %USERPROFILE%\DOSBAT to the front of PATH.
+//*                  That is where I expect you will place the bat
+//*                  files, but you can add them anywhere your PATH
+//*                  will find them.
+//*
+//*       Each z/OS oriented collection is both a sub-directory and:
+//*       *.BAT - A DOS bat file to upload an IEBUPDTE stream.
+//*       *.JCL - JCL to process an IEBUPDTE stream.
+//*       *.SEQ - The IEBUPDTE stream.
+//*
+//*     BACKUPS - A sub-directory for FTP to download to.
+//*     =================================================
+//*
+//*       $$$INDEX - One liner about the files in the sub-directory.
+//*
+//*     DOSBAT  - A collection of BAT files for using FTP.
+//*     ==================================================
+//*
+//*     Never, never, never run anything you have not examined!
+//*     -------------------------------------------------------
+//*
+//*       $$README - Explains more about the contents in this sub-dir.
+//*
+//*       $$$INDEX - One liner about the files in the sub-directory.
+//*
+//*       BAT - To help search fro BAT files, pass it a drive:\path
+//*             argument and it will dir *.BAT files for you.
+//*             Handy when you know where your BAT files are but can
+//*             not remember the exact name of one to use.
+//*
+//*       DIR2UPDT - DOS bat file to call MBR2UPDT to build and
+//*                  IEBUPDTE stream, sans ISPF like statistics.
+//*
+//*       MBR2UPDT - DOS bat file to append a single file into the
+//*                  IEBUPDTE stream, sans ISPF like statistics.
+//*
+//*       OOREXX - My BAT file (JCL like) method to let the bat file
+//*                take care of knowing where Open Object REXX is
+//*                located and where my REXX source is.
+//*
+//*       PARMS* - Some BAT files that convert arguments to upper and
+//*                lowercase. Plus an IVP to see if it works. Non-MVS
+//*                systems may be case sensitive. I forced my
+//*                sub-directories on one to be upper case and called
+//*                PARMSUP to make sure my CD command was upper case.
+//*
+//*       HOSTDEFAULT - Copy this starter to as many HOSThostname.bat
+//*                     files as you have hosts to connect to. Each
+//*                     one will contain the userid and password for
+//*                     that host. Other FTP settings can be
+//*                     configured as well.
+//*
+//*       HOSTIBM - Update with your email address and II13288 will
+//*                 be ready to download some tools from IBM. Have
+//*                 your HOST* file set and it will also upload them.
+//*
+//*       FTPSETCONFIG - Sets which HOST* bat file will be called by
+//*                      other FTP*.bat files. You can switch HOST
+//*                      information, USERID and PASSWORD, in this
+//*                      manner.
+//*
+//*       FTPSETATTRIBUTES - Called by the FTP* bat files to add
+//*                          quote site sub-commands that influence
+//*                          new dataset allocations and some
+//*                          translation specific features. All of
+//*                          the options are set in your HOST* file
+//*                          and activated using the FTPSETCONFIG file.
+//*
+//*       FTPIVP - Tests if you set everything up. It will create a
+//*                PDSE, load some members, submit a JOB to IEBCOPY
+//*                backup the PDS to a sequential dataset, download
+//*                the backup, upload it as a new name, then submit
+//*                a job to restore into a new PDS.
+//*
+//*       II13288 - Logs on to ftp.software.ibm.com and downloads some
+//*                 tools using both the HOSTIBM file and one that you
+//*                 configured for your host and set using FTPSETCONFIG.
+//*
+//*       FTP*GET* - Assorted flavors for getting one or more files.
+//*
+//*       FTP*PUT* - Assorted flavors for putting one or more files.
+//*
+//*       FTPLOGIN - Login to an FTO server and turn the reigns over.
+//*
+//*       FTPCD* - Login, change to the sub-directory.
+//*
+//*       FTPBACKUP - Submit a special backup job that creates
+//*                   IEBUPDTE streams and/or TRANSMIT files, try
+//*                   to wait for the job to complete, and then
+//*                   downlaod the files.
+//*
+//*       FTPBKUP - Sample job to create IEBUPDTE streams or XMIT files.
+//*
+//*       IEBBKUP - Sample job to backup a PDS if you run FTPIVP.
+//*
+//*       IEBREST - Sample job to restore a PDS if you run FTPIVP.
+//*
+//*       FTPDOWNLOAD - Picks up when FTPBACKUP can not wait.
+//*
+//*       FTPCANCEL - Various ways to submit a cancel tso user if
+//*                   your tn3270 session failed and RECONNECT fails.
+//*
+//*       FTPMKDIR - Create a new dataset using attributes from your
+//*                  HOST[hostname) bat file.
+//*
+//*       FTPSCRIPT - Blindly execute your prepared script of FTP
+//*                   sub-commands. And a sample script. II13288 may
+//*                   also give you ideas.
+//*
+//*       FTPSUBMIT - Submits a job from your PDS and waits for it
+//*                   to complete. Downloads a copy of the output to
+//*                   your PC.
+//*
+//*     DOSDATA - A sub-directory used for data.
+//*     ========================================
+//*
+//*       $$$INDEX - One liner about the files in the sub-directory.
+//*
+//*       FTPCHRBN - 256 Character set in PC binary format.
+//*
+//*       FTPCHRMF - 256 Character set in z/OS EBCDIC format.
+//*
+//*       FTPCHRPC - 256 Character set in PC 8 bit ASCII format.
+//*
+//*       URLCHECK - List of urls checked for changes by REXX program
+//*                  by the same name.
+//*
+//*     DOSPERL - Activestate perl programs.
+//*     ====================================
+//*
+//*     Never, never, never run anything you have not examined!
+//*     -------------------------------------------------------
+//*
+//*       $$$INDEX - One liner about the files in the sub-directory.
+//*
+//*       UPDT2HTML - Convert an IEBUPDTE stream into web pages.
+//*
+//*     DOSREXX - Open Object REXX programs.
+//*     ====================================
+//*
+//*     Never, never, never run anything you have not examined!
+//*     -------------------------------------------------------
+//*
+//*       $$$INDEX - One liner about the files in the sub-directory.
+//*
+//*       ASC2EBC  - Convert an 8-bit ASCII file to EBCDIC.
+//*
+//*       EBC2ASC  - Convert an EBCDIC file to 8-bit ASCII.
+//*
+//*       CHARGRID - Create a 16x16 grid of 256 characters.
+//*
+//*       DIR2UPDT - Convert a directory into an IEBUPDTE stream with
+//*                  ISPF like statistics.
+//*
+//*       IVS2DIR  - Read an IEBCOPY unload dataset and extract
+//*                  members int individual files.
+//*
+//*       KETRECV  - RECEIVE like process to read the output of a
+//*                  TRANSMIT command. PDS members are extracted in
+//*                  8-bit ASCII and EBCDIC format. Just in case
+//*                  somebody embdedded a TRANSMIT file as a member.
+//*
+//*       KETUPDTE - Ken's REXX way to read an IEBUPDTE stream and
+//*                  populate a sub-directory. ISPF statistics are
+//*                  written to a report file.
+//*
+//*       XMI2INM  - The first half of KETRECV, read the transmit file
+//*                  and store the internal format as a PC file. The
+//*                  second half might be IVS2DIR.
+//*
+//*       XMITINFO - David Alcock code to show TRANSMIT file headers.
+//*
+//*     HTML    - IEBUPDTE stream converted to web pages.
+//*     =================================================
+//*
+//*       ZOSJCL.SEQ.html - Main page of JCL snippets.
+//*
+//*       ZOSUTIL.SEQ.html - Main page of Utility samples.
+//*
+//*     IEBUPDTE - Each directory bundled and ready for IEBUPDTE.
+//*     =========================================================
+//*
+//*     Batch Oriented
+//*     --------------
+//*
+//*       CNTL.*     - JCL to prepare and run programs.
+//*
+//*       PROCLIB.*  - Sample PROCedures for preparing and running code.
+//*
+//*       SRCLIB.*   - Sample programs that need to be prepared.
+//*
+//*       OBJLIB.*   - Sample programs in object format.
+//*
+//*       EXELIB.*   - Sample programs in executable load module format.
+//*
+//*       PARMLIB.*  - Examples of extending the use of PARMLIB.
+//*
+//*       SQLLIB.*   - Sample DB2 select statements.
+//*
+//*       DATA.*     - Data used or produced by programs.
+//*
+//*       ZOSJCL.*   - Snippets of JCL.
+//*
+//*       ZOSUTIL.*  - Examples of many Utilities to get started with.
+//*
+//*     TSO/ISPF Oriented
+//*     -----------------
+//*
+//*       CONFIG.*   - The output from ISRCONFG.
+//*
+//*       CLIST.*    - TSO Command Procedures.
+//*
+//*       MSGS.*     - ISPF messages.
+//*
+//*       PANELS.*   - ISPF panels.
+//*
+//*       SKELS.*    - ISPF skeletons.
+//*
+//*       REXX.*     - Sample REXX code.
+//*
+//*       SHELL.*    - Sample z/OS UNIX shell scripts.
+//*
+//* ===================================================================
+//* ===================================================================
+//*
+//* z/OS-based
+//* ==========
+//*
+//*     CLIST   - Just a place holder for now.
+//*     ======================================
+//*
+//*     Never, never, never run anything you have not examined!
+//*     -------------------------------------------------------
+//*
+//*     CNTL    - JCL to run the code in this collection.
+//*     =================================================
+//*
+//*     Never, never, never run anything you have not examined!
+//*     -------------------------------------------------------
+//*
+//*       CONDCODE - IVP to check %CONDCODE which shows each steps
+//*                  maximum condition code. Follows control blocks.
+//*
+//*       FTPBLIND - Execute FTP sub-commands. When it fails it fails.
+//*
+//*       FTPNETRC - Execute FTP sub-commands. Hide userid and password.
+//*
+//*       FTPSYSFT - Execute FTP sub-commands. Overrides in SYSFTPD
+//*
+//*       HX2PR    Convert input to two hexadecimal print lines.
+//*       HX2PR$A  Assemble and link source.
+//*       HX2PR4   Convert input to four hexadecimal print lines.
+//*       HX2PR4$A Assemble and link source.
+//*       PR2HX    Convert two print lines back to EBCDIC format.
+//*       PR2HX$A  Assemble and link source.
+//*       PR42HX   Convert four print lines back to EBCDIC format.
+//*       PR42HX$A Assemble and link source.
+//*
+//*       PDSLOAD  IEBUPDTE alternative, preserves ISPF statistics.
+//*       PDSLOAD$ Link object deck.
+//*
+//*       II13288  - Blind FTP script to download some IBM tools.
+//*
+//*       IPCSIVP  - Run IPCS in batch and demonstrate how to use
+//*                  certain features.
+//*
+//*       OBJ2HEX  - Sample JCL that shows multiple ways to run
+//*                  OBJ2HEX to read a PDS member, in this example
+//*                  an object deck for PDSLOAD. Then two ways to
+//*                  run the self extracting REXX program.
+//*
+//*       URLCHECK - Run REXX program %URLCHECK to check if url has
+//*                  been updated since last run. Build a web page of
+//*                  those that have and update last modified date.
+//*
+//*     CONFIG  - Sample ISRCONFG output.
+//*     =================================
+//*               Ought to be LRECL=80 but IBM blew it.
+//*               Forced to be 255 for 80 byte data!
+//*
+//*               Just a place holder for now.
+//*
+//*     DATA    - Data files used by the code in this collection.
+//*     =========================================================
+//*
+//*       URLCHECK - List of urls program %URLCHECK will check if they
+//*                  have been updated since the last run.
+//*
+//*     EXELIB  - Executable load modules.
+//*     ==================================
+//*
+//*     MSGS    - Just a place holder for now.
+//*     ======================================
+//*
+//*     OBJLIB  - Object decks.
+//*     =======================
+//*
+//*       PDSLOAD  -   ORIGINAL PROGRAM FROM FILE 093
+//*
+//*         A sample object deck, (for the very useful IEBUPDTE-like
+//*         program called PDSLOAD - CBT Tape File 093), has been
+//*         included here to test the system. Sample output from
+//*         the SAMPJCL job is also included here. These are members
+//*         PDSLOAD@, PDSLOAD#, and PDSLOAD$.
+//*
+//*         More about the PDSLOAD program itself ---
+//*
+//*         PDSLOAD will load a pds with members, starting from an
+//*         IEBUPDTE-like sequential dataset, but it is possible to
+//*         preserve ISPF statistics too. See the layout below.
+//*
+//*         If you want to linkedit the PDSLOAD object deck to use
+//*         the program for yourself, the LINK job is also included.
+//*
+//*         If you want to run the PDSLOAD program, the PDSLOJCL
+//*         sample JCL, which makes a pds out of an IEBUPDTE-like
+//*         ./ ADD NAME=memname
+//*         input deck, provides a sample job. Input to the PDSLOAD
+//*         sample job is the SHOWMACS member.
+//*
+//*       ---------------------------------------------------------
+//*
+//*         Illustration of the layout of an ./ ADD NAME= card, input
+//*         to PDSLOAD, which preserves the stated ISPF statistics:
+//*         This layout is produced by the OFFLOAD program in CBT
+//*         Tape File 093 and PDS2UPDTE in this file.
+//*
+//*        1       10        20        30        40        50        60
+//*        +---+----+----+----+----+----+----+----+----+----+----+----+
+//*        ./ ADD NAME=$$$#DATE 0474-07151-07151-0941-00012-00012-00000
+//*                    mbrname  vvmm crtdt moddt time currl initl modln
+//*
+//*            50        60
+//*            -+----+----+----+---    (ISPF stats are optional)
+//*            -00012-00000-CBT-474
+//*             initl modln userid
+//*
+//*     ---------------------------------------------------------
+//*
+//*     PANELS  - Just a place holder for now.
+//*     ======================================
+//*
+//*     PARMLIB - A few sample PARMLIB members beyond the basics.
+//*     =========================================================
+//*
+//*       CUNUNI00 - Shortest UNICODE on DEMAND entry I found would
+//*                  prevent DB2 from loading much more and still let
+//*                  z/OS load what is actually used.
+//*
+//*     PROCLIB - Procedures to eliminate duplicate JCL.
+//*     ================================================
+//*
+//*     Never, never, never run anything you have not examined!
+//*     -------------------------------------------------------
+//*
+//*       ASM2OBJ  - PROC to assemble and save OBJECT deck.
+//*
+//*       ASM2LMOD - PROC to assemble and link source to an LMOD.
+//*
+//*       OBJ2LMOD - PROC to link an OBJECT deck to an LMOD.
+//*
+//*       IEASYM00 - Set statements to simulate SYSTEM Symbolics.
+//*                  Works best if you have this in a system unique
+//*                  JES accessible PROCLIB. One per system.
+//*                  NOT SHARED.
+//*
+//*       TSOISPF  - PROC to allocate standard TSO and ISPF datasets.
+//*
+//*     REXX    - REXX programs, EDIT macros.
+//*     =====================================
+//*
+//*     Never, never, never run anything you have not examined!
+//*     -------------------------------------------------------
+//*
+//*       ACEETRID - Follow control blocks to get your VTAM termid.
+//*
+//*       AGE      - EDIT macro uses LMMCOPY to save the as-yet
+//*                  unsaved member as a new name and keep ISPF stats!
+//*
+//*       BATCHISP - Invoke ISPF and your application.
+//*
+//*       BUBLSORT - How to Bubble sort and entry in stem.
+//*
+//*       DDBYCBLK - Access allocated DDNAMEs by following control
+//*                  blocks.
+//*
+//*       DDBYLSTA - Access allocated DDNAMEs by trapping LISTALC.
+//*
+//*       DDBYQLIB - Query if a DDNAME is allocated using ISPF QBASELIB.
+//*
+//*       DDBYTSTR - REXX IVP code to test DDBYCBLK, DDBYLSTA, and
+//*                  the poorly designed DDTRAP.
+//*
+//*       DDTRAP   - Access DDNAMEs with a dataset by trapping LISTALC.
+//*
+//*       HEX2OBJ  - Sample output from running OBJ2HEX against an
+//*                  object deck. PDSLOAD in this instance. The output
+//*                  from running this is a real OBJECT deck suitable
+//*                  as input to IEWBLINK (the linkage editor).
+//*
+//*       HLQSPACE - Example of using ISPF LMDLIST to retrieve a list
+//*                  of matching dataset names and summing their space
+//*                  usage.
+//*
+//*       IPCSIVP  - Invoke IPCS and demonstrate how to use features
+//*                  of IPCS to do common activities.
+//*
+//*       JCLDSCB  - Retrieve data set control block information and
+//*                  insert as comment lines.
+//*
+//*       JOBCARD  - Insert a JOBCARD using an instream template.
+//*
+//*       OBJ2HEX  - Convert the input file into hexadecimal format
+//*                  wrapped inside REXX code to be run on the
+//*                  receiving end.
+//*
+//*           OBJ2HEX is a REXX program that creates a self
+//*           extracting REXX program with the input file
+//*           embedded in comments. Each record of the input file
+//*           is converted into two lines of printable data, in a
+//*           format similar to ISPF HEX ON. This data is read by
+//*           the self extracting program and converted back to
+//*           the original values.
+//*
+//*           The self extracting program is comprised of standard
+//*           characters, easily translated between EBCDIC and
+//*           ASCII characters and back again.
+//*
+//*           This method might be used to accurately transport
+//*           PTFs or object decks thru an ASCII system and back.
+//*           It is not limited to binary data, you can use it on
+//*           any type of data that might contain characters that
+//*           require special conversion during file transfer.
+//*
+//*       PDS2UPDT - ISPF based command to append all members of a PDS
+//*                  into a sequential IEBUPDTE stream with ISPF stats
+//*                  on the control card, suitable for PDSLOAD or
+//*                  REXUPDTE.
+//*
+//*       PDS2XMIT - ISPF based front-end to the TRANSMIT command. If
+//*                  run in the foreground it will pop up a dynamically
+//*                  built panel allowing overrides to the MESSAGES
+//*                  included in the TRANSMIT file.
+//*
+//*       RACFINFO - Modified version of some Xephon published code.
+//*                  The enhancement (my opinion) removes the GRINDD
+//*                  input file specifying CLASSES to check. The output
+//*                  of a SETR LIST is trapped and all ACTIVE classes
+//*                  are checked.
+//*
+//*       REXUPDTE - Read an IEBUPDTE stream and populate a PDS
+//*                  preserving the ISPF statistics if present on the
+//*                  control card.
+//*
+//*       REXXUSS  - A sample IVP program to use several z/OS UNIX
+//*                  features.
+//*
+//*       SDSFDISK - How to call SDSF from REXX to transfer JES2
+//*                  output to a sequential disk file or pds member.
+//*
+//*       TXT2STEM - Routine to parse a text string into stem variables.
+//*                  Real parsing, quoted text is a single stem value.
+//*
+//*       UPDREFDT - Use ISPF to touch datasets which causes the
+//*                  last-reference date to be updated. Helps prevent
+//*                  migrating datasets you want on DASD.
+//*
+//*       URLCHECK - Use TCP/IP Sockets to check if a url has been
+//*                  updated since the last run. If so, add it to a
+//*                  web page. This would be useful if that web page
+//*                  was accessible to a web server. This is a port of
+//*                  the PC based IBM Object REXX code.
+//*
+//*       VIEWHELP - Trap the output of a HELP command, write it to
+//*                  disk, and then invoke VIEW so you can scroll.
+//*
+//*       XMIT2PDS - Front end to RECEIVE, supplying an optional
+//*                  output dataset name at the same time.
+//*
+//*       XYGRID   - Sample of using postive and negative indexing to
+//*                  create a grid. Yes, you can use negatives!
+//*
+//*
+//*     SHELL   - z/OS UNIX scripts.
+//*     ============================
+//*
+//*     Never, never, never run anything you have not examined!
+//*     -------------------------------------------------------
+//*
+//*       java5    - Sample of pre-pending the java5 sub-directory
+//*                  names to the z/OS UNIX path.
+//*
+//*     SKELS   - Just a place holder for now.
+//*     ======================================
+//*
+//*     SQLLIB  - Sample DB2 select statements.
+//*     =======================================
+//*
+//*     SRCLIB  - Assembler, COBOL, and other language source code.
+//*     ===========================================================
+//*
+//*      +-----------------------------------------------------------+
+//*      +  Another set of programs to convert 80 byte               +
+//*      +  images to (the same) two lines of printable data. This   +
+//*      +  consists of 2 Assembler programs.                        +
+//*      +                                                           +
+//*      +  email: "Sam Golob"<sbgolob@attglobal.net>                +
+//*      +  or:  "Sam Golob"<sbgolob@cbttape.org>                    +
+//*      +-----------------------------------------------------------+
+//*
+//*         HX2PR - Makes FB-80 Hex data printable in two lines
+//*         PR2HX - Makes FB-80 Two Line printable data, into
+//*                   one line Hex output
+//*
+//*  Example:  2-line output (should be continued to 80 bytes)
+//*
+//*  0CEC444444014400DCEDDCC40000001A444444444444444444444444444444
+//*  25240000000000017423614000000090000000000000000000000000000000
+//*  0EEE4000440344004FF51DCEDDCC4FFFFFFFF44CDE4DDCCD4DEE744F7C6E66
+//*  2373000000080001700417423614020070529001580395330643A001A6B50E
+//*
+//*         HX2PR4 - Makes FB-80 Hex data printable in four lines
+//*         PR42HX - Makes FB-80 Four Line printable data, into
+//*                   one line Hex output
+//*
+//*           If you want clearer displayable output, you can have it
+//*           in 4 lines instead of 2. These two programs add
+//*           a line of purely printable data, plus a "ruler line" just
+//*           the way the ISPF HEX display does it. To reconstitute
+//*           the original binary card-image, the PR42HX will do that,
+//*           by ignoring the first two of the four lines in the
+//*           display.
+//*
+//*  Example:  4-line output (should be continued to 80 bytes)
+//*
+//*   ESD            PDSLOAD
+//*  ----+----1----+----2----+----3----+----4----+----5----+----6--
+//*  0CEC444444014400DCEDDCC40000001A444444444444444444444444444444
+//*  25240000000000017423614000000090000000000000000000000000000000
+//*
+//*   TXT             00  PDSLOAD 20070529  ANY LRECL OUT:  1:F,V->
+//*  ----+----1----+----2----+----3----+----4----+----5----+----6--
+//*  0EEE4000440344004FF51DCEDDCC4FFFFFFFF44CDE4DDCCD4DEE744F7C6E66
+//*  2373000000080001700417423614020070529001580395330643A001A6B50E
+//*
+//*
+//*     ZOSJCL  - Basic JCL examples.
+//*     =============================
+//*
+//*       $$$INDEX - List of JCL templates included.
+//*
+//*     ZOSUTIL - An ever expanding collection of UTILITY jobs.
+//*     =======================================================
+//*
+//*     Never, never, never run anything you have not examined!
+//*
+//*       $$$INDEX - List of UTILITY samples included.
+//*
+//*     -------------------------------------------------------
+//*
+//* ===================================================================
+//* ===================================================================
+//*

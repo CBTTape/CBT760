@@ -1,0 +1,234 @@
+>< ADD NAME=EDIT     0101-07003-07016-2327-00008-00008-00000-KTOMIAK
+
+EDIT$01  Copy One Job
+EDIT$02  Copy Steps from Three Jobs
+EDIT$03  Include Step from One Job, Exclude Step from Another
+EDIT$04  Copy Statement for JOBA and JOB STEPF
+EDIT$05  Copy Entire Input Data Set
+EDIT$06  Copy Entire Data Set to Include New Delimiter
+
+>< ADD NAME=EDIT$01  0100-07003-07003-2113-00032-00032-00000-SC26UTL
+
+Example 1: Copy One Job
+
+In this example, one job (JOBA), including all of its job steps, is
+copied into the output data set. The input data set contains three
+jobs: JOBA, JOBB and JOBC.
+
+//EDIT1 JOB ...
+//STEP1   EXEC PGM=IEBEDIT
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=INJOBS
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=OUTTAPE,
+//             UNIT=tape,
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  *
+         EDIT START=JOBA
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set, INJOBS. The data set resides
+   on a standard labeled tape volume (001234).
+
+x) SYSUT2 DD defines the output data set, called OUTTAPE. The data set
+   is to reside as the first data set on a standard labeled tape
+   volume. The system will select an optimal block size.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) EDIT indicates that JOBA is to be copied in its entirety.
+
+>< ADD NAME=EDIT$02  0100-07003-07003-2113-00041-00041-00000-SC26UTL
+
+Example 2: Copy Steps from Three Jobs
+
+This example copies job steps from each of three jobs. The input data
+set contains three jobs: JOBA, which includes STEPA, STEPB, STEPC, and
+STEPD; JOBB, which includes STEPE, STEPF, and STEPG; and JOBC, which
+includes STEPH and STEPJ.
+
+//EDIT2 JOB ...
+//STEP1   EXEC PGM=IEBEDIT
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=INJOBS
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=OUTSTRM,
+//             UNIT=tape,LABEL=(2,SL),
+//             VOL=SER=001235,
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  *
+         EDIT START=JOBA,TYPE=INCLUDE,STEPNAME=(STEPC,STEPD)
+         EDIT START=JOBB,TYPE=INCLUDE,STEPNAME=STEPE
+         EDIT START=JOBC,TYPE=INCLUDE,STEPNAME=STEPJ
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set, INJOBS. The data set resides
+   on a standard labeled tape volume (001234).
+
+x) SYSUT2 DD defines the output data set, OUTSTRM. The data set is to
+   reside as the second data set on a standard labeled tape volume
+   (001235).
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The EDIT statements copy the JOB statements and job steps described
+   as follows:
+
+  1. The JOB statement and steps STEPC and STEPD for JOBA.
+  2. The JOB statement and STEPE for JOBB.
+  3. The JOB statement and STEPJ for JOBC.
+
+>< ADD NAME=EDIT$03  0100-07003-07003-2113-00036-00036-00000-SC26UTL
+
+Example 3: Include Step from One Job, Exclude Step from Another
+
+This example includes a job step from one job and excludes a job step
+from another job. The input data set contains three jobs: JOBA, which
+includes STEPA, STEPB, STEPC, and STEPD; JOBB, which includes STEPE,
+STEPF, and STEPG; and JOBC, which includes STEPH and STEPJ.
+
+//EDIT3 JOB ...
+//STEP1   EXEC PGM=IEBEDIT
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=INSET
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=OUTTAPE,
+//             UNIT=tape,LABEL=(,SL),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  *
+         EDIT START=JOBB,TYPE=INCLUDE,STEPNAME=(STEPF-STEPG)
+         EDIT START=JOBC,TYPE=EXCLUDE,STEPNAME=STEPJ
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set, INSET.
+
+x) SYSUT2 DD defines the output data set, OUTTAPE. The data set is to
+   reside as the first or only data set on a labeled tape volume.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The EDIT statements copy JOB statements and job steps as described
+   below:
+
+  1. The JOB statement and steps STEPF and STEPG for JOBB.
+  2. The JOB statement and STEPH, excluding STEPJ, for JOBC.
+
+>< ADD NAME=EDIT$04  0100-07003-07003-2113-00034-00034-00000-SC26UTL
+
+Example 4: Copy Statement for JOBA and JOB STEPF
+
+This example copies the JOB statement for JOBA, the job step STEPF, and
+all the steps that follow it. The input data set contains one job
+(JOBA), which includes STEPA through STEPL. Job steps STEPA through
+STEPE are not included in the output data set.
+
+//EDIT4 JOB ...
+//STEP1   EXEC PGM=IEBEDIT
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=INSTREAM
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=OUTSTREM,
+//             UNIT=disk,
+//             SPACE=(TRK,2)
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  *
+         EDIT START=JOBA,TYPE=POSITION,STEPNAME=STEPF
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set, INSTREAM.
+
+x) SYSUT2 DD defines the output data set, OUTSTREAM. The data set is to
+   reside on a disk volume. Two tracks are allocated for the output
+   data set.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) EDIT copies the JOB statement for JOBA and job steps STEPF through
+   STEPL.
+
+>< ADD NAME=EDIT$05  0100-07003-07003-2113-00035-00035-00000-SC26UTL
+
+Example 5: Copy Entire Input Data Set
+
+This example copies the entire input data set. The record containing
+the characters "..*" in columns 1 through 3 is converted to a "/*"
+statement in the output data set.
+
+//EDIT5 JOB ...
+//STEP1   EXEC PGM=IEBEDIT
+//SYSPRINT DD  SYSOUT=*
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=OUTTAPE,
+//             UNIT=tape,
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  DUMMY
+//SYSUT1   DD  DATA
+//BLDGDGIX JOB ...
+//        EXEC PGM=IEHPROGM
+//SYSPRINT DD  SYSOUT=*
+//DD1      DD  DISP=OLD,UNIT=disk,VOL=SER=111111
+//SYSIN DD  *
+         BLDG INDEX=A.B.C,ENTRIES=10,EMPTY
+/*
+
+The control statements are discussed below:
+
+x) SYSUT2 DD defines the output data set, OUTTAPE. The data set will be
+   the first data set on a tape volume.
+
+x) SYSIN DD defines a dummy control data set.
+
+x) SYSUT1 DD defines the input data set, which follows in the input
+   stream. The job is stopped when the statement "/*" is encountered.
+   (SYSUT1 therefore includes the BLDGDGIX JOB statement, EXEC
+   statement, SYSPRINT, DD1, and SYSIN DD statements.)
+
+>< ADD NAME=EDIT$06  0100-07003-07003-2113-00041-00041-00000-SC26UTL
+
+Example 6: Copy Entire Data Set to Include New Delimiter
+
+This example copies the entire input data set, including the JES2
+control statement, because a new delimiter (JP) has been coded.
+Otherwise, the "/*" in the JES2 control statement would have stopped
+the input.
+
+//EDIT6 JOB ...
+//STEP1   EXEC PGM=IEBEDIT
+//SYSPRINT DD  SYSOUT=*
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=TAPEOUT,
+//             UNIT=tape,LABEL=(2,SL),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  DUMMY
+//SYSUT1   DD  DATA,DLM='JP'
+//LISTVTOC JOB ...
+/*MESSAGE JOB NEEDS VOLUME 338000
+//FSTEP   EXEC PGM=IEHLIST
+//SYSPRINT DD  SYSOUT=*
+//DD2      DD  DISP=OLD,UNIT=disk,VOL=SER=338000
+//SYSIN    DD  *
+         LISTVTOC FORMAT,VOL=disk=338000
+/*
+JP
+
+The control statements are discussed below:
+
+x) SYSUT2 DD defines the output data set, TAPEOUT. The data set will be
+   the first data set on a standard label tape volume.
+
+x) SYSIN DD defines a dummy control data set.
+
+x) SYSUT1 DD defines the input data set, which follows in the input
+   stream. The DLM parameter defines characters JP to act as a
+   delimiter for the input data.
+
+x) IEBEDIT copies the JOB statement through the "/*" statement
+   (including the LISTVTOC and MESSAGE job statements, FSTEP EXEC
+   statement, and SYSPRINT, DD2 and SYSIN DD statements).
+

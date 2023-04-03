@@ -1,0 +1,203 @@
+rexx_txt2stem: /* rexx */
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+/* Routine to parse text delimited by spaces into stem variables     */
+/* literals.0 contains the number of variables.                      */
+/* Add to your code and then use it:                                 */
+/* ok_rc = text2stem("'This is my test.' okay")                      */
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+text2stem:
+  procedure expose literals.
+  parse arg text
+
+  text = strip(text,"B"," ")
+  textlen=length(text)
+  fieldstart = 1
+  fieldend   = 1
+  fieldno = 0
+  literals.0 = 0
+  literals.  = ""
+  string_state = "on"
+  apostrophe_state = "off"
+  quote_state = "off"
+  pb = " "
+
+/*  trace ?ilrs */
+
+  do ts_cx = 1 to textlen
+    cb = substr(text,ts_cx,1)
+    nx = ts_cx + 1
+    nb = substr(text,nx,1)
+
+    Select
+/*                                        check blanks           */
+      when ((cb = " ") & ,
+        (apostrophe_state = "off") &,
+        (quote_state = "off") &,
+        (string_state = "off")) then,
+        do
+          NOP
+        end
+      when ((cb = " ") & ,
+        (apostrophe_state = "off") &,
+        (quote_state = "off") &,
+        (string_state = "on")) then,
+        do
+          fieldend = ts_cx
+          fieldno = fieldno + 1
+          literals.0 = fieldno
+          fieldlength = fieldend - fieldstart + 1
+          some_text = substr(text,fieldstart,fieldlength)
+          literals.fieldno = strip(some_text,"T"," ")
+          string_state = "off"
+        end
+      when ((cb = " ") & ,
+        ((apostrophe_state = "on") |,
+         (quote_state = "on")) &,
+        (string_state = "on")) then,
+        do
+          NOP
+        end
+/*                                        check apostrophe       */
+      when ((cb = "'") & ,
+        (apostrophe_state = "off") &,
+        (quote_state = "off") &,
+        (string_state = "off")) then,
+        do
+          apostrophe_state = "on"
+          string_state = "on"
+          fieldstart = ts_cx
+        end
+      when ((cb = "'") & ,
+        (apostrophe_state = "off") &,
+        (quote_state = "off") &,
+        (string_state = "on")) then,
+        do
+          apostrophe_state = "on"
+        end
+      when ((cb = "'") & ,
+        (apostrophe_state = "off") &,
+        (quote_state = "on") &,
+        (string_state = "off")) then,
+        do
+          NOP
+        end
+      when ((cb = "'") & ,
+        (nb = "'") & ,
+        (apostrophe_state = "on") &,
+        (quote_state = "off") &,
+        (string_state = "on")) then,
+        do
+          NOP
+        end
+      when ((cb = "'") & ,
+        (pb = "'") & ,
+        (apostrophe_state = "on") &,
+        (quote_state = "off") &,
+        (string_state = "on")) then,
+        do
+          NOP
+        end
+      when ((cb = "'") & ,
+        (apostrophe_state = "on") &,
+        (quote_state = "off") &,
+        (string_state = "on")) then,
+        do
+          apostrophe_state = "off"
+        end
+/*                                        check quote            */
+      when ((cb = '"') & ,
+        (apostrophe_state = "off") &,
+        (quote_state = "off") &,
+        (string_state = "off")) then,
+        do
+          quote_state = "on"
+          string_state = "on"
+          fieldstart = ts_cx
+        end
+      when ((cb = '"') & ,
+        (apostrophe_state = "off") &,
+        (quote_state = "off") &,
+        (string_state = "on")) then,
+        do
+          quote_state = "on"
+        end
+      when ((cb = '"') & ,
+        (apostrophe_state = "on") &,
+        (quote_state = "off") &,
+        (string_state = "off")) then,
+        do
+          NOP
+        end
+      when ((cb = '"') & ,
+        (nb = '"') & ,
+        (apostrophe_state = "off") &,
+        (quote_state = "on") &,
+        (string_state = "on")) then,
+        do
+          NOP
+        end
+      when ((cb = '"') & ,
+        (pb = '"') & ,
+        (apostrophe_state = "off") &,
+        (quote_state = "on") &,
+        (string_state = "on")) then,
+        do
+          NOP
+        end
+      when ((cb = '"') & ,
+        (apostrophe_state = "off") &,
+        (quote_state = "on") &,
+        (string_state = "on")) then,
+        do
+          quote_state = "off"
+        end
+/*                                        end of the text        */
+      when (ts_cx = textlen) then,
+        do
+          if (string_state = "on") then,
+            do
+              fieldend = ts_cx
+              fieldno = fieldno + 1
+              literals.0 = fieldno
+              fieldlength = fieldend - fieldstart + 1
+              some_text = substr(text,fieldstart,fieldlength)
+              literals.fieldno = some_text
+              string_state = "off"
+            end
+          else
+            do
+              string_state = "on"
+              fieldstart = ts_cx
+            end
+        end
+      when ((cb >< " ") & ,
+        (apostrophe_state = "off") &,
+        (quote_state = "off") &,
+        (string_state = "off")) then,
+        do
+          string_state = "on"
+          fieldstart = ts_cx
+        end
+      otherwise,
+        do
+        if ts_cx < 45 then,
+          s = ts_cx "PB("pb") CB("cb") NB("nb") S="string_state,
+            "Q="quote_state,
+            "A="apostrophe_state
+          string_state = "on"
+        end
+    End
+    px = ts_cx
+    pb = cb
+  end
+  if (string_state = "on") then,
+    do
+      fieldend = ts_cx
+      fieldno = fieldno + 1
+      literals.0 = fieldno
+      fieldlength = fieldend - fieldstart + 1
+      some_text = substr(text,fieldstart,fieldlength)
+      literals.fieldno = some_text
+    end
+
+  return literals.0

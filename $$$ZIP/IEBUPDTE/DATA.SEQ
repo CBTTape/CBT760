@@ -1,0 +1,71 @@
+./ ADD NAME=$$$INDEX 0666-07209-07209-0848-00001-00001-00000-DIR2UPDT
+
+This dataset (sub-directory) contains any data that might
+be used by the routines in the other files.
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------
+$$$INDEX This member
+URLCHECK A list of urls that will be checked since the last run.
+
+./ ADD NAME=NETRC    0666-07213-07213-1716-00001-00001-00000-DIR2UPDT
+#
+# machine site login userid password pass
+#
+# Under z/OS UNIX and other unix-like operating systems:
+#   keywords should be lower case,
+#   values may be case sensitive.
+#
+# localhost
+machine 127.0.0.1 login LOCALID password LOCALPSWD
+#
+# ibm
+machine ftp.software.ibm.com login anonymous +
+password
+# password your_email_address@your_domains_mail_server.tlq
+#
+./ ADD NAME=SYSFTPD  0666-07213-07213-1715-00001-00001-00000-DIR2UPDT
+;
+; Now really, if you can copy this member from your system, all I will
+; give you is the hint where you can get it from your system.
+;
+; Too many ignorant people believe they should point to the
+; TCPPARMS(FTPDATA) member used by their FTP daemon. This is
+; where you get parameters for your client! They are not the same.
+;
+; Help break the bad habit and use the correct parameters.
+;
+;***********************************************************************
+;                                                                      *
+;   Name of File:             SEZAINST(FTCDATA)                        *
+;                                                                      *
+;   Descriptive Name:         FTP.DATA  (for FTP Client)               *
+;                                                                      *
+;   SMP/E Distribution Name:  EZAFTPAC                                 *
+;                                                                      *
+;   Copyright:    Licensed Materials - Property of IBM                 *
+;                                                                      *
+;                 "Restricted Materials of IBM"                        *
+;                                                                      *
+;                 5694-A01                                             *
+;                                                                      *
+;                 (C) Copyright IBM Corp. 1977, 2006                   *
+;                                                                      *
+;                 US Government Users Restricted Rights -              *
+;                 Use, duplication or disclosure restricted by         *
+;                 GSA ADP Schedule Contract with IBM Corp.             *
+;                                                                      *
+;   Status:       CSV1R8                                               *
+;***********************************************************************
+./ ADD NAME=URLCHECK 0666-07209-07209-0825-00001-00001-00000-DIR2UPDT
+#
+# Source: DATA(URLCHECK)
+# Author: Unknown - found on the web when OS/2 was used more.
+# Notes:  I once found it as coming with the PC based IBM Object REXX.
+#
+# This is 255 characters wide. It helps preserve the LRECL I want.                                                                                                                                                                                         EOR!
+#
+http://www.sitename.com
+http://www.sitename.com/doclib/filename.doc
+#http://www.sitename.com
+./ ENDUP

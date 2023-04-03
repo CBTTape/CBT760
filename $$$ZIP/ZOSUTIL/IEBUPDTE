@@ -1,0 +1,697 @@
+>< ADD NAME=UPDTE    0102-07003-07166-1102-00014-00015-00000-KTOMIAK
+
+UPDTE$01  Place Two Procedures in SYS1.PROCLIB
+UPDTE$02  Create a Three-Member Library
+UPDTE$03  Create New Library Using SYS1.MACLIB as a Source
+UPDTE$04  Update a Library Member
+UPDTE$05  Create New Master Data Set and Delete Selected Records
+UPDTE$06  Create and Update a Library Member
+UPDTE$07  Insert Records into a Library Member
+UPDTE$08  Renumber and Insert Records into a Library Member
+UPDTE$09  Create a Sequential Data Set from Card Input
+UPDTE$10  Copy Sequential Data Set from One Volume to Another
+UPDTE$11  Create a New Partitioned Data Set
+UPDTE$12  Erase it?
+UPDTE$13  Add a member with an alias
+
+>< ADD NAME=UPDTE$01 0101-07003-07003-2113-00069-00069-00000-SC26UTL
+
+Example 1: Place Two Procedures in SYS1.PROCLIB
+
+In this example, two procedures are to be placed in the cataloged
+procedure library, SYS1.PROCLIB. The example assumes that the two
+procedures can be accommodated within the space originally allocated to
+the procedure library.
+
+//UPDATEJOB ...
+//STEP1   EXEC PGM=IEBUPDTE,PARM=MOD
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.PROCLIB
+//SYSUT2   DD  DISP=(OLD),DSN=SYS1.PROCLIB
+//*                                          <==== SHIFT THE DATA LEFT
+//SYSIN    DD  DATA
+  ./       ADD    LIST=ALL,NAME=ERASE,LEVEL=01,SOURCE=0
+  ./       NUMBER NEW1=10,INCR=10
+  //ERASE   EXEC PGM=IEBUPDTE
+  //DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=111111
+  //SYSPRINT DD  SYSOUT=*
+  ./       REPL   LIST=ALL,NAME=LISTPROC
+  ./       NUMBER NEW1=10,INCR=10
+  //LIST    EXEC PGM=IEBGENER
+  //SYSPRINT DD  SYSOUT=*
+  //SYSUT1   DD  DISP=SHR,DSN=SYS1.PROCLIB(&MEMBER)
+  //SYSUT2   DD  SYSOUT=*,DCB=(RECFM=F,BLKSIZE=80)
+  //SYSIN    DD  DATA
+  ./ ENDUP
+/*
+//                                           <==== SHIFT THE DATA LEFT
+
+The control statements are discussed below:
+
+x) SYSUT1 and SYSUT2 DD define the SYS1.PROCLIB data set, which is
+   assumed to be cataloged.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. The data set contains the utility control statements and the
+   data to be placed in the procedure library.
+
+x) The ADD function statement indicates that records (data statements)
+   in the control data set are to be placed in the output. The newly
+   created procedure, ERASE, is listed in the message data set.
+
+   The ADD function will not take place if a member named ERASE already
+   exists in the new master data set referenced by SYSUT2.
+
+x) The first NUMBER detail statement indicates that the new and
+   replacement procedures are to be assigned sequence numbers. The
+   first record of each procedure is assigned sequence number 10; the
+   next record is assigned sequence number 20, and so on.
+
+x) The ERASE EXEC statement marks the beginning of the first new
+   procedure.
+
+x) The REPL function statement indicates that records (data statements)
+   in the control data set are to replace an already existing member.
+   The member is stored in the new master data set referenced by
+   SYSUT2. The REPL function will only take place if a member named
+   LISTPROC already exists in the old master data set referenced by
+   SYSUT1.
+
+x) The second NUMBER detail statement is a duplicate of the first.
+
+x) The LIST EXEC statement marks the beginning of the second new
+   procedure.
+
+x) The ENDUP statement marks the end of the SYSIN DD input data.
+
+>< ADD NAME=UPDTE$02 0101-07003-07003-2113-00057-00057-00000-SC26UTL
+
+Example 2: Create a Three-Member Library
+
+In this example, a three-member partitioned library is created. The
+input data is contained solely in the control data set.
+
+//UPDATEJOB ...
+//STEP1   EXEC PGM=IEBUPDTE,PARM=NEW
+//SYSPRINT DD  SYSOUT=*
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=OUTLIB,
+//             UNIT=disk,
+//             SPACE=(TRK,(50,,10)),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//*                                          <==== SHIFT THE DATA LEFT
+//SYSIN DD  DATA
+  ./ ADD NAME=MEMB1,LEVEL=00,SOURCE=0,LIST=ALL
+
+  (Data statements, sequence numbers in columns 73 through 80)
+
+  ./ ADD NAME=MEMB2,LEVEL=00,SOURCE=0,LIST=ALL
+
+  (Data statements, sequence numbers in columns 73 through 80)
+
+  ./ ADD NAME=MEMB3,LEVEL=00,SOURCE=0,LIST=ALL
+
+  (Data statements, sequence numbers in columns 73 through 80)
+
+  ./ ENDUP
+/*
+//                                           <==== SHIFT THE DATA LEFT
+
+The control statements are discussed below:
+
+x) SYSUT2 DD defines the new partitioned master, OUTLIB. Enough space
+   is allocated to allow for subsequent modifications without creating a
+   new master data set.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. The data set contains the utility control statements and the
+   data to be placed as three members in the output partitioned data
+   set.
+
+x) The ADD function statements indicate that subsequent data statements
+   are to be placed as members in the output partitioned data set. Each
+   ADD function statement specifies a member name for subsequent data
+   and indicates that the member and control statement is listed in the
+   message data set.
+
+x) The data statements contain the data to be placed in each member of
+   the output partitioned data set.
+
+x) ENDUP signals the end of control data set input.
+
+Because sequence numbers (other than blank numbers) are included within
+the data statements, no NUMBER detail statements are included in the
+example.
+
+>< ADD NAME=UPDTE$03 0101-07003-07003-2113-00063-00063-00000-SC26UTL
+
+Example 3: Create New Library Using SYS1.MACLIB as a Source
+
+In this example, a three-member partitioned data set (NEWMCLIB) is
+created. The data set will contain two members, ATTACH and DETACH,
+copied from an existing partitioned data set (SYS1.MACLIB), and a new
+member, EXIT, which is contained in the control data set.
+
+//UPDATEJOB ...
+//STEP1   EXEC PGM=IEBUPDTE,PARM=MOD
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(SHR,KEEP),DSN=SYS1.MACLIB,DISP=SHR
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=DEV.DRIVER3.NEWMCLIB,
+//             UNIT=disk,
+//             SPACE=(TRK,(100,,10)),
+//             DCB=(RECFM=FB,BLKSIZE=0,,LRECL=80)
+//*                                          <==== SHIFT THE DATA LEFT
+//SYSIN DD  DATA
+  ./        REPRO  NAME=ATTACH,LEVEL=00,SOURCE=1,LIST=ALL
+  ./        REPRO  NAME=DETACH,LEVEL=00,SOURCE=1,LIST=ALL
+  ./        ADD    NAME=EXIT,LEVEL=00,SOURCE=1,LIST=ALL
+  ./        NUMBER NEW1=10,INCR=100
+
+  (Data records for EXIT member)
+
+  ./ ENDUP
+/*
+//                                           <==== SHIFT THE DATA LEFT
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input partitioned data set SYS1.MACLIB, which
+   is assumed to be cataloged.
+
+x) SYSUT2 DD defines the output partitioned data set
+   DEV.DRIVER3.NEWMCLIB. Enough space is allocated to allow for
+   subsequent modifications without creating a new master data set.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The REPRO function statements identify the existing input members
+   (ATTACH and DETACH) to be copied onto the output data set. These
+   members are also listed in the message data set (because LIST=ALL is
+   specified).
+
+x) The ADD function statement indicates that records (subsequent data
+   statements) are to be placed as members in the output partitioned
+   data set, called EXIT. The data statements are to be listed in the
+   message data set.
+
+x) The NUMBER detail statement assigns sequence numbers to the data
+   statements. (The data statements contain blank sequence numbers in
+   columns 73 through 80.) The first record of the output member is
+   assigned sequence number 10; subsequent record numbers are increased
+   by 100.
+
+x) ENDUP signals the end of SYSIN data.
+
+   Note that the three named input members (ATTACH, DETACH, and EXIT)
+   do not have to be specified in the order of their collating sequence
+   in the old master.
+
+>< ADD NAME=UPDTE$04 0101-07003-07003-2113-00045-00045-00000-SC26UTL
+
+Example 4: Update a Library Member
+
+In this example, a member (MODMEMB) is updated within the space it
+actually occupies. Two existing logical records are replaced, and the
+entire member is renumbered.
+
+//UPDATEJOB ...
+//STEP1    EXEC PGM=IEBUPDTE,PARM=MOD
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=PDS
+//*                                          <==== SHIFT THE DATA LEFT
+//SYSIN    DD  *
+  ./       CHANGE NAME=MODMEMB,LIST=ALL,UPDATE=INPLACE
+  ./       NUMBER SEQ1=ALL,NEW1=10,INCR=5
+
+  (Data statement 1, sequence number 00000020)
+  (Data statement 2, sequence number 00000035)
+
+/*
+//                                           <==== SHIFT THE DATA LEFT
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the partitioned data set that is updated in place.
+   (Note that the member name need not be specified in the DD
+   statement.)
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The CHANGE function statement indicates the name of the member to be
+   updated (MODMEMB) and specifies the UPDATE=INPLACE operation. The
+   entire member is listed in the message data set. Note that, as
+   renumbering is being done, and since UPDATE=INPLACE was specified,
+   the listing would have been provided even if the LIST=ALL parameter
+   had not been specified. See the LIST parameter for more information.
+
+x) The NUMBER detail statement indicates that the entire member is to
+   be renumbered, and specifies the first sequence number to be assigned
+   and the increment value (5) for successive sequence numbers.
+
+x) The data statements replace existing logical records having sequence
+   numbers of 20 and 35.
+
+>< ADD NAME=UPDTE$05 0101-07003-07003-2113-00055-00055-00000-SC26UTL
+
+Example 5: Create New Master Data Set and Delete Selected Records
+
+In this example, a new master sequential data set is created from
+partitioned input and selected logical records are deleted.
+
+//UPDATEJOB ...
+//STEP1   EXEC PGM=IEBUPDTE,PARM=MOD
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=DCB.PARTDS
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=SEQDS,
+//             UNIT=tape,LABEL=(2,SL),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//*                                          <==== SHIFT THE DATA LEFT
+//SYSIN    DD  *
+  ./       CHANGE NEW=PS,NAME=OLDMEMB1
+
+  (Data statement 1, sequence number 00000123)
+
+  ./       DELETE SEQ1=223,SEQ2=246
+
+  (Data statement 2, sequence number 00000224)
+
+/*
+//                                           <==== SHIFT THE DATA LEFT
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input partitioned data set DCB.PARTDS, which
+   resides on a disk volume.
+
+x) SYSUT2 DD defines the output sequential data set, SEQDS. The data
+   set is written as the second data set on a tape volume.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) CHANGE identifies the input member (OLDMEMB1) and indicates that the
+   output is a sequential data set (NEW=PS).
+
+x) The first data statement replaces the logical record whose sequence
+   number is identical to the sequence number in the data statement
+   (00000123). If no such logical record exists, the data statement is
+   incorporated in the proper sequence within the output data set.
+
+x) The DELETE detail statement deletes logical records having sequence
+   numbers from 223 through 246, inclusive.
+
+x) The second data statement is inserted in the proper sequence in the
+   output data set, because no logical record with the sequence number
+   224 exists (it was deleted in the previous statement).
+
+   Note that only one member can be used as input when converting to
+   sequential organization.
+
+>< ADD NAME=UPDTE$06 0101-07003-07003-2113-00070-00070-00000-SC26UTL
+
+Example 6: Create and Update a Library Member
+
+In this example, a member of a partitioned data set is created from
+sequential input and existing logical records are updated.
+
+//UPDATEJOB ...
+//STEP1   EXEC PGM=IEBUPDTE,PARM=MOD
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=BROWN.OLDSEQDS
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=BROWN.NEWPART,
+//             UNIT=disk,
+//             SPACE=(TRK,(10,5,5)),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//*                                          <==== SHIFT THE DATA LEFT
+//SYSIN    DD  *
+  ./       CHANGE NEW=PO,MEMBER=PARMEM1,LEVEL=01,
+  ./       SEQFLD=605,COLUMN=40,SOURCE=0
+
+  (Data statement 1, sequence number 00020)
+
+  ./ DELETE SEQ1=220,SEQ2=250
+
+  (Data statement 2, sequence number 00230)
+  (Data statement 3, sequence number 00260)
+
+  ./       ALIAS NAME=MEMB1
+/*
+//                                           <==== SHIFT THE DATA LEFT
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input sequential data set (BROWN.OLDSEQDS).
+   The data set resides on a tape volume.
+
+x) SYSUT2 DD defines the output partitioned data set (BROWN.NEWPART).
+   Enough space is allocated to provide for members that may be added
+   in the future.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The CHANGE function statement identifies the output member (PARMEM1)
+   and indicates that a conversion from sequential input to partitioned
+   output is made. The SEQFLD parameter indicates that a 5-byte
+   sequence number is located in columns 60 through 64 of each data
+   statement. The COLUMN=40 parameter specifies the starting column of
+   a field (within subsequent data statements) from which replacement
+   information is obtained. SOURCE=0 indicates that the replacement
+   information is provided by you.
+
+x) The first data statement is used as replacement data. Columns 40
+   through 80 of the statement replace columns 40 through 80 of the
+   corresponding logical record. If no such logical record exists, the
+   entire card image is inserted in the output data set member.
+
+x) The DELETE detail statement deletes all of the logical records
+   having sequence numbers from 220 through 250.
+
+x) The second data statement, whose sequence number falls within the
+   range specified in the DELETE detail statement above, is
+   incorporated in its entirety in the output data set member.
+
+x) The third data statement, which is beyond the range of the DELETE
+   detail statement, is treated in the same manner as the first data
+   statement.
+
+x) ALIAS assigns the alias name MEMB1 to the output data set member
+   PARMEM1.
+
+>< ADD NAME=UPDTE$07 0101-07003-07003-2113-00052-00052-00000-SC26UTL
+
+Example 7: Insert Records into a Library Member
+
+In this example, a block of three logical records is inserted into an
+existing member, and the updated member is placed in the existing
+partitioned data set.
+
+//UPDATEJOB ...
+//STEP1   EXEC PGM=IEBUPDTE,PARM=MOD
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=PDS
+//SYSUT2   DD  DISP=(OLD),DSN=PDS
+//*                                          <==== SHIFT THE DATA LEFT
+//SYSIN    DD  *
+  ./       CHANGE NAME=RENUM,LIST=ALL,LEVEL=01,SOURCE=0
+  ./       NUMBER SEQ1=15,NEW1=20,INCR=5,INSERT=YES
+
+  (Data statement 1)
+  (Data statement 2)
+  (Data statement 3)
+
+/*
+//                                           <==== SHIFT THE DATA LEFT
+
+The control statements are discussed below:
+
+x) SYSUT1 and SYSUT2 DD define the partitioned data set (PDS).
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The CHANGE function statement identifies the input member RENUM. The
+   entire member is listed in the message data set.
+
+x) The NUMBER detail statement specifies the insert operation and
+   controls the renumbering operation as described below.
+
+x) The data statements are the logical records to be inserted.
+   (Sequence numbers are assigned when the data statements are
+   inserted.)
+
+   In this example, the existing logical records have sequence numbers
+   10, 15, 20, 25, and 30. Sequence numbers are assigned by the NUMBER
+   detail statement, as follows:
+
+   1. Data statement 1 is assigned sequence number 20 (NEW1=20) and
+      inserted after existing logical record 15 (SEQ1=15).
+   2. Data statements 2 and 3 are assigned sequence numbers 25 and 30
+      (INCR=5) and are inserted after data statement 1.
+   3. Existing logical records 20, 25, and 30 are assigned sequence
+      numbers 35, 40, and 45, respectively.
+
+>< ADD NAME=UPDTE$08 0101-07003-07003-2113-00080-00080-00000-SC26UTL
+
+Example 8: Renumber and Insert Records into a Library Member
+
+In this example, two blocks (three logical records per block) are
+inserted into an existing member, and the member is placed in the
+existing partitioned data set. A portion of the output member is also
+renumbered.
+
+//UPDATEJOB ...
+//STEP1   EXEC PGM=IEBUPDTE,PARM=MOD
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=PDS
+//SYSUT2   DD  DISP=(OLD),DSN=PDS
+//*                                          <==== SHIFT THE DATA LEFT
+//SYSIN    DD  *
+  ./       CHANGE NAME=RENUM,LIST=ALL,LEVEL=01,SOURCE=0,SEQFLD=(765,783)
+  ./       NUMBER SEQ1=AA015,NEW1=AA020,INCR=5,INSERT=YES
+
+  (Data statement 1)
+  (Data statement 2)
+  (Data statement 3)
+
+  ./       NUMBER SEQ1=AA030,INSERT=YES
+
+  (Data statement 4)
+  (Data statement 5)
+  (Data statement 6)
+  (Data statement 7, sequence number AA035)
+
+/*
+//                                           <==== SHIFT THE DATA LEFT
+
+The control statements are discussed below:
+
+x) SYSUT1 and SYSUT2 DD define the partitioned data set PDS.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The CHANGE function statement identifies the input member RENUM. The
+   entire member is listed in the message data set.
+
+x) The NUMBER detail statements specify the insert operations
+   (INSERT=YES) and control the renumbering operation as described
+   below.
+
+x) Data statements 1, 2, 3, and 4, 5, 6 are the blocks of logical
+   records to be inserted. Because they contain blank sequence numbers,
+   sequence numbers are assigned when the data statements are inserted.
+
+x) Data statement 7, because it contains a sequence number, stops the
+   insert operation. The sequence number is identical to the number on
+   the next record in the old master data set; consequently, data
+   statement 7 will replace the equally numbered old master record in
+   the output data set.
+
+   The existing logical records in this example have sequence numbers
+   AA010, AA015, AA020, AA025, AA030, AA035, AA040, AA045, AA050, BB010,
+   and BB015. The insertion and renumbering operations are performed as
+   follows:
+
+   1. Data statement 1 is assigned sequence number AA020 (NEW1=AA020)
+      and inserted after existing logical record AA015 (SEQ1=AA015).
+   2. Data statements 2 and 3 are assigned sequence numbers AA025 and
+      AA030 (INCR=5) and are inserted after data statement 1.
+   3. Existing logical records AA020, AA025, and AA030 are assigned
+      sequence numbers AA035, AA040, and AA045, respectively.
+   4. Data statement 4 is assigned sequence number AA050 and inserted.
+      (The SEQ1=AA030 specification in the second NUMBER statement
+      places this data statement after existing logical record AA030,
+      which has become logical record AA045.)
+   5. Data statements 5 and 6 are assigned sequence numbers AA055 and
+      AA060 and are inserted after data statement 4.
+   6. Existing logical record AA035 is replaced by data statement 7,
+      which is assigned sequence number AA065.
+   7. The remaining logical records in the member are renumbered until
+      logical record BB010 is encountered. Because this record has a
+      sequence number higher than the next number to be assigned, the
+      renumbering operation is ended.
+
+>< ADD NAME=UPDTE$09 0101-07003-07003-2113-00058-00058-00000-SC26UTL
+
+Example 9: Create a Sequential Data Set from Card Input
+
+In this example, IEBUPDTE is used to create a sequential data set from
+card input. User header and trailer labels, also from the input stream,
+are placed on this sequential data set.
+
+//LABEL JOB ...
+//CREATION EXEC PGM=IEBUPDTE,PARM=NEW
+//SYSPRINT DD  SYSOUT=*
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=LABEL,
+//             UNIT=disk,
+//             SPACE=(TRK,(15,3))
+//*                                          <==== SHIFT THE DATA LEFT
+//SYSIN    DD  *
+  ./       LABEL
+
+  (Header labels)
+
+  ./       ADD LIST=ALL,OUTHDR=ROUTINE1,OUTTLR=ROUTINE2
+
+  (Data records)
+
+  ./       LABEL
+
+  (Trailer labels)
+
+  ./ ENDUP
+/*
+//                                           <==== SHIFT THE DATA LEFT
+
+The control statements are discussed below:
+
+x) SYSUT2 DD defines and allocates space for the output sequential data
+   set, called LABEL, which resides on a disk volume.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. (This control data set includes the sequential input data
+   set and the user labels, which are on cards.)
+
+x) The first LABEL statement identifies the 80-byte card images in the
+   input stream which will become user header labels. (They can be
+   modified by the user's header-label processing routine specified on
+   the ADD function statement.)
+
+x) The ADD function statement indicates that the data statements that
+   follow are placed in the output data set. The newly created data set
+   is listed in the message data set. User output header and output
+   trailer routines are to be given control before the writing of header
+   and trailer labels.
+
+x) The second LABEL statement identifies the 80-byte card images in the
+   input stream which will become user trailer labels. (They can be
+   modified by the user's trailer-label processing routine specified on
+   the ADD function statement.)
+
+x) ENDUP signals the end of the control data set.
+
+>< ADD NAME=UPDTE$10 0101-07003-07003-2113-00042-00042-00000-SC26UTL
+
+Example 10: Copy Sequential Data Set from One Volume to Another
+
+In this example, IEBUPDTE is used to copy a sequential data set from
+one DASD volume to another. User labels are processed by user exit
+routines.
+
+//LABELS JOB ...
+//STEP1   EXEC PGM=IEBUPDTE,PARM=(MOD,,INTLRTN)
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=OLDMAST
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=NEWMAST,
+//             UNIT=disk,
+//             SPACE=(TRK,(5,10))
+//SYSIN    DD  DISP=(SHR),DSN=INPUT
+
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input sequential data set, called OLDMAST,
+   which resides on a disk volume.
+
+x) SYSUT2 DD defines the output sequential data set, called NEWMAST,
+   which will reside on a disk volume.
+
+x) SYSIN DD defines the control data set. The contents of this
+   disk-resident data set in this example are:
+
+//*                                          <==== SHIFT THE DATA LEFT
+  ./       REPRO LIST=ALL,INHDR=INHRTN,INTLR=INTRTN,                     C
+  ./       OUTHDR=OUTHRTN,OUTTLR=OUTTRN
+  ./       ENDUP
+//                                           <==== SHIFT THE DATA LEFT
+
+x) The REPRO function statement indicates that the existing input
+   sequential data set is copied to the output data set. This output
+   data set is listed on the message data set. The user's label
+   processing routines are to be given control when header or trailer
+   labels are encountered on either the input or the output data set.
+
+x) ENDUP indicates the end of the control data set.
+
+>< ADD NAME=UPDTE$11 0101-07003-07003-2113-00056-00056-00000-SC26UTL
+
+Example 11: Create a New Partitioned Data Set
+
+In this example, a partitioned generation data set consisting of three
+members is used as source data in the creation of a new partitioned
+data set. IEBUPDTE is also used to add a fourth member to the three
+source members and to number the new member. The resultant data set is
+cataloged as a new partitioned data set.
+
+//NEWGDS JOB ...
+//STEP1   EXEC PGM=IEBUPDTE,PARM=MOD
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=A.B.C
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=A.B.D,
+//             UNIT=disk,
+//             SPACE=(TRK,(100,10,10)),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//*                                          <==== SHIFT THE DATA LEFT
+//SYSIN    DD  DATA
+  ./       REPRO  NAME=MEM1,LEVEL=00,SOURCE=0,LIST=ALL
+  ./       REPRO  NAME=MEM2,LEVEL=00,SOURCE=0,LIST=ALL
+  ./       REPRO  NAME=MEM3,LEVEL=00,SOURCE=0,LIST=ALL
+  ./       ADD    NAME=MEM4,LEVEL=00,SOURCE=0,LIST=ALL
+  ./       NUMBER NEW1=10,INCR=5
+
+  (Data records comprising MEM4)
+
+  ./       ENDUP
+/*
+//                                           <==== SHIFT THE DATA LEFT
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the partitioned data set, which is used as source
+   data. It can be a PDSE.
+
+x) SYSUT2 DD defines the new partitioned data set, which is created
+   from the source partitioned data set and from an additional member
+   included as input and data. It can be a PDSE.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The REPRO function statements reproduce the named source members in
+   the output partitioned data set.
+
+x) The ADD function statement specifies that the data records following
+   the input stream be included as MEM4.
+
+x) The NUMBER detail statement indicates that the new member is to have
+   sequence numbers assigned in columns 73 through 80. The first record
+   is assigned sequence number 10. The sequence number of each
+   successive record is increased by 5.
+
+x) ENDUP signals the end of input card data.
+
+>< ADD NAME=UPDTE$12 0100-07003-07003-2113-00005-00005-00000-SC26UTL
+
+//ERASE   EXEC PGM=IEBUPDTE
+//DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=111111
+//SYSPRINT DD  SYSOUT=*
+
+>< ADD NAME=UPDTE$13 0100-07166-07166-1103-00016-00016-00000-KTOMIAK
+//*
+//* IEBUPDTE - Update Data Set
+//*
+//UPDTE01 EXEC PGM=IEBUPDTE,REGION=6M,PARM='MOD'
+//SYSPRINT DD  SYSOUT=*
+//*SYSUT1  DD  NOT USED WHEN PARM=NEW
+//SYSUT1   DD  DISP=SHR,DSN=SOME.PDS.DSNAME
+//SYSUT2   DD  DISP=OLD,DSN=SOME.PDS.DSNAME
+//SYSIN    DD  *        <== Shift the data over to column 1
+  ./ ADD NAME=KEN
+  THIS IS MEMBER KEN, ALIAS TOMIAK
+  ./ ALIAS NAME=TOMIAK
+>< ENDUP
+/*
+//*
+//

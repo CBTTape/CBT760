@@ -1,0 +1,9 @@
+2023-04-03 02:28:10.781052 - Initialized conversion of CBT760
+2023-04-03 02:28:11.012205 - Received CBT.V504.FILE760.PDS from FILE760.XMI 
+2023-04-03 02:28:11.015284 - Found $$$#DATE.txt (text/plain) in CBT.V504.FILE760.PDS, moved to PDS/$$$#DATE
+2023-04-03 02:28:11.015295 - Found $$$ZIP.zip (application/zip), trying to unzip
+2023-04-03 02:28:11.017090 - Found $$$ZIP.zip (application/zip), extracting to CBT760/$$$ZIP
+2023-04-03 02:28:11.059839 - Found @FILE760.txt (text/plain) in CBT.V504.FILE760.PDS, moved to PDS/@FILE760
+2023-04-03 02:28:11.061121 - Found CNTL.txt (text/plain) in CBT.V504.FILE760.PDS, moved to PDS/CNTL
+2023-04-03 02:28:11.062364 - Found PROCLIB.txt (text/plain) in CBT.V504.FILE760.PDS, moved to PDS/PROCLIB
+2023-04-03 02:28:11.062375 - Found ZOSUTIL.bin containing application/octet-stream, moved to PDS/ZOSUTIL

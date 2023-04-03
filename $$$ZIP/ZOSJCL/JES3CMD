@@ -1,0 +1,26 @@
+
+//**command command-verb
+
+Issue a JES3 Command. Just like with JES2, should you really be
+doing this?
+
+Command     Short Form
+CALL         X
+CANCEL       C
+DELAY        D
+DISABLE      H
+ENABLE       N
+ERASE        E
+FAIL
+FREE
+INQUIRY      I
+MESSAGE      Z
+MODIFY       F
+RESTART      R
+SEND T
+START        S
+SWITCH
+VARY         V
+
+Do not specify a *DUMP or *RETURN command on a JES3 command statement.
+

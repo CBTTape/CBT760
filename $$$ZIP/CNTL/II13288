@@ -1,0 +1,83 @@
+//userid!  JOB (ACCT),'FTP: GET IBM TOOOLS'
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+//* UPDATES: YOU NEED TO ENTER YOUR EMAIL ADDRESS ON LINE 54
+//*          YOU MAY NEED TO ENTER A VALIF VOLSER ON LINE 71
+//*          OR REMOVE THE VOLUME(VOLSER) PARAMETER.
+//*
+//*          YOU SHOULD HAVE A &SYSUID..EXELIB DATASET.
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(II13288)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO FTP TO AN IBM FTP SERVER AND RETRIEVE
+//*          TRSMAIN AND INDXCISZ. TRSMAIN IS RECEIVED SO THAT INDXCISZ
+//*          CAN BE UNTERSED.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE PROCEDURE TO ASSEMBLE AND LINK THE SOURCE TO AN LMOD.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* LIB: DSN=&SYSUID..ZOSCNTL(II13288)
+//* AUTHOR: "KENNETH E TOMIAK"<CBT_Ken@KTomiak.org>
+//* GUIDE:  THIS JOB WILL RETRIEVE THE IBM TERSE TOOL AND THE
+//*         INDEX CI SIZER TOOL.
+//*
+//FTP     EXEC PGM=FTP,REGION=5000K,
+//             PARM='( EXIT'
+//OUTPUT   DD  SYSOUT=*
+//INPUT    DD  *
+ftp.software.ibm.com ;   207.25.253.40 if no DNS available.
+anonymous ;
+                      ;  <= Enter your email address here
+bin ;
+locsite recfm=fb lrecl=1024 blksize=0 tracks pri=3 sec=3 ;
+locsite volume=csi001 ;
+cd s390/mvs/tools ;
+get INDXCISZ.JCL.TRSD INDXCISZ.TERSED ;
+ls ;
+cd packlib ;
+locsite recfm=fb lrecl=80 blksize=0 tracks pri=3 sec=3 ;
+get trsmain.bin TRSMAIN.XMI ;
+quit ;
+/*
+//*
+//RECEIVE EXEC PGM=IKJEFT01,REGION=4M,DYNAMNBR=99,COND=(0,LT)
+//SYSTSPRT DD  SYSOUT=*
+//SYSTSIN  DD  *
+  RECEIVE INDATASET(TRSMAIN.XMI)
+    DATASET(EXELIB) VOLUME(volser)
+/*
+//*
+//UNTERSE EXEC PGM=TRSMAIN,PARM=UNPACK,COND=(0,LT)
+//STEPLIB  DD  DISP=SHR,DSN=&SYSUID..EXELIB
+//SYSPRINT DD  SYSOUT=*
+//INFILE   DD  DISP=SHR,DSN=&SYSUID..INDXCISZ.TERSED
+//OUTFILE  DD  DISP=(NEW,CATLG,DELETE),DSN=&SYSUID..INDXCISZ.UNTERSED,
+//             UNIT=SYSALLDA,
+//             SPACE=(TRK,(10,10,0),RLSE)
+//             DCB=(DSORG=PS,RECFM=FB.BLKSIZE=0,LRECL=80)
+//*
+//

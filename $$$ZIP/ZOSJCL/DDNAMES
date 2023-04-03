@@ -1,0 +1,240 @@
+
+"Reserved DD Statements."
+Do not use the following ddnames on a DD statement in a JES2 system.
+They have special meaning to JES2.
+
+  JESJCLIN
+  JESMSGLG
+  JESJCL
+  JESYSMSG
+
+Do not use the following ddnames on a DD statement in a JES3 system.
+They have special meaning to JES3.
+
+  JCBIN
+  JESJCL
+  JS3CATLG
+  JCBLOCK
+  JESMSGLG
+  J3JBINFO
+  JCBTAB
+  JOURNAL
+  J3SCINFO
+  JESJCLIN
+  JST
+  J3STINFO
+  JESInnnn
+  JESYSMSG
+  STCINRDR
+  TSOINRDR
+
+"Special DD Statements."
+  JOBCAT
+  SYSCHK
+  JOBLIB
+  SYSCKEOV
+  STEPCAT
+  SYSIN
+  STEPLIB
+  SYSMDUMP
+  SYSABEND
+  SYSUDUMP
+
+"Product DD Statements." - Know when to use them
+  $ORTPARM    SORT     SYNCSORT parameter overrides
+  CEEDUMP     CEE      Language Environment
+  DFHCSD      CICS
+  DFHRPL      CICS     Runtime Program Library - like STEPLIB
+  DFSPARM     SORT     DFSort parameter overrides
+  DFSUINnn    IMS
+  DFSURIDX    IMS
+  HCDPROF     HCD      Profile
+  IDCUT1      DFP      Used for BLDINDEX workfile
+  IDCUT2      DFP      Used for BLDINDEX workfile
+  INPUT       FTP      Input stream of commands
+  IPCSPARM    IPCS     Library with IPCS routines
+  ISPALIB     ISPF     APL2 support
+  ISPCTL##    ISPF
+  ISPILIB     ISPF     Images for GUI
+  ISPLLIB     ISPF     Load Library - like STEPLIB
+  ISPLOG#     ISPF     Log of activity
+  ISPLST#     ISPF     Printed listing of members
+  ISPMLIB     ISPF     Message Library
+  ISPPLIB     ISPF     Panel Library
+  ISPPROF     ISPF     Profile
+  ISPSLIB     ISPF     Skeleton Library
+  ISPTABL     ISPF     Table Library Output
+  ISPTLIB     ISPF     Table Library Input
+  NAMES       TSO      Transmit nickname file
+  NETRC       FTP      Network resource connections
+  OUTPUT      FTP      Messages
+  PARMLIB     z/OS     In MSTJCLxx
+  PROCLIB     z/OS     In MSTJCLxx
+  PROC##      JES2     Used in JES2 Procedure
+  PROFILE     TCPIP
+  SGCDUMP     BMC      Mainview dump
+  SGCTRACE    BMC      Mainview trace
+  SMPCSI      SMPE     Consolidated Software Inventory repository
+  SMPHOLD     SMPE
+  SMPLIST     SMPE
+  SMPLOG      SMPE     Internally captured messages
+  SMPLOG      SMPE     Internally captured messages Alternate
+  SMPLTS      SMPE     Long term Storage
+  SMPMTS      SMPE     Macro Temporary Storage
+  SMPOUT      SMPE     Output
+  SMPPTFIN    SMPE
+  SMPPTS      SMPE     PTF Temporary Storage
+  SMPPUNCH    SMPE
+  SMPRPT      SMPE     Report
+  SMPSCDS     SMPE     Source Control Data Set
+  SMPSNAP     SMPE     SNAP Dumps
+  SMPSTS      SMPE     Source Temporary Storage
+  SMPTABL     SMPE     ISPF Table Library
+  SMPTLIB     SMPE     Target Library allocations
+  SORTDIAG    SORT     Diagnostic messages
+  SORTIN      SORT     Input data to sort
+  SORTLIB     SORT     library of routines and exits
+  SORTMSG     SORT     Output Messages
+  SORTOUT     SORT     Output data from sort
+  SORTWK*     SORT
+  SYS*        *        Temporary DDnames
+  SYSEXEC     TSO      Source for REXX Procedures
+  SYSHELP     TSO      Help
+  SYSPROC     TSO      Source for CLIST and REXX Procedures
+  SYSLBC      TSO      Broadcast
+  SYSLIB      *        COPY, MACRO, OBJECT for inclusions
+  SYSLIN      HEWL     Input to Binder (Linkage Editor)
+  SYSOUT      *        Usually output messages
+  SYSPRINT    *        Usually output reports or messges
+  SYSFTPD     FTP      CLIENT Defaults
+  SYSTCPD     TCPIP    Defaults
+  SYSTSIN     TSO      input
+  SYSTSPRT    TSO      Output
+  SYSUADS     TSO      User Attributes Data Set
+  SYSUT1      *        Usually input for a Utility
+  SYSUT2      *        Usually output for a Utility
+  SYSUT3      *        Utility work data set
+  SYSUT4      *        Utility work data set
+  SYSUT6      *        Utility work data set
+  TOOLIN      SORT     Input data to ICETOOL
+  TOOLMSG     SORT     Output Messages
+  TSOLIB      TSO      Load Library - like STEPLIB
+  UTPRINT     DB2      Utility output messages
+  *llq*       SMPE     By convention, the last qualifier is DDNAME
+
+"Disabling DD Statements." - Know when to use them
+//ddname   DD  DUMMY   is usually all it takes.
+  ABNLIGNR    AbendAid Disable
+  CAOESTOP    CA-OPT   Turn CA-OPT II & CA-SYMDUMP OFF
+  DMBENAN     DUMPMSTR TURN OFF DUMPMASTER
+  ESPYIBM     EYE-SPY  Turn it OFF
+  CAHBEXCL    Hyperbuf bypass CA- Hyperbuf
+  IDIOFF      IBMFA    Turn IBM FAULT ANALYZER OFF
+  NOESTAE     ASE      TURN OFF ABEND handling for ASE's OMCS
+  NOSTAX      ASE      TURN OFF ATTN  handling for ASE's OMCS
+  PLDIGN      Mainview StopX37  Mainview SRM Allocation
+  BYPASPRO    Mainview ProSMS   Mainview SRM Allocation
+  PROIGN      Mainview PoolDasd Mainview SRM Allocation
+  FCOPYOFF    PDSMAN   Disable FastCopy
+  PSPOFF      SoftWork Performance Essentials
+  ULT@SOFF    StarTool Bypass Serena's StarTool IOO optimization
+  NPDSFAST    SEA      PDSFAST
+  VDSBYPAS    DMS      CA-SAMS
+  ACCIGN      ????     ??????
+
+  X$abbbN     ASM2     Computer Associates
+    abbb ============> Option
+    a                  ASY
+    a                  CND
+    a                  DFR
+    a                  FRC
+    a                  IAS
+    a                  INT
+    a                  IXR
+    a                  QUI
+    a                  SEC
+    a                  S99
+    a                  UJI
+    a                  USI
+    a                  VER
+    a                  X37
+    a                  213
+    a                  26A
+    a                  26J
+    a                  26V
+    a                  522
+    a ===============> Scope
+                       J = Job
+                       S = Step
+                       I = immediate (TSO)
+
+//ABNLIGNR  DD DUMMY    ABENDAID
+//NPDSFAST  DD DUMMY    PDSFAST
+//VDSBYPAS  DD DUMMY    DMS (CA-SAMS)
+//FCOPYOFF  DD DUMMY    PDSMAN FASTCOPY
+//PLDIGN    DD DUMMY    STOPX37
+//PROIGN    DD DUMMY    POOL-DASD
+//BYPASPRO  DD DUMMY    PROSMS
+//PSPOFF    DD DUMMY    SOFTWORKS (PERFORMANCE ESSENTIAL)
+//ESPYIBM   DD DUMMY    EYE-SPY OFF
+//NOESTAE   DD DUMMY    OMCS
+//NOSTAX    DD DUMMY    OMCS
+//CAOESTOP  DD DUMMY    CA-OPT II & CA-SYMDUMP OFF
+//IDIOFF    DD DUMMY    IBM FAULT ANALYZER OFF
+//DMBENAN   DD DUMMY    TURN OFF DUMPMASTER
+//ULT@SOFF  DD DUMMY    SERENA'S STARTOOL
+//CAHBEXCL  DD DUMMY    CA- HYPERBUF
+//X$JX37N   DD DUMMY    CA-ASM2
+//X$J26JN   DD DUMMY    CA-ASM2
+//X$JIXRN   DD DUMMY    CA-ASM2
+//X$JUJIN   DD DUMMY    CA-ASM2
+//X$JS99N   DD DUMMY    CA-ASM2
+//X$J26AN   DD DUMMY    CA-ASM2
+//X$J26VN   DD DUMMY    CA-ASM2
+//X$J213N   DD DUMMY    CA-ASM2
+//X$JDFRN   DD DUMMY    CA-ASM2
+//X$JINTN   DD DUMMY    CA-ASM2
+//X$JQUIN   DD DUMMY    CA-ASM2
+//X$J522N   DD DUMMY    CA-ASM2
+//X$JCNDN   DD DUMMY    CA-ASM2
+//X$JASYN   DD DUMMY    CA-ASM2
+//X$JIASN   DD DUMMY    CA-ASM2
+//X$JSECN   DD DUMMY    CA-ASM2
+//X$JVERN   DD DUMMY    CA-ASM2
+//X$JFRCN   DD DUMMY    CA-ASM2
+//X$SX37N   DD DUMMY    CA-ASM2
+//X$S26JN   DD DUMMY    CA-ASM2
+//X$SIXRN   DD DUMMY    CA-ASM2
+//X$SUJIN   DD DUMMY    CA-ASM2
+//X$SS99N   DD DUMMY    CA-ASM2
+//X$S26AN   DD DUMMY    CA-ASM2
+//X$S26VN   DD DUMMY    CA-ASM2
+//X$S213N   DD DUMMY    CA-ASM2
+//X$SDFRN   DD DUMMY    CA-ASM2
+//X$SINTN   DD DUMMY    CA-ASM2
+//X$SQUIN   DD DUMMY    CA-ASM2
+//X$S522N   DD DUMMY    CA-ASM2
+//X$SCNDN   DD DUMMY    CA-ASM2
+//X$SASYN   DD DUMMY    CA-ASM2
+//X$SIASN   DD DUMMY    CA-ASM2
+//X$SSECN   DD DUMMY    CA-ASM2
+//X$SVERN   DD DUMMY    CA-ASM2
+//X$SFRCN   DD DUMMY    CA-ASM2
+//X$IX37N   DD DUMMY    CA-ASM2
+//X$I26JN   DD DUMMY    CA-ASM2
+//X$IIXRN   DD DUMMY    CA-ASM2
+//X$IUJIN   DD DUMMY    CA-ASM2
+//X$IS99N   DD DUMMY    CA-ASM2
+//X$I26AN   DD DUMMY    CA-ASM2
+//X$I26VN   DD DUMMY    CA-ASM2
+//X$I213N   DD DUMMY    CA-ASM2
+//X$IDFRN   DD DUMMY    CA-ASM2
+//X$IINTN   DD DUMMY    CA-ASM2
+//X$IQUIN   DD DUMMY    CA-ASM2
+//X$I522N   DD DUMMY    CA-ASM2
+//X$ICNDN   DD DUMMY    CA-ASM2
+//X$IASYN   DD DUMMY    CA-ASM2
+//X$IIASN   DD DUMMY    CA-ASM2
+//X$ISECN   DD DUMMY    CA-ASM2
+//X$IVERN   DD DUMMY    CA-ASM2
+//X$IFRCN   DD DUMMY    CA-ASM2

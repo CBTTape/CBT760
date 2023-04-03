@@ -1,0 +1,122 @@
+rexx_ddbytstr: /* rexx */
+  ddbytstr_version = "01.00"
+  parse arg ddname type
+  allcblk = ddbycblk()
+  alllsta = ddbylsta()
+  alltrap = ddtrap("*" "DSN")
+  select
+    when ((alltrap == allcblk) & (allcblk == alllsta)) then
+      do
+        say "Wow, can you imagine that!"
+      end
+    when ((alltrap == allcblk) & (allcblk >< alllsta)) then
+      do
+        say "DDTRAP == DDBYCBLK >< DDBYLSTA"
+        say copies("-",79)
+        say Left(copies("-allcblk-",20),79)
+        say copies("-",79)
+        say allcblk
+        say copies("-",79)
+        say Left(copies("-alllsta-",20),79)
+        say copies("-",79)
+        say alllsta
+        say copies("-",79)
+      end
+    when ((alltrap >< allcblk) & (allcblk == alllsta)) then
+      do
+        say "DDTRAP >< DDBYCBLK == DDBYLSTA"
+        say "I am not surprised, DDTRAP was poorly written!"
+        say "It only finds DDNAMEs with datasets allocated to it."
+        say copies("-",79)
+        say Left(copies("-alltrap-",20),79)
+        say copies("-",79)
+        say alltrap
+        say copies("-",79)
+        say Left(copies("-allcblk-",20),79)
+        say copies("-",79)
+        say allcblk
+        say copies("-",79)
+      end
+    Otherwise
+      say "This is the worst choice!"
+      say "DDTRAP >< DDBYCBLK >< DDBYLSTA"
+      say "Check the results carefully, you likely had"
+      say "some temporary DDNAME allocated in between runs."
+      say copies("-",79)
+      say Left(copies("-alltrap-",20),79)
+      say copies("-",79)
+      say alltrap
+      say copies("-",79)
+      say Left(copies("-allcblk-",20),79)
+      say copies("-",79)
+      say allcblk
+      say copies("-",79)
+      say Left(copies("-alllsta-",20),79)
+      say copies("-",79)
+      say alllsta
+      say copies("-",79)
+  end
+  allofit = allcblk
+  call de_parse
+  find_dd = "SYSEXEC"
+  netrc_dd = tiotddnm.find_dd
+  if (netrc_dd >< "") then,
+    do
+      say "NETRC("netrc_dd")"
+      netrc_dsns = dd_dsname.netrc_dd.0
+      do ds_x = 1 to netrc_dsns
+        say "  DSN="dd_dsname.netrc_dd.ds_x
+      end
+
+    end
+  else,
+    say "//NETRC is not allocated"
+  return 0
+  call show_it
+
+show_it:
+  say ""
+  say copies("=",79)
+  say "D D T R A P"
+  allofit = alltrap
+  do while allofit >< ""
+    parse var allofit someofit ";" allofit
+    say someofit
+  end
+
+  say ""
+  say copies("=",79)
+  say "D D B Y C B L K"
+  allofit = allcblk
+  do while allofit >< ""
+    parse var allofit someofit ";" allofit
+    say someofit
+  end
+
+  say ""
+  say copies("=",79)
+  say "D D B Y L S T A"
+  allofit = alllsta
+  do while allofit >< ""
+    parse var allofit someofit ";" allofit
+    say someofit
+  end
+  return
+
+/* #dds;dd#;ddname;#dsn;dsn#;dsname;...                        */
+de_parse:
+  tiotddnm. = ""
+  tiotddnm.0 = 0
+  parse var allofit nbr_dds ";" allofit
+  do dd_x = 1 to nbr_dds
+    parse var allofit dd_nbr ";" dd_name ";" nbr_dsns ";" allofit
+    tiotddnm.dd_name = dd_x
+    dd_dsname.dd_x. = ""
+    do ds_x = 1 to nbr_dsns
+      parse var allofit ds_nbr ";" ds_name ";" allofit
+      dd_dsname.dd_x.ds_x = ds_name
+    end
+    dd_dsname.dd_x.0 = ds_x - 1
+  end
+  tiotddnm.0 = dd_x - 1
+  return

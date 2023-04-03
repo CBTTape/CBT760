@@ -1,0 +1,39 @@
+
+//*NET
+
+Purpose Use the //*NET statement to define the dependencies between
+jobs in a dependent job control (DJC) network. JES3 sets up a network
+of dependent jobs and executes them in a specific order. (Once set up,
+the structure of a DJC network cannot be changed unless all of the jobs
+in the network are resubmitted.) Jobs belonging to a DJC network cannot
+be registered with the automatic restart manager (ARM).
+
+//*NET {NETID} =name[,parameter]...
+       {ID }
+
+{ABCMP} = {NOKP}
+{AC } {KEEP}
+{ {ABNORMAL|AB} = {D} }
+{ {F} }
+{ {R} }
+{ {NORMAL|NC} = {D} }
+{ {F} }
+{ {R} }
+DEVPOOL=( {ANY} [,device-name,n]...
+{NET}
+DEVRELSE= {YES}
+{NO }
+{NETREL} =(netid,jobname)
+{NR }
+{NHOLD} =n
+{HC }
+{NRCMP} = {HOLD}
+{PC } {NOHO}
+{FLSH}
+{OPHOLD} = {NO }
+{OH } {YES}
+{RELEASE} =(jobname[,jobname]...)
+{RL }
+{RELSCHCT} =n
+{RS }
+

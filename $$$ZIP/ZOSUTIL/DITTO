@@ -1,0 +1,19 @@
+>< ADD NAME=DIT
+
+DIT$01 - Copy an entire tape to another tape
+
+>< ADD NAME=DIT$01
+
+//STEP010 EXEC PGM=DITTO
+//SYSPRINT DD  SYSOUT=*
+//IN       DD  DISP=OLD,DSN=ANY1,
+//             UNIT=cart,VOL=SER=input1,
+//             LABEL=(1,BLP)
+//OUT      DD  DISP=(NEW,KEEP),DSN=ANY2,
+//             UNIT=cart,VOL=SER=output,
+//             LABEL=(1,BLP)
+//SYSIN    DD  *
+$$DITTO TT  INPUT=IN,OUTPUT=OUT,NFILES=EOT
+/*
+//*
+//

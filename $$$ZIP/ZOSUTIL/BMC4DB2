@@ -1,0 +1,25 @@
+>< ADD NAME=BMC4DB2
+
+BMCTERMU - Terminate failed utility
+
+>< ADD NAME=BMCTERMU
+
+//*
+//        SET  DB2ID='DSN'
+//        SET  UTILID='BMCREORG.TSNAME'
+//*
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* Terminate the named utility-identifier in the named subsystem.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//BMCTERM EXEC PGM=ARUUMAIN,REGION=4M,
+//             PARM='&DB2ID,&UTILID,TERM,,MSGLEVEL(1)'
+//STEPLIB  DD  DISP=SHR,DSN=&DB2ID...REORGPLS.LOAD
+//         DD  DISP=SHR,DSN=&DB2ID..SDSNLOAD
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  DUMMY
+//*
+//
+//             PARM='&DB2ID,&UTILID,TERM/RESET,,MSGLEVEL(1)'
+//*
+

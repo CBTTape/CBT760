@@ -1,0 +1,53 @@
+parse arg path
+say ""
+say "BPXTREE" DATE() TIME()
+say ""
+if path = "" then path = '/'
+call rdir path
+say ""
+exit 0
+rdir: procedure
+   call syscalls on
+   parse arg path
+   say "Path:" path
+   tabs = copies(" ",length(path))
+   d.0=0
+   address syscall 'readdir (path) d.'
+   if d.0=0 then
+      say 'ERROR>> Cannot read directory:' path
+   else
+   do i=1 to d.0
+      dpath=path'/'d.i
+/*    address syscall 'lstat (dpath)' st.     */
+      rt = ketcall('lstat (dpath)' st.)
+      if rt >< 0 then
+        do
+          say "rt" rt retval
+          return 0
+        end
+      if st.st_type=s_isdir & d.i<>'.' & d.i<>'..' then
+         call rdir dpath
+      else,
+      if d.i<>'.' & d.i<>'..' then
+         say "File:" tabs"/"d.i
+   end
+   return
+
+ketcall:
+   parse arg xx
+   address syscall xx
+   krc = rc
+   if krc < 0 then
+     do
+       say "Can this happen? rc("krc")"
+     end
+   if krc>=0 & retval<>-1 then
+     do
+       return 0              /* this is normally what happens */
+     end
+   parse var xx '(' nm ')'
+   if nm<>'' then nm=value(nm)
+   say "ADDRESS SYSCALL:" xx
+   say 'Error codes:' krc retval errno errnojr
+   "BPXMTEXT" errnojr
+   return retval

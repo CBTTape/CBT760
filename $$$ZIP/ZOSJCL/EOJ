@@ -1,0 +1,15 @@
+
+//
+
+A throwback to when JCL and data was actually punched on a card. This
+signalled when the end of a job was reached and the system could start
+processing it. Eventually the system could tell the end of one job
+when it saw another jobcard. Then when terminals came into vogue,
+TSO and ISPF submits read until the end of file, which signalled the
+end of a job. So, it is no longer required, wastes disk space, but
+lets you keep JCL in the same member which is not processed.
+
+Oh yeah, instead of deleting those last steps, just insert an EOJ
+after the last statement you want as part of the job, then submit.
+Voila`, the remaining JCL is not submitted and you still have it!
+

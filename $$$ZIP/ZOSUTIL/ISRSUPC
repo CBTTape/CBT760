@@ -1,0 +1,192 @@
+>< ADD NAME=SUPC     0102-07003-07017-0016-00159-00159-00000-KTOMIAK
+
+SUPC$01  Line compare
+SUPC$02  File compare
+SUPC$03  Line compare with edit statement and selected members
+
+
+//SUPERC EXEC PGM=ISRSUPC,
+//            PARM=(listing-type,compare-type,
+//            'process-options-part-1-of-2',
+//            'process-options-part-2-of-2')
+
+LISTING TYPE:
+-------------
+       OVSUML  DELTAL  CHNGL  LONGL  NOLISTL
+
+OVSUM  Lists only the overall summary of the data set or PDS comparison.
+
+       If partitioned data sets are compared, the listing includes a
+       summary line for each member selected from the PDS.
+
+Delta  Lists the differences between the source data sets, followed by
+       the overall summary results.  Differences are flagged to the left
+       of each output line.
+
+CHNG   Lists the differences between the source data sets, plus up to 10
+       matching output lines before and after the differences.  This
+       listing is like the delta listing, but includes surrounding
+       matched lines as an aid in recognizing changed areas of the
+       source data sets.
+
+Long   Lists the complete new data set with the old data set deleted
+       data interspersed in the output listing.  Both inserted and
+       deleted output data is flagged. The format is the same as the
+       DELTA with all matching data shown.
+
+Nolist No listing output is produced.  A ISPF message displayed after
+       the SuperC program execution is the sole method to determine the
+       results of the compare operation.  You may wish to use the NOLIST
+       option when you use one of the UPDATE comparison options to
+       generate an update data set and the listing is unimportant.
+
+NOTE:  The listing type default for Line, Word, and Byte compare is
+       DELTA.  The listing type is ignored for File compare as other
+       File compare process options are used to determine the listing
+       requirements.
+
+COMPARE TYPE:
+-------------
+       FILECMP   LINECMP  WORDCMP  BYTECMP
+File   Checks source data sets and determines if they are different.
+       This is the simplest and fastest method with the least amount of
+       processing overhead. It produces a 32 bit hashsum for each
+       DS/member processed.
+
+Line   Compares source data sets at the line level for differences.
+       Reformatted lines (that is, lines with blanks inserted or
+       deleted) are automatically detected for lines <= 256 characters.
+       Line compare is the most frequently used level of compare and is
+       the compare type default.
+
+Word   Compares source data sets for word differences. A word is a group
+       of characters separated by a blank or line delimiter. The XWDCMP
+       process option extends the delimiters to all non-alphameric
+       characters.
+
+Byte   Compares source data sets for differences at the byte level. The
+       output listing data set consists of a hex printout with character
+       equivalents listed on the right (as in a dump listing).
+
+
+PROCESS OPTIONS BY COMPARE TYPE:
+--------------------------------
+Line-Compare:
+
+    ALLMEMS ANYC    APNDLST APNDUPD CKPACKL
+    CNPML   COBOL   COVSUM  DLMDUP
+    DLREFM  DPACMT  DPADCMT DPBLKCL DPCBCMT
+    DPCPCMT DPFTCMT DPMACMT DPPLCMT
+    DPPSCMT FMVLNS  GWCBL   LOCS    LONGLN
+    MIXED   NARROW  NOPRTCC NOSEQ
+    NOSUMS  REFMOVR SEQ     UPDCMS8 UPDCNTL
+    UPDLDEL UPDMVS8 UPDPDEL UPDREV
+    UPDREV2 UPDSEQ0 UPDSUMO WIDE    Y2DTONLY
+
+Word-Compare:
+
+    ALLMEMS ANYC    APNDLST APNDUPD CKPACKL
+    COBOL   COVSUM
+    DPACMT  DPADCMT DPBLKCL DPCBCMT DPCPCMT
+    DPFTCMT DPMACMT DPPLCMT DPPSCMT
+    GWCBL   LOCS    MIXED   NOPRTCC NOSEQ
+    NOSUMS  SEQ
+    UPDCNTL UPDREV  UPDREV2 UPDSUMO XWDCMP
+
+Byte-Compare:
+
+    ALLMEMS APNDLST APNDUPD COVSUM
+    NOPRTCC NOSUMS  LOCS
+    UPDCNTL UPDSUMO
+
+File-Compare:
+
+    ALLMEMS APNDLST COVSUM FMSTOP
+    LMCSFC  LOCS    NOPRTCC
+
+
+PROCESS OPTIONS:
+----------------
+                     Input Process Control Options
+SEQ      - Ignore FB 80/VB 255 standard sequence number columns or
+NOSEQ    - Process FB 80/VB 255 standard sequence number columns as data
+COBOL    - Ignore sequence number columns 1-6 in FB 80 records.
+ANYC     - Process lower case as upper case input characters.
+MIXED    - Data may contain DBCS strings delimited by SO/SI characters.
+CKPACKL  - Check and unpack data before comparing data sets or members.
+Y2DTONLY - Process only data defined by Year 2000 Date Definitions.
+ALLMEMS  - Compare all members including alias entries.
+
+                     Do Not Process Control Options
+DPPLCMT  - Do not process /* ... */ comments and blank compare lines.
+DPPSCMT  - Do not process (* ... *) comments and blank compare lines.
+DPADCMT  - Do not process "--" comments and blank compare lines.
+DPACMT   - Do not process "assembler" lines with "*" in column 1.
+DPFTCMT  - Do not process lines with "C" in column 1.
+DPCBCMT  - Do not process lines with "*" in column 7.
+DPBLKCL  - Do not process blank compare lines.
+DPCPCMT  - Do not process "//" comments and blank compare lines.
+DPMACMT  - Do not process PC assembly comments ("*" in column 1).
+
+                     Output Process Control Options
+REFMOVR  - Reformat override.  Do not flag reformatted lines in listing.
+DLREFM   - Do not list reformatted old DS lines. Only new DS reformats.
+DLMDUP   - Do not list matched old DS lines in side-by-side listing.
+FMVLNS   - Flag Insert/Delete moved lines.
+LOCS     - List only changed and non-paired members in PDS summary list.
+CNPML    - Count all lines including non-paired members in PDS summary.
+NOSUMS   - Exclude listing summary sections.
+COVSUM   - List final summary section only if there are differences.
+
+                        Listing Control Options
+WIDE     - Up to 80 columns side-by-side. Line length = 202/203 or
+NARROW   - Up to 55 columns side-by-side. Line length = 132/133 or
+LONGLN   - Lists up to 176 columns. Line length = 202/203.
+GWCBL    - Generate LINE Change Bar Listing.
+NOPRTCC  - No print control column and page separators.
+APNDLST  - Append listing report to listing data set.
+
+                        Update Data Set Options
+APNDUPD  - Append update report to update data set.
+UPDSUMO  - Overall summary statistics listed in a single line format or
+UPDCMS8  - Cntl and new DS source using cols 73-80 (for CMS UPDATE) or
+UPDMVS8  - Cntl and new DS source using cols 73-80 (for MVS IEBUPDTE) or
+UPDSEQ0  - Cntl and new DS source using relative line numbers or
+UPDCNTL  - Ins, del and mat control records using relative line numbers
+UPDPDEL  - Prefixed delta lines (maximum 32K columns in output line) or
+UPDLDEL  - Generate long delta - full source with inserts and deletes or
+UPDREV   - Update Revision   - new DS copy with revision code tags or
+UPDREV2  - Update Revision 2 - new DS copy with revision code tags.
+
+>< ADD NAME=SUPC$01  0100-07003-07003-2114-00010-00010-00000-KTOMIAK
+
+//* ISRSUPC   - SuperC Compare
+//SUPERC  EXEC PGM=ISRSUPC,
+//             PARM=(DELTAL,LINECMP,
+//             '',
+//             '')
+//OLDDD    DD  DISP=SHR,DSN=<==your.older.pds.dataset
+//NEWDD    DD  DISP=SHR,DSN=<==your.newer.pds.dataset
+//OUTDD    DD  SYSOUT=(*)
+
+>< ADD NAME=SUPC$02  0100-07003-07003-2114-00006-00006-00000-KTOMIAK
+//SUPERC EXEC PGM=ISRSUPC,
+//            PARM=(DELTAL,FILECMP,'','')
+//NEWDD   DD  DISP=SHR,DSN=KTOMIAK.S2820LAB.CNTL
+//OLDDD   DD  DISP=SHR,DSN=KTOMIAK.S2820.CNTL
+//OUTDD   DD  SYSOUT=(*)
+//
+>< ADD NAME=SUPC$03  0100-07003-07003-2114-00013-00013-00000-KTOMIAK
+//SUPERC  EXEC PGM=ISRSUPC,                                            *
+//            PARM=(DELTAL,LINECMP,
+//            'SEQ DPPLCMT DPPSCMT FMVLNS LOCS ANYC WIDE',
+//            'ALLMEMS')
+//NEWDD  DD DSN=KTOMIAK.SHR.CNTL,
+//          DISP=SHR
+//OLDDD  DD DSN=KTOMIAK.S2820.CNTL,
+//          DISP=SHR
+//OUTDD  DD SYSOUT=(A)
+//SYSIN  DD *
+LSTCOLM 1:55
+SELECT $ASMAC,$ASMACL,$IGYWCL,$S8324E,$S8325,ADRDSSU
+/*

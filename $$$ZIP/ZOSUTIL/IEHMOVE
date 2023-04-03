@@ -1,0 +1,434 @@
+>< ADD NAME=MOVE     0101-07003-07016-2349-00028-00028-00000-KTOMIAK
+
+The information given on IEHMOVE is provided for the sake of
+compatibility only. DFSMSdss should be used instead of IEHMOVE to move
+or copy data to volumes managed by the Storage Management Subsystem.
+DFSMSdss or IEBCOPY should be used to process PDSEs. You cannot use
+IEHMOVE with PDSEs or ISAM or VSAM data sets.
+
+
+If you do use IEHMOVE to move or copy data sets to SMS-managed volumes,
+you must preallocate all the target data sets. If the data set you are
+copying or moving is cataloged, and you are moving or copying it to an
+SMS-managed volume, you must rename the data set.
+
+
+See z/OS DFSMS: Using Data Sets for more information on allocating
+SMS-managed data sets and z/OS DFSMS Access Method Services for
+information on the ALLOCATE command.
+
+MOVE$01  Move Sequential Data Sets from Disk Volume to Separate
+         Volumes
+MOVE$02  Move Partitioned Data Set to Disk Volume and Merge
+MOVE$03  Move Volume of Data Sets to Disk Volume
+MOVE$04  Move Partitioned Data Set to Allocated Space
+MOVE$05  Move and Unload Partitioned Data Sets Volume
+MOVE$06  Unload Sequential Data Set onto Unlabeled Tape Volume
+MOVE$07  Load Unloaded Sequential Data Sets from Labeled Tape
+MOVE$08  Move Cataloged Data Set Group
+
+>< ADD NAME=MOVE$01  0100-07003-07003-2113-00051-00051-00000-SC26UTL
+
+DFSMSdss should be used instead of IEHMOVE to move or copy data to
+volumes managed by the Storage Management Subsystem. DFSMSdss or
+IEBCOPY should be used to process PDSEs. You cannot use IEHMOVE with
+PDSEs or ISAM or VSAM data sets.
+
+Example 1: Move Sequential Data Sets from Disk Volume to Separate
+Volumes
+
+In this example, three sequential data sets (SEQSET1, SEQSET2, and
+SEQSET3) are moved from a disk volume to three separate disk volumes.
+Each of the three receiving volumes is mounted when it is required by
+IEHMOVE. The source data sets are not cataloged. Space is allocated by
+IEHMOVE.
+
+//MOVEDS JOB ...
+//STEP1   EXEC PGM=IEHMOVE
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),UNIT=disk,VOL=SER=333333
+//DD1      DD  DISP=(OLD),UNIT=(disk,,DEFER),
+//             VOL=(PRIVATE,,SER=(222222))
+//DD2      DD  DISP=(OLD),UNIT=(disk,,DEFER),
+//             VOL=(PRIVATE,,SER=(222333))
+//DD3      DD  DISP=(OLD),UNIT=(disk,,DEFER),
+//             VOL=(PRIVATE,,SER=(222444))
+//DD4      DD  DISP=(OLD),UNIT=(disk,,DEFER),
+//             VOL=(PRIVATE,RETAIN,SER=(444444))
+//SYSIN    DD  *
+MOVE     DSNAME=SEQSET1,TO=disk=222222,FROM=disk=444444
+MOVE     DSNAME=SEQSET2,TO=disk=222333,FROM=disk=444444
+MOVE     DSNAME=SEQSET3,TO=disk=222444,FROM=disk=444444
+
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the disk device that is to contain the work data
+set.
+
+x) DD1, DD2, and DD3 DD define the receiving volumes.
+
+x) DD4 DD defines a device on which the source volume is mounted.
+   Because the RETAIN subparameter is included, the volume remains
+   mounted until the job has completed.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) MOVE moves the source data sets to volumes 222222, 222333, and
+   222444, respectively. The source data sets are scratched.
+
+>< ADD NAME=MOVE$02  0100-07003-07003-2113-00046-00046-00000-SC26UTL
+
+DFSMSdss should be used instead of IEHMOVE to move or copy data to
+volumes managed by the Storage Management Subsystem. DFSMSdss or
+IEBCOPY should be used to process PDSEs. You cannot use IEHMOVE with
+PDSEs or ISAM or VSAM data sets.
+
+Example 2: Move Partitioned Data Set to Disk Volume and Merge
+
+In this example, a partitioned data set (PARTSET1) is moved to a disk
+volume. In addition, a member (PARMEM3) from another partitioned data
+set (PARTSET2) is merged with the source members on the receiving
+volume. The source partitioned data set (PARTSET1) is scratched. Space
+is allocated by IEHMOVE.
+
+//MOVEPDS JOB ...
+//STEP1   EXEC PGM=IEHMOVE
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),UNIT=disk,VOL=SER=333000
+//DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=111111
+//DD2      DD  DISP=(OLD),UNIT=disk,VOL=SER=222111
+//DD3      DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//DD4      DD  DISP=(OLD),UNIT=disk,VOL=SER=222333
+//SYSIN    DD  *
+         MOVE    PDS=PARTSET1,TO=disk=222333,FROM=disk=222111
+         INCLUDE DSNAME=PARTSET2,MEMBER=PARMEM3,FROM=disk=222222
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the disk volume that is to contain the work data
+   set.
+
+x) DD1 DD defines the system residence device.
+
+x) The DD2, DD3, and DD4 DD statements define devices that are to
+   contain the two source volumes and the receiving volume.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) MOVE defines the source partitioned data set, the volume that
+   contains it, and its receiving volume.
+
+x) INCLUDE includes a member from a second partitioned data set in the
+   operation.
+
+>< ADD NAME=MOVE$03  0100-07003-07003-2113-00044-00044-00000-SC26UTL
+
+DFSMSdss should be used instead of IEHMOVE to move or copy data to
+volumes managed by the Storage Management Subsystem. DFSMSdss or
+IEBCOPY should be used to process PDSEs. You cannot use IEHMOVE with
+PDSEs or ISAM or VSAM data sets.
+
+A SECURITY PACKAGE IS A BETTER WAY TO PROTECT ACCESS THAN PASSWORDS.
+
+Example 3: Move Volume of Data Sets to Disk Volume
+
+In this example, a volume of data sets is moved to a disk volume. All
+data sets that are successfully moved are scratched from the source
+volume; however, any catalog entries pertaining to those data sets are
+not changed. Space is allocated by IEHMOVE.
+
+//MOVEVOL JOB ...
+//STEP1   EXEC PGM=IEHMOVE
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=111111
+//DD2      DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//DD3      DD  DISP=(OLD),UNIT=disk,VOL=SER=333333
+//SYSIN    DD  *
+         MOVE     VOLUME=disk=333333,TO=disk=222222,PASSWORD
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the device that is to contain the work data set.
+
+x) DD1 DD defines the system residence device.
+
+x) DD2 DD defines the device on which the receiving volume is mounted.
+
+x) DD3 DD defines a device on which the source volume is mounted.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) MOVE specifies a move operation for a volume of data sets and
+   defines the source and receiving volumes. This statement also
+   indicates that password-protected data sets are included in the
+   operation.
+
+>< ADD NAME=MOVE$04  0100-07003-07003-2113-00040-00040-00000-SC26UTL
+
+DFSMSdss should be used instead of IEHMOVE to move or copy data to
+volumes managed by the Storage Management Subsystem. DFSMSdss or
+IEBCOPY should be used to process PDSEs. You cannot use IEHMOVE with
+PDSEs or ISAM or VSAM data sets.
+
+Example 4: Move Partitioned Data Set to Allocated Space
+
+In this example, a partitioned data set is moved to a disk volume on
+which space has been previously allocated for the data set. The source
+data set is scratched.
+
+//MOVEPDS JOB ...
+//STEP1   EXEC PGM=IEHMOVE
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=111111
+//DD2      DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//DD3      DD  DISP=(OLD),UNIT=disk,VOL=SER=333333
+//SYSIN    DD  *
+         MOVE PDS=PDSSET1,TO=disk=222222,FROM=disk=333333
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the device that is to contain the work data set.
+
+x) DD1 DD defines the system residence device.
+
+x) DD2 DD defines the device on which the receiving volume is to be
+   mounted.
+
+x) DD3 DD defines a device on which the source volume is mounted.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) MOVE specifies a move operation for the partitioned data set PDSSET1
+   and defines the source and receiving volumes.
+
+>< ADD NAME=MOVE$05  0100-07003-07003-2113-00062-00062-00000-SC26UTL
+
+DFSMSdss should be used instead of IEHMOVE to move or copy data to
+volumes managed by the Storage Management Subsystem. DFSMSdss or
+IEBCOPY should be used to process PDSEs. You cannot use IEHMOVE with
+PDSEs or ISAM or VSAM data sets.
+
+Example 5: Move and Unload Partitioned Data Sets Volume
+
+In this example, three partitioned data sets are moved from three
+separate source volumes to a disk volume. The source data set PDSSET3
+is unloaded. (The record size exceeds the track capacity of the
+receiving volume.)
+
+//MOVEPDS JOB ...
+//STEP1   EXEC PGM=IEHMOVE
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=111111
+//DD2      DD  DISP=(OLD),UNIT=(disk,,DEFER)
+//             VOL=(PRIVATE,,SER=(333333))
+//DD3      DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//SYSIN    DD  *
+         MOVE PDS=PDSSET1,TO=disk=222222,FROM=disk=333333
+         MOVE PDS=PDSSET2,TO=disk=222222,FROM=disk=222222
+         MOVE PDS=PDSSET3,TO=disk=222222,FROM=disk=444444,UNLOAD
+/*
+
+NOTE:
+
+   PDSSET1, PDSSET2, and PDSSET3 are already allocated on the receiving
+   volume. PDSSET3 is allocated as a sequential data set; PDSSET1 and
+   PDSSET2 are allocated as partitioned data sets. Since PDSSET3 is
+   moved to a sequential data set, it is unloaded.
+
+   For a discussion of estimating space allocations, see
+   z/OS DFSMS: Using Data Sets.
+
+   The DCB attributes of PDSSET3 are:
+
+   DCB=(RECFM=U,BLKSIZE=5000)
+
+   The unloaded attributes are:
+
+   DCB=(RECFM=FB,LRECL=80,BLKSIZE=800)
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the device that is to contain the work data set.
+
+x) DD1 DD defines the system residence device.
+
+x) DD2 DD defines a device on which the source volumes are mounted as
+   they are required.
+
+x) DD3 DD defines a device on which the receiving volume is mounted.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) MOVE specifies move operations for the partitioned data sets and
+   defines the source and receiving volumes for each data set.
+
+>< ADD NAME=MOVE$06  0100-07003-07003-2113-00045-00045-00000-SC26UTL
+
+DFSMSdss should be used instead of IEHMOVE to move or copy data to
+volumes managed by the Storage Management Subsystem. DFSMSdss or
+IEBCOPY should be used to process PDSEs. You cannot use IEHMOVE with
+PDSEs or ISAM or VSAM data sets.
+
+Example 6: Unload Sequential Data Set onto Unlabeled Tape Volume
+
+In this example, a sequential data set is unloaded onto a 9-track,
+unlabeled tape volume (800 bits per inch).
+
+//UNLOAD JOB ...
+//STEP1   EXEC PGM=IEHMOVE
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=111111
+//DD2      DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//TAPEOUT  DD  DISP=(NEW,CATLG),DSN=NEW.TAPE,
+//             UNIT=tape,
+//             VOL=SER=SCRCH2,
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  *
+         MOVE  DSNAME=SEQSET1,TO=tape=SCRCH2,FROM=disk=222222,         X
+               TODD=TAPEOUT
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the device that is to contain the work data set.
+
+x) DD1 DD defines the system residence device.
+
+x) DD2 DD defines a device on which the source volume is mounted.
+
+x) TAPEOUT DD defines a device on which the receiving tape volume is
+   mounted. This statement also provides label and mode information.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) MOVE moves the sequential data set SEQSET1 from a disk volume to the
+   receiving tape volume. The data set is unloaded. The TODD parameter
+   in this statement refers to the TAPEOUT DD statement for label and
+   mode information.
+
+>< ADD NAME=MOVE$07  0100-07003-07003-2113-00052-00052-00000-SC26UTL
+
+DFSMSdss should be used instead of IEHMOVE to move or copy data to
+volumes managed by the Storage Management Subsystem. DFSMSdss or
+IEBCOPY should be used to process PDSEs. You cannot use IEHMOVE with
+PDSEs or ISAM or VSAM data sets.
+
+Example 7: Load Unloaded Sequential Data Sets from Labeled Tape
+
+In this example, three unloaded sequential data sets are loaded from a
+labeled, 7-track tape volume (556 bits per inch) to a disk volume.
+Space is allocated by IEHMOVE. The example assumes that the disk volume
+is capable of supporting the data sets in their original forms.
+
+//LOAD JOB ...
+//STEP1   EXEC PGM=IEHMOVE
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=111111
+//DD2      DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//TAPESETS DD  DISP=(OLD),
+//             UNIT=tape,LABEL=(1,SL),
+//             VOL=SER=001234,
+//             DCB=(DEN=1,TRTCH=C)
+//SYSIN    DD  *
+         MOVE DSNAME=UNLDSET1,T0=disk=222222,                          X
+               FROM=tape=(001234,1),FROMDD=TAPESETS
+         MOVE DSNAME=UNLDSET2,TO=disk=222222,                          X
+               FROM=tape=(001234,2),FROMDD=TAPESETS
+         MOVE DSNAME=UNLDSET3,TO=disk=222222,                          X
+               FROM=tape=(001234,3),FROMDD=TAPESETS
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the device that is to contain the work data set.
+
+x) DD1 DD defines the system residence device.
+
+x) DD2 DD defines a device on which the receiving volume is mounted.
+
+x) TAPESETS DD defines a device on which the source tape volume is
+   mounted. DCB information is provided in this statement.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) MOVE moves the unloaded data sets to the receiving volume.
+
+To move a data set from a tape volume that contains more than one data
+set, you must specify the sequence number of the data set in the list
+field of the FROM parameter on the utility control statement.
+
+>< ADD NAME=MOVE$08  0100-07003-07003-2113-00057-00057-00000-SC26UTL
+
+DFSMSdss should be used instead of IEHMOVE to move or copy data to
+volumes managed by the Storage Management Subsystem. DFSMSdss or
+IEBCOPY should be used to process PDSEs. You cannot use IEHMOVE with
+PDSEs or ISAM or VSAM data sets.
+
+Example 8: Move Cataloged Data Set Group
+
+In this example, the cataloged data set group A.B.C, which comprises
+data set A.B.C.X, A.B.C.Y, and A.B.C.Z, ,is moved from two disk volumes
+onto a third volume. Space is allocated by IEHMOVE. The catalog is
+updated to refer to the receiving volume. The source data sets are
+scratched.
+
+//MOVEDSG JOB ...
+//STEP1   EXEC PGM=IEHMOVE
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=111111
+//DD2      DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//DD3      DD  DISP=(OLD),UNIT=disk,VOL=SER=333333
+//DD4      DD  DISP=(OLD),UNIT=disk,VOL=SER=444444
+//SYSIN    DD  *
+         MOVE DSGROUP=A.B.C,TO=disk=222222
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the device that is to contain the work data set.
+
+x) DD1 DD defines the system residence device.
+
+x) DD2 DD defines a device on which the receiving volume is mounted.
+
+x) DD3 DD defines a device on which one of the source volumes is
+   mounted.
+
+x) DD4 DD defines a device on which one of the source volumes is
+   mounted.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) MOVE moves the specified data sets to volume 222222.
+
+This example can be used to produce the same result without the use of
+the DD4 DD statement, using one less mountable disk device. With DD3
+and DD4, both of the source volumes are mounted at the start of the
+job. With DD3 only, the 333333 volume is mounted at the start of the
+job. After the 333333 volume is processed, the utility requests that
+the operator mount the 444444 volume. In this case, the DD3 statement
+is coded:
+
+
+//DD3      DD  DISP=(OLD),UNIT=(disk,,DEFER),
+//             VOL=(PRIVATE,,SER=(333333))
+

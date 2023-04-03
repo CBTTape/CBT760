@@ -1,0 +1,28 @@
+rexx_ddbyqlib: /* rexx */
+  ddbyqlib_version = "01.00"
+  parse arg ddname .
+  If (ddname = "") Then ddname = "SYSPROC"
+  parse source . . . me .
+  say me "starting..."
+  Address ISPexec "CONTROL ERRORS RETURN"
+  Address ISPexec,
+    "QBASELIB" ddname "ID(IDVAR)"
+  q_rc = rc
+  If (q_rc >< 0) Then,  /* Return codes                               */
+                        /*  4  - Specified dd-name is not defined     */
+                        /*                                            */
+                        /* 16  - Dialog variable translation or       */
+                        /*       truncation error.                    */
+                        /* 20 -  Severe error.                        */
+    Do
+      say "Nope, RC("q_rc")."
+    End
+  Else,
+    Do
+      Do while IDVAR >< ""
+        parse var IDVAR dsn "," IDVAR
+        say dsn
+      End
+    End
+  say "Ending" me"..."
+  exit 0

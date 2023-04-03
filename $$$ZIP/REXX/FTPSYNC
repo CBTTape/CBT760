@@ -1,0 +1,833 @@
+rexx_FTPSYNC:  /* We still need rexx in comment if read from SYSPROC */
+  rexxpgm_version = "01.00"
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+  Dataset: REXX(FTPSYNC)
+  Author:  KTomiak
+  Contact: "Kenneth Tomiak"<KenTomiak@KTomiak.org>
+  Syntax:  FTPSYNC {arguments ...}
+
+=======================================================================
+
+  History of Modifications
+  ------------------------
+  When     Who      VV Mm What you did
+  -------- -------- ----- ---------------------------------------------
+  20070330 KTomiak  01.00 Original code
+
+
+=======================================================================
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+  Parse Arg all_my_arguments
+  Numeric Digits 18
+
+rexx_Main_FTPSYNC:
+  return_code = rexx_Initialize()
+  If (return_code = 0) then,
+    Do
+      return_code = rexx_Process()
+      return_code = rexx_Termination()
+    End
+   Return 0
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+  In this routine we open any files and intialize any
+  constants we might need.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Initialize:
+  PARSE VERSION,
+    version_rexx_name,
+    version_rexx_version,
+    version_rexx_date
+  PARSE SOURCE,
+    source_host_env,
+    source_call_type,
+    source_uc_exec_name,
+    source_hostdd,
+    source_hostdsn,
+    source_nf_exec_name,
+    source_initial_cmd_env,
+    source_asid_name,
+    source_char8_user_token,
+    source_hostother
+  Address_Environment = Address()
+  job_specs = rexx_jobspecs()
+  say ""
+  say Copies("=",55)
+  say left("=" source_uc_exec_name rexxpgm_version,53) "="
+  say left("=" "executing under" source_host_env,53) "="
+  say left("=" "as a" source_call_type,53) "="
+  say left("=  on" date() "at" time()".",53) "="
+  say Copies("=",55)
+  say ""
+  return_code = 0
+  sysvar_sysuid = SYSVAR("SYSUID")
+  mvs_sysname   = MVSVAR("SYSNAME")
+  mvs_opsys     = MVSVAR("SYSOPSYS")
+  mvs_sysname   = MVSVAR("SYSNAME")
+  Address ISPEXEC "VGET (ZPREFIX)"
+  old_trap = OutTrap("RACF.")
+  "listuser" sys_sysuid
+  new_trap = OutTrap("OFF")
+  sys_username = sys_sysuid"@"mvs_sysname
+  if (racf.0 > 0) then,
+    do ix = 4 to racf.0
+      if (pos("INSTALLATION-DATA",racf.ix) > 0) then,
+        do
+          parse var racf.ix . "=" sys_username
+          sys_username = strip(sys_username)
+          leave
+        end
+    end
+  msg1 = sys_username
+  say ""
+  say Copies("=",55)
+  say left("=" source_uc_exec_name,
+    "executing under" source_host_env,
+    "as a" source_call_type,53) "="
+  say left("=  on" date() "at" time()".",53) "="
+  say Copies("=",55)
+  trace o
+  signal on halt
+  signal on syntax
+  call init_workareas
+  call parse_parameters
+  Return 0
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+  In this routine we do our processing.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Process:
+  Address IspExec "CONTROL ERRORS RETURN"
+  call ftp_sync_main
+  Return 0
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+  In this routine we close files and finish up.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Termination:
+  Return 0
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+  Place any of your subroutines and procedures below this.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+parse_parameters:
+  if (pos("=",all_my_arguments) > 0) then,
+    parse var all_my_arguments .,
+      "DSNL=" locfile " ",
+      0 .,
+      "DSNR=" rmtfile " ",
+      0 .,
+      "SITE=" server " ",
+      0 .,
+      "WHEN=" topswd " ",
+      0 .,
+      "USER=" touser " ",
+      0 .,
+      "QUIET=" quiet_option " ",
+      0 .,
+      "DEBUG=" debug_option " ",
+      0 .,
+      "TRACE=" trcopts " ",
+      0 .
+  else,
+    parse var all_my_arguments,
+      locfile " ",
+      rmtfile " ",
+      server " ",
+      touser " ",
+      topswd " ",
+      quiet_option " ",
+      debug_option " ",
+      trcopts
+  if (trcopts >< "") then,
+    do
+      interpret "trace" trcopts
+    end
+  if (debug_option >< "") then,
+    do
+      say "SITE:" server"."
+      say "USER:" touser":"topswd"."
+      say "Local DSN" locfile"."
+      say "Remote DSN" rmtfile"."
+    end
+  if (locfile >< "") then,
+    do
+      ck_loc = check_file("L" locfile)
+      if (word(ck_loc,1) >< "0") then,
+        do
+          msg1 = "LOCFILE("locfile") not valid," word(ck_loc,1)
+          signal ftp_sync_main
+        end
+      locfile = word(ck_loc,2)
+    end
+  if (rmtfile = "") then,
+    do
+      rmtfile = locfile
+    end
+  return
+
+ftp_sync_main:
+  if (trcopts >< "") then,
+    do
+      interpret "trace" trcopts
+    end
+  ck_loc = check_file("L" locfile)
+  if (word(ck_loc,1) >< "0") then,
+    do
+      msg1 = "LOCFILE("locfile") not valid," word(ck_loc,1)
+      signal ftp_sync_main
+    end
+  locfile = word(ck_loc,2)
+  call alloc_report
+  call get_local
+  if (mycc >< 0) then
+    do
+      say zerrlm
+    end
+  call get_remote_listing
+  call free_report
+  return
+
+check_file: Procedure
+  parse arg myargs
+  parse var myargs loc myfile
+  myfile = strip(myfile,"B","'")
+  X = LISTDSI("'"myfile"'" DIRECTORY)
+  return x myfile
+
+alloc_report:
+  do rpt_ix = 0 to 99
+    rpt_dd = "RPTS"RIGHT("0000"rpt_ix,4)
+    Address ISPexec,
+      "QBASELIB" ddname "ID(IDVAR)"
+    q_rc = rc
+    If (q_rc = 4) Then,   /* Return codes                             */
+                          /* 4 - Specified dd-name is not defined     */
+                          /*                                          */
+                          /* 16 - Dialog variable translation or      */
+                          /*     truncation error.                    */
+                          /* 20 - Severe error.                       */
+      Do
+        "ALLOC NEW DEL F("rpt_dd") DSO(PS) SP(3,3) TRACK",
+          "REUSE RECFM(V B A) BLKSIZE(0) LRECL(137) UNIT(SYSDA)"
+        rpt.0 = 0
+        rpt.0 = add_rpt("1  "date() Time() "-" source_uc_exec_name)
+        rpt.0 = add_rpt(" ")
+        rpt.0 = add_rpt(" "left("LOCAL:"mvs_sysname,50),
+        left("REMOTE:" server,50))
+        rpt.0 = add_rpt(" "left(locfile,50) left(rmtfile,50))
+        rpt.0 = add_rpt(" "left(copies('-',44),50),
+                           left(copies('-',44),50))
+        rpt.0 = add_rpt(" "left("MEMBER   CHG-DATE   TIME ",50),
+                            left("MEMBER   CHG-DATE   TIME ",50))
+        rpt.0 = add_rpt(" "left("-------- ---------- -----",50),
+                            left("-------- ---------- -----",50))
+        return
+      End
+  end
+  say "Yikes, 100 reports already in use?"
+  return
+
+add_rpt:
+  parse arg rptargs
+  rpt_ix = rpt.0 + 1
+  rpt.rpt_ix = rptargs
+  return rpt_ix
+
+add_loc_mbr:
+  parse arg mbrname mbrdate mbrtime mbrnorc .
+  if (mbrtime >< "") then,
+    do
+      loc_base = base(mbrtime":00" mbrdate)
+      parse var loc_base loc_days loc_seconds loc_stmp
+    end
+  else,
+    loc_stmp = "0"
+  loc_ix = loc_mbr.0 + 1
+  loc_mbr.loc_ix = left(mbrname,8) mbrdate mbrtime mbrnorc loc_stmp
+  return loc_ix
+
+add_rmt_mbr:
+  parse arg mbrname mbrdate mbrtime mbrnorc .
+  if (mbrtime >< "") then,
+    do
+      rmt_base = base(mbrtime":00" mbrdate)
+      parse var rmt_base rmt_days rmt_seconds rmt_stmp
+    end
+  else,
+    rmt_stmp = "0"
+  rmt_ix = rmt_mbr.0 + 1
+  rmt_mbr.rmt_ix = left(mbrname,8) mbrdate mbrtime mbrnorc rmt_stmp
+  return rmt_ix
+
+free_report:
+  if (quiet_option = "QUIET") then,
+    do rpt_x = 1 to rpt.0
+      say rpt.rpt_x
+    End
+  else
+    do
+      "EXECIO" rpt.0 "DISKW" rpt_dd "(FINIS STEM RPT."
+      "ISPEXEC LMINIT DATAID(RPTAID) DDNAME("rpt_dd")"
+      "ISPEXEC BROWSE DATAID("RPTAID")"
+      "ISPEXEC LMCLOSE DATAID("RPTAID")"
+      "ISPEXEC LMFREE DATAID("RPTAID")"
+    END
+  "FREE FILE("rpt_dd")"
+  return
+
+get_local:
+  MYCTR = 0
+  MYCC = RC
+  IF (MYCC >< 0) THEN ,
+    DO
+      ZERRSM = "FILE IN USE"
+      ZERRLM = "THE FILE" locfile "IS IN USE"
+      ADDRESS ISPEXEC "SETMSG MSG(ISRZ002)"
+      return
+    END
+  ADDRESS ISPEXEC "LMINIT DATAID(PDSMEMID)",
+     "DATASET('"locfile"') ENQ(SHR)"
+  ADDRESS ISPEXEC "LMOPEN DATAID("PDSMEMID")",
+    "OPTION(INPUT)"
+  MYCC = RC
+  IF (MYCC > 0) THEN ,
+    DO
+      ZERRSM = "FILE FAILED TO OPEN"
+      ZERRLM = "THE FILE" locfile "FAILED TO OPEN RC="MYCC
+      ADDRESS ISPEXEC "SETMSG MSG(ISRZ002)"
+      return
+    END
+  PDSMBR = ""
+  mycc = 0
+  do until mycc >< 0
+    ADDRESS ISPEXEC "LMMLIST DATAID("PDSMEMID")",
+      "OPTION(LIST) MEMBER(PDSMBR) STATS(YES)"
+    MYCC = RC
+    IF (MYCC > 0) THEN ,
+      DO
+        leave
+      END
+    MYCTR = MYCTR + 1
+    loc_mbr.0 = add_loc_mbr(LEFT(PDSMBR,8) ZLM4DATE ZLMTIME ZLCNORC)
+  end
+  mycc = 0
+  zerrlm = ""
+  ADDRESS ISPEXEC "LMMLIST DATAID("PDSMEMID") OPTION(FREE)"
+  ADDRESS ISPEXEC "LMCLOSE DATAID("PDSMEMID")"
+  ADDRESS ISPEXEC "LMFREE DATAID("PDSMEMID")"
+  Return
+
+ftp_sync_pds:
+  NEWSTACK
+  if (touser >< "") then,
+    queue touser
+  if (topswd >< "") then,
+    queue topswd
+  queue "type E"
+  queue "mode B"
+  queue "QUOTE SITE ISPFSTATS"
+  queue "lcd '"locfile"'"
+  queue "cd '"rmtfile"'"
+  do ftp_ix = 1 to ftp_cmd.0
+    queue ftp_cmd.ftp_ix
+  end
+  queue "dir"
+  queue "quit"
+  ftp_out_dd = "FTPO"RIGHT("0000"RANDOM(99999),4)
+  ftp_out_dd = "OUTPUT"
+  "ALLOC FILE("ftp_out_dd") SPACE(5 5) RECFM(F B)",
+    "BLKSIZE(0) LRECL(80) DSORG(PS) NEW DELETE",
+    "UNIT(SYSALLDA) DIR(0)"
+  quietly = Outtrap("FTP.")
+  "ftp" towhere
+  quietly = Outtrap("OFF")
+  ftpin = Queued()
+  do ix = 1 to ftpin
+    parse pull dline
+    say " *****ERROR*****" dline
+  end
+  DELSTACK
+  "EXECIO * DISKR OUTPUT (FINIS STEM FTPO."
+  "Free file(OUTPUT)"
+  if (quiet_option >< "QUIET") then
+  do ix = 1 to ftpo.0
+    if (left(ftpo.ix,3) = "EZA") then iterate
+    rpt.0 = add_rpt(" "ftpo.ix)
+  end
+  Return
+
+get_remote_listing:
+  NEWSTACK
+  if (touser >< "") then,
+    queue touser
+  if (topswd >< "") then,
+    queue topswd
+  queue "cd '"rmtfile"'"
+  queue "dir"
+  queue "quit"
+  towhere = server
+  if (uc(server) = "IPCO") then towhere = "172.23.22.20"
+  if (uc(server) = "IDAT") then towhere = "172.23.22.21"
+  if (uc(server) = "ISYS") then towhere = "172.23.22.22"
+  if (uc(server) = "IDEV") then towhere = "172.23.22.23"
+  ftp_out_dd = "FTPO"RIGHT("0000"RANDOM(99999),4)
+  ftp_out_dd = "OUTPUT"
+  "ALLOC FILE("ftp_out_dd") SPACE(5 5) RECFM(F B)",
+    "BLKSIZE(0) LRECL(80) DSORG(PS) NEW DELETE",
+    "UNIT(SYSALLDA) DIR(0)"
+  quietly = Outtrap("FTP.")
+  my_time_now = Time() date("S")
+  "ftp" towhere
+  quietly = Outtrap("OFF")
+  parse var my_time_now,
+    now_hh ":",
+    now_mm ":",
+    now_ss " ",
+    .      +1,
+    now_yr +4,
+    now_mo +2,
+    now_dy +2,
+    .
+  my_time = now_hh":"now_mm":"now_ss
+  my_date = now_yr"/"now_mo"/"now_dy
+  host_base = Base(my_time my_date)
+  parse var host_base host_base_days host_base_seconds host_timestamp
+  ftpin = Queued()
+  do ix = 1 to ftpin
+    parse pull dline
+    rpt.0 = add_rpt(" *****ERROR*****" dline)
+  end
+  DELSTACK
+  "EXECIO * DISKR OUTPUT (FINIS STEM FTPO."
+  "Free file(OUTPUT)"
+  do ix = 1 to ftpo.0
+    if (left(ftpo.ix,4) = "220-") then call get_site_adjustment
+    if (left(ftpo.ix,8) >< "EZA2284I") then iterate
+    parse var ftpo.ix,
+      eza_msgid membr vermod credt chgdt chgtm chgnorc .
+    if (left(membr,8) left(chgdt,10) chgtm =,
+      "Name     Changed    Size") then iterate
+    rmt_mbr.0 = add_rmt_mbr(LEFT(membr,8) chgdt chgtm chgnorc)
+  end
+  /*
+  */
+  if (loc_mbr.0 > rmt_mbr.0) then
+    bx = loc_mbr.0 + 1
+  else
+    bx = rmt_mbr.0 + 1
+  lx = 1
+  rx = 1
+  ftp_cmd.0 = 0
+  parse var loc_mbr.lx lmem ldte ltme lnorc lstmp
+  parse var rmt_mbr.rx rmem rdte rtme rnorc rstmp
+  do Loop_ux = 1 to bx
+    do while ((lx < bx) & (rx < bx))
+      call compare_stem
+    end
+  end
+  if (ftp_ix > 0) then
+    call ftp_sync_pds
+  return
+
+compare_stem:
+  if ((lmem = "") & (lmem = rmem)) then
+    do
+      rpt.0 = add_rpt(" " lmem "><" rmem)
+      say "Horrible looping about to occur!"
+      exit 24
+    end
+  select
+    when (lmem = rmem) then call mbr_equal
+    when ((lmem >< "") & (rmem = "")) then call loc_lower
+    when ((rmem >< "") & (lmem = "")) then call rmt_lower
+    when (lmem < rmem) then call loc_lower
+    when (lmem > rmem) then call rmt_lower
+    otherwise
+      if ((lx > bx) & (rx > bx)) then
+        do
+          rpt.0 = add_rpt(" " lmem "><" rmem)
+          say "Horrible looping about to occur!"
+          exit 24
+        end
+  end
+  return
+
+rmt_lower:
+  if (rnorc = 0) then,
+    do
+      rpt.0 = add_rpt("Okay to delete remote "copies(" ",44) " na ",
+        left(rmt_mbr.rx,50))
+      ftp_ix = ftp_cmd.0 + 1
+      ftp_cmd.0 = ftp_ix
+      ftp_cmd.ftp_ix = "dele" rmem
+    end
+  else,
+    do
+      rpt.0 = add_rpt(" "copies(" ",44) "<GET",
+        left(rmt_mbr.rx,50))
+      ftp_ix = ftp_cmd.0 + 1
+      ftp_cmd.0 = ftp_ix
+      ftp_cmd.ftp_ix = "get" rmem
+    end
+  rx = rx + 1
+  parse var rmt_mbr.rx rmem rdte rtme rnorc rstmp
+  return
+
+loc_lower:
+  if (lnorc = 0) then,
+    do
+      rpt.0 = add_rpt(" "left(loc_mbr.lx,44) " NA ",
+        left("Okay to delete locally ",50))
+      call Ispf_lmmdel
+    end
+  else,
+    do
+      rpt.0 = add_rpt(" "left(loc_mbr.lx,44) "PUT>",
+        copies(" ",50))
+      ftp_ix = ftp_cmd.0 + 1
+      ftp_cmd.0 = ftp_ix
+      ftp_cmd.ftp_ix = "put" lmem
+    end
+  lx = lx + 1
+  parse var loc_mbr.lx lmem ldte ltme lnorc lstmp
+  return
+
+mbr_equal:
+  select
+    when ((lstmp = "") & (rstmp = "")) then,
+      do
+        rpt.0 = add_rpt(" "left(loc_mbr.lx,44) " ns ",
+          left(rmt_mbr.rx,50))
+      end
+    when (lstmp = rstmp) then,
+      do
+        rpt.0 = add_rpt(" "left(loc_mbr.lx,44) " == ",
+          left(rmt_mbr.rx,50))
+      end
+    when (rnorc = 0) then,
+      do
+        rpt.0 = add_rpt(" "left(loc_mbr.lx,44) "Drmt",
+          left(rmt_mbr.rx,50))
+        ftp_ix = ftp_cmd.0 + 1
+        ftp_cmd.0 = ftp_ix
+        ftp_cmd.ftp_ix = "dele" lmem
+      end
+    when (lnorc = 0) then,
+      do
+        rpt.0 = add_rpt(" "left(loc_mbr.lx,44) "Locd",
+          left(rmt_mbr.rx,50))
+        rpt.0 = add_rpt("delete '"locfile"("lmem")'")
+        call Ispf_lmmdel
+      end
+    when ((lstmp = "") & (rstmp >< "")) then,
+      do
+        rpt.0 = add_rpt(" "left(loc_mbr.lx,44) " get",
+          left(rmt_mbr.rx,50))
+        ftp_ix = ftp_cmd.0 + 1
+        ftp_cmd.0 = ftp_ix
+        ftp_cmd.ftp_ix = "get" lmem
+      end
+    when ((rstmp = "") & (lstmp >< "")) then,
+      do
+        rpt.0 = add_rpt(" "left(loc_mbr.lx,44) " put",
+          left(rmt_mbr.rx,50))
+        ftp_ix = ftp_cmd.0 + 1
+        ftp_cmd.0 = ftp_ix
+        ftp_cmd.ftp_ix = "put" lmem
+      end
+    when (lstmp > rstmp) then,
+      do
+        rpt.0 = add_rpt(" "left(loc_mbr.lx,44) " >> ",
+          left(rmt_mbr.rx,50))
+        ftp_ix = ftp_cmd.0 + 1
+        ftp_cmd.0 = ftp_ix
+        ftp_cmd.ftp_ix = "put" lmem
+      end
+    when (lstmp < rstmp) then,
+      do
+        rpt.0 = add_rpt(" "left(loc_mbr.lx,44) " << ",
+          left(rmt_mbr.rx,50))
+        ftp_ix = ftp_cmd.0 + 1
+        ftp_cmd.0 = ftp_ix
+        ftp_cmd.ftp_ix = "get" lmem "(REPLACE"
+      end
+    otherwise
+      rpt.0 = add_rpt(" "left(loc_mbr.lx,44) " ?? ",
+        left(rmt_mbr.rx,50))
+  end
+  lx = lx + 1
+  parse var loc_mbr.lx lmem ldte ltme lnorc lstmp
+  rx = rx + 1
+  parse var rmt_mbr.rx rmem rdte rtme rnorc rstmp
+  return
+
+ispf_lmmdel:
+  return
+  Address IspExec,
+    "LMINIT DATAID(DELID)",
+    "DATASET('"locfile"')",
+    "ENQ(SHRW)"
+                            /* Return codes                     */
+                            /*  8 - Data set or file not        */
+                            /*      allocated                   */
+                            /*    - DDname not found            */
+                            /*    - Data set or file            */
+                            /*      organization not supported  */
+                            /* 12 - Invalid parameter value     */
+                            /* 16 - Truncation or translation   */
+                            /*      error in accessing dialog   */
+                            /*      variables                   */
+                            /* 20 - Severe error                */
+  lminit_rc = rc
+  if (lminit_rc >< 0) then,
+    do
+      say "LMINIT RC("lminit_rc") on file("locfile")"
+      return
+    end
+  Address IspExec,
+    "LMOPEN DATAID("delid") OPTION(OUTPUT)"
+                                /* Return codes                      */
+                                /*  8 - Open failed                  */
+                                /*    - Data set record format not   */
+                                /*      supported by ISPF            */
+                                /* 10 - No data set associated with  */
+                                /*      the data-id                  */
+                                /* 12 - Invalid parameter value      */
+                                /*    - Data set is already open     */
+                                /*    - Cannot open data set         */
+                                /*      allocated "SHR" for output   */
+                                /* 16 - Truncation or translation    */
+                                /*      error in storing defined     */
+                                /*      variables                    */
+                                /* 20 - Severe error                 */
+  lmOPEN_rc = rc
+  if (lmOPEN_rc >< 0) then,
+    do
+      say "LMOPEN RC("lmOPEN_rc") on file("locfile")"
+      return
+    end
+  Address IspExec,
+    "LMMDEL DATAID("DELID")",
+    "MEMBER("lmem") NOENQ"
+                           /* Return codes                       */
+                           /*  4 - Member deleted, maclib/txtlib */
+                           /*      erased if it is empty after   */
+                           /*      the deletion  (CMS only)      */
+                           /*  8 - Member not found              */
+                           /* 10 - No data set or data file      */
+                           /*      associated with the given     */
+                           /*      data-id                       */
+                           /* 12 - Data set or data file not     */
+                           /*      open or not open for output   */
+                           /*    - Invalid parameter value       */
+                           /*    - Invalid data set or data file */
+                           /*      organization                  */
+                           /* 20 - Severe error                  */
+  lmmdel_rc = rc
+  if (lmmdel_rc >< 0) then,
+    do
+      say "LMMDEL RC("lmmdel_rc") on member("lmem")"
+    end
+  Address IspExec,
+    "LMCLOSE DATAID("delid")"
+                                /* Return codes                     */
+                                /*  8  - Data set is not open       */
+                                /* 10  - No data set associated     */
+                                /*       with the given data id     */
+                                /* 20  - Severe error               */
+  lmclose_rc = rc
+  if (lmclose_rc >< 0) then,
+    do
+      say "LMCLOSE RC("lmclose_rc") on file("locfile")"
+      return
+    end
+  Address IspExec,
+    "LMFREE DATAID("DELID")"
+  lmfree_rc = rc
+  if (lmfree_rc >< 0) then,
+    do
+      say "LMFREE RC("lmfree_rc") on file("locfile")"
+      return
+    end
+  return
+
+uc: Procedure
+  parse upper arg string
+  return string
+
+lc: Procedure
+  parse arg string
+  string = translate(string,
+    "abcdefghijklmnopqrstuvwxyz",
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+  return string
+
+an: Procedure expose alpha_numeric all_ebcdic
+  parse arg string
+  string = translate(string,alpha_numeric,all_ebcdic)
+  return string
+
+init_workareas:
+  loc_mbr.  = ""
+  loc_mbr.0 = 0
+  rmt_mbr.  = ""
+  rmt_mbr.0 = 0
+  all_ebcdic = xrange(x2c("00"),x2c("FF"))
+  alpha_numeric = ,
+    copies(" ",x2d("6B")-x2d("00"))||,
+    "," ||,
+    copies(" ",x2d("C1")-x2d("6C"))||,
+    "ABCDEFGHI" ||,
+    copies(" ",x2d("D1")-x2d("CA"))||,
+    "JKLMNOPQR" ||,
+    copies(" ",x2d("E2")-x2d("DA"))||,
+    "STUVWXYZ" ||,
+    copies(" ",x2d("F0")-x2d("EA"))||,
+    "0123456789" ||,
+    copies(" ",x2d("0100")-x2d("FA"))
+  return
+
+Base: Procedure
+  parse arg,
+    base_hh ":",
+    base_mm ":",
+    base_ss " ",
+    .      +1,
+    base_yr "/",
+    base_mo "/",
+    base_dy "/",
+    .
+  if (base_yr||base_mo||base_dy = "") then return 0 0 0
+  base_days = Date("B",base_yr||base_mo||base_dy,"S")
+  base_seconds = (((base_hh * 60) + base_mm) * 60) + base_ss
+  base_timestamp = (base_days * 86400) + base_seconds
+  return base_days base_seconds base_timestamp
+
+chg_adjust:
+  parse arg,
+    adjust_timestamp
+  return adjust_timestamp + diff_base_seconds
+
+show_adjustment_direction:
+  diff_base_seconds = host_base_seconds - site_base_seconds
+  select
+    when (diff_base_seconds < 0) then,
+      do
+        diff_direction = "Ahead"
+      end
+    when (diff_base_seconds > 0) then,
+      do
+        diff_direction = "Behind"
+      end
+    otherwise
+      diff_direction = "None"
+  end
+  return
+
+diff_in_segments:
+  diff_plus_seconds = diff_base_seconds * Sign(diff_base_seconds)
+  diff_plus_days = diff_plus_seconds % 86400
+  if (debug_option >< "") then,
+    do
+  if (diff_plus_days > 0) then say diff_plus_days "Day(s)."
+    end
+  diff_plus_seconds = diff_plus_seconds - (diff_plus_days * 86400)
+  diff_plus_hours = diff_plus_seconds % 3600
+  if (debug_option >< "") then,
+    do
+  if (diff_plus_hours > 0) then say diff_plus_hours "Hours(s)."
+    end
+  diff_plus_seconds = diff_plus_seconds - (diff_plus_hours * 3600)
+  diff_plus_minutes = diff_plus_seconds % 60
+  if (debug_option >< "") then,
+    do
+  if (diff_plus_minutes > 0) then say diff_plus_minutes "Minutes(s)."
+    end
+  diff_plus_seconds = diff_plus_seconds - (diff_plus_minutes * 60)
+  if (debug_option >< "") then,
+    do
+  if (diff_plus_seconds > 0) then say diff_plus_seconds "Seconds(s)."
+    end
+  diff_plus_adjust = 0
+  diff_text = "."
+  if (diff_plus_minutes > 15) then,
+    do
+      diff_plus_adjust = diff_plus_adjust + (diff_plus_minutes * 60)
+      diff_text = diff_plus_minutes "Minute(s)" diff_text
+    end
+  if (diff_plus_hours > 0) then,
+    do
+      diff_plus_adjust = diff_plus_adjust + (diff_plus_hours * 3600)
+      diff_text = diff_plus_hours "Hours(s)" diff_text
+    end
+  if (diff_plus_days > 0) then,
+    do
+      diff_plus_adjust = diff_plus_adjust + (diff_plus_days * 86400)
+      diff_text = diff_plus_days "Days(s)" diff_text
+    end
+  return
+
+get_site_adjustment:
+  /* 220-FTPD1 IBM FTP CS V1R7 at IP6JES2, 14:01:37 on 2007-01-05. */
+  parse var ftpo.ix . ", ",
+    ftp_hh ":",
+    ftp_mm ":",
+    ftp_ss " on ",
+    ftp_yr "-",
+    ftp_mo "-",
+    ftp_dy ".",
+    . " " .
+  site_base = Base(ftp_hh":"ftp_mm":"ftp_ss ftp_yr"/"ftp_mo"/"ftp_dy)
+  parse var site_base site_base_days site_base_seconds site_timestamp
+
+  call show_adjustment_direction
+  call diff_in_segments
+  return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+  Place any of your subroutines and procedures below this.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_jobspecs:
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO CVT FROM PSA                                */
+  /*---------------------------------------------------------------*/
+  PTR2PSA = 0
+  CVTPTR = STORAGE(D2X(PTR2PSA + 16),4)
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO SMCA, THEN GET SMF SYSTEM ID                */
+  /*---------------------------------------------------------------*/
+  CVTSMCA = STORAGE(D2X(C2D(CVTPTR)+197),3)
+  SMFID = STORAGE(D2X(C2D(CVTSMCA)+16),4)
+  /*---------------------------------------------------------------*/
+  /* GET JOBNAME, STEP, AND PROCEDURE                              */
+  /*---------------------------------------------------------------*/
+  PSATOLD  = STORAGE(21C,4)                    /* POINTER TO TCB   */
+  PTRTIOT  = STORAGE(D2X(C2D(PSATOLD)+12),4)   /* POINTER TO TIOT  */
+  JOBNAME  = STORAGE(D2X(C2D(PTRTIOT)),8)
+  STEPNAME = STORAGE(D2X(C2D(PTRTIOT)+8),8)
+  PROCNAME = STORAGE(D2X(C2D(PTRTIOT)+16),8)
+  Tcbjscbb = Storage(D2x(C2d(Psatold)+181),3)                /* jscb */
+  jscbssib = STORAGE(D2X(C2D(tcbjscbb)+316),4)        /* Ptr to SSIB */
+  ssibjbid = STORAGE(D2X(C2D(jscbssib)+12),8)      /* job identifier */
+  Return JOBNAME SSIBJBID STEPNAME PROCNAME
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+__DATA__
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+

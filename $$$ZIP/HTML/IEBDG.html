@@ -1,0 +1,441 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--                                                                 -->
+<!-- Version       | TimeStamp         | Description of change       -->
+<!-- ------------- | ----------------- | --------------------------- -->
+<!-- 1.0.0 KTomiak | 20070802 21:37:42 | Original version            -->
+<!--                                                                 -->
+
+<html>
+ <!---
+ Author: Kenneth E Tomiak
+ updt2htm.pl Copyright (c) 02007 by Kenneth E Tomiak
+ --->
+
+<head>
+ <title>
+ zosutil.seq - IEBDG Examples
+ </title>
+
+ <!--META_START-->
+
+ <meta HTTP-EQUIV="Content-Type" content="text/html ; charset=iso8859-1">
+ <meta name="ROBOTS" content="INDEX, FOLLOW">
+ <meta name="abstract" content="Web pages for files in zosutil.seq">
+ <meta name="Keywords" content="zosutil.seq">
+ <meta name="owner" content="Author of zosutil.seq">
+ <meta name="author" content="d:\home\ktomiak\PERL\updt2htm.pl">
+ <meta name="modified" content="20070802">
+ <meta name="review" content="20071231">
+ <meta name="security" content="public">
+ <meta name="ms.locale" content="EN-US">
+ <meta name="Generator" content="Kenneth Tomiak's perl program d:\home\ktomiak\PERL\updt2htm.pl">
+
+ <!--META_END-->
+
+</head>
+<BODY BGCOLOR="#FFFFFF" LINK="#000066" ALINK="#000088">
+
+ <A NAME="pgtop"></A>
+
+ <center>
+ <h1>
+ <a href="../zosutil.seq.html">zosutil.seq</a> - IEBDG Examples
+ </h1>
+ </center>
+
+<hr noshade size="4" color="#66CCCC">
+
+<pre>
+./ ADD NAME=IEBDG    0666-07209-07209-1453-00001-00001-00000-DIR2UPDT
+>< ADD NAME=DG       0101-07003-07016-2326-00008-00008-00000-KTOMIAK
+
+DG$01  Place Binary Zeros in Records Copied from Sequential Data
+DG$02  Ripple 10-byte Alphabetic Pattern
+DG$03  Create Output Records from Utility Control Statements
+DG$04  Use Members and Input Records as Basis of Output Member
+DG$05  Create Records in Three Output Data Sets and Write them
+DG$06  Construct Records with Your Own Patterns
+
+>< ADD NAME=DG$01    0100-07003-07003-2113-00055-00055-00000-SC26UTL
+
+Example 1: Place Binary Zeros in Records Copied from Sequential Data
+Set
+
+In this example, binary zeros are placed in two fields of 100 records
+copied from a sequential data set. After the operation, each record in
+the copied data set (OUTSET) contains binary zeros in locations 20
+through 29 and 50 through 59.
+
+//CLEAROUT JOB ...
+//STEP1   EXEC PGM=IEBDG
+//SYSPRINT DD  SYSOUT=*
+//SEQIN    DD  DISP=(OLD,KEEP),DSN=INSET,
+//             DCB=(RECFM=FB,BLKSIZE=800,LRECL=80),
+//             UNIT=tape,LABEL=(,NL)
+//SEQOUT   DD  DISP=(NEW,KEEP),DSN=OUTSET,
+//             UNIT=tape,LABEL=(,SL),
+//             DCB=(RECFM=FB,BLKSIZE=32760,LRECL=80)   <==close to 32K
+//SYSIN    DD  *
+         DSD    OUTPUT=(SEQOUT),INPUT=(SEQIN)
+         FD     NAME=FIELD1,LENGTH=10,STARTLOC=20
+         FD     NAME=FIELD2,LENGTH=10,STARTLOC=50
+         CREATE QUANTITY=100,INPUT=SEQIN,NAME=(FIELD1,FIELD2)
+         END
+/*
+
+The control statements are discussed below:
+
+x) SEQIN DD defines a sequential input data set (INSET). The data set
+   was originally written on a unlabeled tape volume.
+
+x) SEQOUT DD defines the test data set (OUTSET). The output records are
+   identical to the input records, except for locations 20 through 29
+   and 50 through 59, which contain binary zeros at the completion of
+   the operation.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) DSD marks the beginning of a set of utility control statements and
+   refers to the DD statements defining the input and output data sets.
+
+x) The first and second FD statements create two 10-byte fields (FIELD1
+   and FIELD2). Because no pattern is specified for these fields, each
+   field contains the default fill of binary zeros. The fields are to
+   begin in the 20th and 50th bytes of each output record.
+
+x) CREATE constructs 100 output records in which the contents of
+   previously defined fields (FIELD1, FIELD2) are placed in their
+   respective starting locations in each of the output records. Input
+   records from data set INSET are used as the basis of the output
+   records.
+
+x) END signals the end of a set of utility control statements.
+
+>< ADD NAME=DG$02    0100-07003-07003-2113-00050-00050-00000-SC26UTL
+
+Example 2: Ripple 10-byte Alphabetic Pattern
+
+In this example, a 10-byte alphabetic pattern is rippled. At the end of
+the job step the first output record contains "ABCDEFGHIJ", followed by
+data in location 11 through 80 from the input record; the second record
+contains "BCDEFGHIJK" followed by data in locations 11 through 80, and
+so forth.
+
+//RIPPLEJOB ...
+//STEP1   EXEC PGM=IEBDG
+//SYSPRINT DD  SYSOUT=*
+//SEQIN    DD  DISP=(OLD),DSN=INSET
+//SEQOUT   DD  DISP=(NEW,CATLG),DSN=OUTSET,
+//             UNIT=disk,
+//             SPACE=(TRK,(10,10))
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  *
+         DSD    OUTPUT=(SEQOUT),INPUT=(SEQIN)
+         FD     NAME=FIELD1,LENGTH=10,FORMAT=AL,ACTION=RP,STARTLOC=1
+         CREATE QUANTITY=100,INPUT=SEQIN,NAME=FIELD1
+         END
+/*
+
+The control statements are discussed below:
+
+x) SEQIN DD defines an input sequential data set (INSET). The data set
+   was originally written on a standard labeled tape volume.
+
+x) SEQOUT DD defines the test output data set (OUTSET). Ten tracks of
+   primary space and ten tracks of secondary space are allocated for
+   the sequential data set on a disk volume.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) DSD marks the beginning of a set of utility control statements and
+   refers to the DD statements defining the input and output data sets.
+
+x) The FD statement creates a 10-byte field in which the pattern
+   ABCDEFGHIJ is initially placed. The data is rippled after each
+   output record is written.
+
+x) CREATE constructs 100 output records in which the contents of a
+   previously defined field (FIELD1) are included. The CREATE statement
+   uses input records from data set INSET as the basis of the output
+   records.
+
+x) END signals the end of a set of utility control statements.
+
+>< ADD NAME=DG$03    0100-07003-07003-2113-00053-00053-00000-SC26UTL
+
+Example 3: Create Output Records from Utility Control Statements
+
+In this example, output records are created entirely from utility
+control statements. Three fields are created and used in the
+construction of the output records. In two of the fields, alphabetic
+data is truncated; the other field is a numeric field that is
+incremented (indexed) by one after each output record is written.
+
+//UTLYONLY JOB ...
+//STEP1   EXEC PGM=IEBDG
+//SYSPRINT DD  SYSOUT=*
+//SEQOUT   DD  DISP=(NEW,CATLG),DSN=OUTSET,
+//             UNIT=disk,
+//             SPACE=(TRK,(10,10)),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  DATA
+         DSD    OUTPUT=(SEQOUT)
+         FD     NAME=FIELD1,LENGTH=30,STARTLOC=1,FORMAT=AL,ACTION=TL
+         FD     NAME=FIELD2,LENGTH=30,STARTLOC=31,FORMAT=AL,ACTION=TR
+         FD     NAME=FIELD3,LENGTH=10,STARTLOC=71,PICTURE=10,          X
+               P'1234567890',INDEX=1
+         CREATE QUANTITY=100,NAME=(FIELD1,FIELD2,FIELD3),FILL=X'FF'
+         END
+/*
+
+The control statements are discussed below:
+
+x) SEQOUT DD defines the test output data set. Ten tracks of primary
+   space and ten tracks of secondary space are allocated for the
+   sequential data set on a disk volume.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) DSD marks the beginning of a set of utility control statements and
+   refers to the DD statement defining the output data set.
+
+x) FD defines the contents of three fields to be used in the
+   construction of output records. The first field contains 30 bytes of
+   alphabetic data to be truncated left after each output record is
+   written. The second field contains 30 bytes of alphabetic data to be
+   truncated right after each output record is written. The third field
+   is a 10-byte field containing a packed decimal number (1234567890)
+   to be increased by one after each record is written.
+
+x) CREATE constructs 100 output records in which the contents of
+   previously defined fields (FIELD1, FIELD2, and FIELD3) are included.
+   Note that after each record is written, FIELD1 and FIELD2 are
+   restored to full width.
+
+x) END signals the end of a set of utility control statements.
+
+>< ADD NAME=DG$04    0100-07003-07003-2113-00075-00075-00000-SC26UTL
+
+Example 4: Use Members and Input Records as Basis of Output Member
+
+In this example, two partitioned members and input records from the
+input stream are used as the basis of a partitioned output member. Each
+block of 12 output records contains 10 modified records from an input
+partitioned member and two records from the input stream.
+
+//MIX JOB ...
+//STEP1   EXEC PGM=IEBDG
+//SYSPRINT DD  SYSOUT=*
+//PARIN1   DD  DISP=(OLD),DSN=INSET1(MEMBA)
+//PARIN2   DD  DISP=(OLD),DSN=INSET2(MEMBA)
+//PAROUT   DD  DISP=(NEW,CATLG),DSN=PARSET(MEMBA),
+//             UNIT=disk,
+//             SPACE=(TRK,(10,10,5)),
+//             DCB=(DSORG=PO,RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  DATA
+         DSD    OUTPUT=(PAROUT),INPUT=(PARIN1,PARIN2)
+         FD     NAME=FIELD1,LENGTH=13,PICTURE=13,'DEPARTMENT 21'
+         REPEAT QUANTITY=10,CREATE=2
+         CREATE QUANTITY=10,INPUT=PARIN1,NAME=FIELD1
+         CREATE QUANTITY=2,INPUT=SYSIN
+
+(input records 1 through 20)
+
+$$$E
+         REPEAT QUANTITY=10,CREATE=2
+         CREATE QUANTITY=10,INPUT=PARIN2,NAME=FIELD1
+         CREATE QUANTITY=2,INPUT=SYSIN
+
+(input records 21 through 40)
+
+$$$E
+         END
+/*
+
+The control statements are discussed below:
+
+x) PARIN1 DD defines one of the input partitioned members.
+
+x) PARIN 2 DD defines the second of the input partitioned members.
+   (Note that the members are from different partitioned data sets.)
+
+x) PAROUT DD defines the output partitioned member. This example
+   assumes that the partitioned data set does not exist before the job
+   step; that is, this DD statement allocates space for the partitioned
+   data set.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) DSD marks the beginning of a set of utility control statements and
+   refers to the DD statements defining the input and output data sets.
+
+x) FD creates a 13-byte field in which the picture "DEPARTMENT 21" is
+   placed.
+
+x) The first REPEAT statement indicates that the following group of two
+   CREATE statements is to be repeated 10 times.
+
+x) The first CREATE statement creates 10 output records. Each output
+   record is constructed from an input record (from partitioned data
+   set INSET1) and from previously defined FIELD1.
+
+x) The second CREATE statement indicates that two records are to be
+   constructed from input records included next in the input stream.
+
+x) The $$$E record separates the input records from the REPEAT
+   statement. The next REPEAT statement group is identical to the
+   preceding group, except that records from a different partitioned
+   member are used as input.
+
+x) END signals the end of a set of utility control statements.
+
+>< ADD NAME=DG$05    0100-07003-07003-2113-00010-00010-00000-SC26UTL
+
+Example 5: Create Records in Three Output Data Sets and Write them
+to Three Partitioned Data Set Members
+
+Restriction: This example will not work if the data sets are
+system-managed or SMS data sets.
+
+This example was removed because you should be using system-managed
+datasets.
+
+>< ADD NAME=DG$06    0100-07003-07003-2113-00053-00053-00000-SC26UTL
+
+Example 6: Construct Records with Your Own Patterns
+
+In this example, 10 fields containing user-supplied character patterns
+are used in the construction of output records. After a record is
+written, each field is rolled or waved, as specified in the applicable
+FD statement.
+
+//ROLLWAVEJOB ...
+//STEP1   EXEC PGM=IEBDG
+//SYSPRINT DD  SYSOUT=*
+//OUTSET   DD  DISP=(NEW,CATLG),DSN=SEQSET,
+//             UNIT=disk,
+//             SPACE=(TRK,(10,10)),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  *
+         DSD    OUTPUT=(OUTSET)
+         FD     NAME=FIELD1,LENGTH=8,PICTURE=8,' AAAAA',ACTION=RO
+         FD     NAME=FIELD2,LENGTH=8,PICTURE=8,'BBBBB ',ACTION=RO
+         FD     NAME=FIELD3,LENGTH=8,PICTURE=8,'A AA ',ACTION=RO
+         FD     NAME=FIELD4,LENGTH=8,PICTURE=8,' BB B',ACTION=RO
+         FD     NAME=FIELD5,LENGTH=8,PICTURE=8,' AAA ',ACTION=RO
+         FD     NAME=FIELD6,LENGTH=8,PICTURE=8,' CCCCC',ACTION=WV
+         FD     NAME=FIELD7,LENGTH=8,PICTURE=8,' DDDD ',ACTION=WV
+         FD     NAME=FIELD8,LENGTH=8,PICTURE=8,' C CC ',ACTION=WV
+         FD     NAME=FIELD9,LENGTH=8,PICTURE=8,' DD D',ACTION=WV
+         FD     NAME=FIELD10,LENGTH=8,PICTURE=8,' CCC ',ACTION=WV
+         CREATE QUANTITY=300,NAME=(FIELD1,FIELD2,FIELD3,               X
+               FIELD4,FIELD5,FIELD6,FIELD7,FIELD8,FIELD9,FIELD10)
+         END
+/*
+
+The control statements are discussed below:
+
+x) OUTSET DD defines the output sequential data set on a disk volume.
+   Ten tracks of primary space and 10 tracks of secondary space are
+   allocated to the data set.
+
+x) SYSIN DD defines the control data set that follows in the input
+   stream.
+
+x) DSD marks the beginning of a set of utility control statements and
+   refers to the DD statement defining the output data set.
+
+x) FD defines a field to be used in the subsequent construction of
+   output records. The direction and frequency of the initial roll or
+   wave depend on the location of data in the field.
+
+x) CREATE constructs 300 records from the contents of the previously
+   defined fields.
+
+x) END signals the end of a set of utility control statements.
+
+</pre>
+<hr noshade size="4" color="#66CCCC">
+<h2>IEBDG</h2>
+<a href="IEBDG$IEBDG.html">IEBDG$IEBDG</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<h2>Categories</h2>
+<a href="$$$INDEX.html">$$$INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ADRDSSU.html">ADRDSSU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMASPZAP.html">AMASPZAP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMBLIST.html">AMBLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BATCH.html">BATCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BMC4DB2.html">BMC4DB2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CPPUPDTE.html">CPPUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CUNMITG1.html">CUNMITG1</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DFHCSDUP.html">DFHCSDUP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DITTO.html">DITTO</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTEP2.html">DSNTEP2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAD.html">DSNTIAD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAUL.html">DSNTIAUL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="EDGINERS.html">EDGINERS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FDR.html">FDR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FTP.html">FTP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="HCD.html">HCD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ICKDSF.html">ICKDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IDCAMS.html">IDCAMS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOMPR.html">IEBCOMPR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOPY.html">IEBCOPY</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBDG.html">IEBDG</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBEDIT.html">IEBEDIT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBGENER.html">IEBGENER</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBIMAGE.html">IEBIMAGE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBPTPCH.html">IEBPTPCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBUPDTE.html">IEBUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEFBR14.html">IEFBR14</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHATLAS.html">IEHATLAS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHINITT.html">IEHINITT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHLIST.html">IEHLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHMOVE.html">IEHMOVE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHPROGM.html">IEHPROGM</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEWBLINK.html">IEWBLINK</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFASMFDP.html">IFASMFDP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFHSTATR.html">IFHSTATR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IPCS.html">IPCS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ISRSUPC.html">ISRSUPC</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IXCMIAPU.html">IXCMIAPU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="JOBCARD.html">JOBCARD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="RACF.html">RACF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SDSF.html">SDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SMPE.html">SMPE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SORT.html">SORT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SRCHFOR.html">SRCHFOR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="TRSMAIN.html">TRSMAIN</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="zosutil.seq.html">INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="../index.html">Up one level</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+
+<hr noshade size="4" color="#CCCC66">
+
+<A NAME="pgbottom"></A>
+<hr noshade size="4">
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+document.write("<b>" + location.href + "</b>")
+// -->
+</SCRIPT>
+
+<hr noshade size="4">
+<b> updt2htm.pl Copyright:</b> &copy; 02007 by Kenneth E Tomiak
+<br>
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+var d = new Date(document.lastModified)
+document.write("<b>Last modified:</b> " + d)
+// -->
+</SCRIPT>
+<hr noshade size="4">
+
+</body>
+</html>

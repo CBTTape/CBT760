@@ -1,0 +1,56 @@
+
+//*FORMAT
+
+Used to format SYSOUT output.
+
+//*FORMAT PR,DDNAME= {ddname } [,parameter]...
+         {stepname.ddname } ,parameter]...
+         {stepname.procstepname.ddname}
+         {JESYSMSG }
+         {JESJCL }
+         {JESMSGLG }
+
+//*FORMAT PR,DDNAME=[,parameter]...
+         { CARRIAGE= {carriage-tape-name} }
+         { {6 } }
+         { FCB= {image-name} }
+         { {6 } }
+         CHARS= {STANDARD }
+         {table-name }
+         {(table-name[,table-name]...)}
+         CHNSIZE= {DS }
+         {(nnn[,mmm])}
+         COMPACT=compaction-table-name
+         CONTROL= {PROGRAM}
+         {SINGLE }
+         {DOUBLE }
+         {TRIPLE }
+         COPIES= {nnn }
+         {(nnn,(group-value[,group-value]...))}
+         {(group-value[,group-value]...) }
+         DEST= {ANYLOCAL }
+         {device-name }
+         {device-number }
+         {group-name }
+         {nodename[.remote] }
+         {(type[,device-name]) }
+         {(type[,device-number])}
+         {(type[,group-name]) }
+         EXTWTR=name
+         FLASH= {STANDARD }
+         {overlay-name }
+         {(overlay-name[,count])}
+         FORMS= {STANDARD }
+         {form-name}
+         MODIFY= {module-name }
+         {(module-name[,trc])}
+         OVFL= {ON }
+         {OFF}
+         PRTY=nnn
+         STACKER= {STANDARD}
+         {S }
+         {C }
+         THRESHLD=limit
+         TRAIN= {STANDARD }
+         {train-name}
+

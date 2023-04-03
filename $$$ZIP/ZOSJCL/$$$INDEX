@@ -1,0 +1,65 @@
+
+This dataset (sub-directory) contains the beginning of a project to
+have some useful samples showing how to use features of JCL.
+
+At this time it is very primitive and is going to be phased out as
+I start working on %JCL, a dialog like MODEL, to insert the
+appropriate code into your JOB or PROC with notelines trying to help
+you understand what to use the feature for.
+
+
+SA22-7597-06 z/OS MVS JCL Reference
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------
+$$$INDEX This member
+CNTL
+COMMAND 'command'              Issued during conversion
+COMMENTS
+DD
+DDNAMES  Reserved or to temporarily disable a product
+ENDCNTL
+EOD      /*
+EOJ      //
+EXEC
+IF/THEN/ELSE/ENDIF
+INCLUDE
+JCLLIB
+JES2CMD  /*$command   JECL - JES2
+JES2JOBP /*JOBPARM    JECL - JES2
+JES2MSG  /*MESSAGE    JECL - JES2
+JES2NETA /*NETACCT    JECL - JES2
+JES2NTFY /*NOTIFY     JECL - JES2
+JES2OUTP /*OUTPUT     JECL - JES2
+JES2PRTY /*PRIORITY   JECL - JES2
+JES2ROUT /*ROUTE      JECL - JES2
+JES2SETP /*SETUP      JECL - JES2
+JES2SOFF /*SIGNOFF    JECL - JES2
+JES2SON  /*SIGNON     JECL - JES2
+JES2XEQ  /*XEQ        JECL - JES2
+JES2XMIT /*XMIT       JECL - JES2
+JES3CMD  //**command    JECL - JES3
+JES3DATA //*DATASET     JECL - JES3
+JES3ENDD //*ENDDATASET  JECL - JES3
+JES3ENDP //*ENDPROCESS  JECL - JES3
+JES3FORM //*FORMAT      JECL - JES3
+JES3MAIN //*MAIN        JECL - JES3
+JES3NET  //*NET         JECL - JES3
+JES3NETA //*NETACCT     JECL - JES3
+JES3OPER //*OPERATOR    JECL - JES3
+JES3PAUS //*PAUSE       JECL - JES3
+JES3PROC //*PROCESS     JECL - JES3
+JES3ROUT //*ROUTE       JECL - JES3
+JES3SOFF /*SIGNOFF      JECL - JES3
+JES3SON  /*SIGNON       JECL - JES3
+JOB
+OUTPUT
+PEND
+PROC
+RDRDEL   /*DEL
+RDREOF   /*EOF
+RDRPURGE /*PURGE
+RDRSCAN  /*SCAN
+SET
+XMIT
+

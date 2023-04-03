@@ -1,0 +1,83 @@
+
+//*MAIN
+
+Used to specify processing options.
+
+//*MAIN parameter[,parameter]...
+
+ACMAIN=processor-id
+BYTES= {([nnnnnn][,WARNING][,mmm])}
+{([nnnnnn][,W][,mmm]) }
+{([nnnnnn][,CANCEL]) }
+{([nnnnnn][,C]) }
+{([nnnnnn][,DUMP]) }
+{([nnnnnn][,D]) }
+CARDS= {([nnnn][,WARNING][,mmm])}
+{([nnnn][,W][,mmm]) }
+{([nnnn][,CANCEL]) }
+{([nnnn][,C]) }
+{([nnnn][,DUMP]) }
+{([nnnn][,D]) }
+CLASS=class-name
+DEADLINE= {(time,type[,date]) }
+{(time,type[,rel,cycle])}
+EXPDTCHK= {YES}
+{NO }
+FAILURE= {RESTART}
+{CANCEL }
+{HOLD }
+{PRINT }
+FETCH= {ALL }
+{NONE }
+{SETUP }
+{(ddname[,ddname]...) }
+{/(ddname[,ddname]...)}
+HOLD= {YES}
+{NO }
+IORATE= {MED }
+{HIGH}
+{LOW }
+JOURNAL= {YES}
+{NO }
+LINES= {([nnnn][,WARNING][,mmm])}
+{([nnnn][,W][,mmm]) }
+{([nnnn][,CANCEL]) }
+{([nnnn][,C]) }
+{([nnnn][,DUMP]) }
+{([nnnn][,D]) }
+LREGION=nnnnK
+ORG= {group-name }
+{nodename[.remote]}
+PAGES= {([nnnnnnnn][,WARNING][,mmm])}
+{([nnnnnnnn][,W][,mmm]) }
+{([nnnnnnnn][,CANCEL]) }
+{([nnnnnnnn][,C]) }
+{([nnnnnnnn][,DUMP]) }
+{([nnnnnnnn][,D]) }
+PROC= {ST}
+{xx}
+RINGCHK= {YES}
+{NO }
+SETUP= {JOB }
+{HWS }
+{THWS }
+{DHWS }
+{(stepname.ddname[,stepname.ddname]...) }
+{(stepname.procstepname.ddname[,stepname.procstepname.ddname]...) }
+{/(stepname.ddname[,stepname.ddname]...) }
+{/(stepname.procstepname.ddname[,stepname.procstepname.ddname]...)}
+SPART=partition-name
+SYSTEM= {ANY }
+{JGLOBAL }
+{JLOCAL }
+{(main-name[,main-name]...) }
+{/(main-name[,main-name]...)}
+THWSSEP= {IGNORE }
+{PREFER }
+{REQUIRE}
+TRKGRPS=(primary-qty,second-qty)
+TYPE= {ANY}
+{VS2}
+UPDATE=(dsname[,dsname]...)
+USER=userid
+

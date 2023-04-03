@@ -1,0 +1,13 @@
+
+Sorry, there are presently no PANELS in this location.
+
+Patience please. I may have some to put here in the future. I have
+been converting my rexx code to be self-contained, though. The only
+panels that would make sense to be here would be driven off another
+panel and not from within REXX code. Like a replacement to the
+startup panel.
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------
+$$$INDEX This member
+

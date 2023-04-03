@@ -1,0 +1,416 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--                                                                 -->
+<!-- Version       | TimeStamp         | Description of change       -->
+<!-- ------------- | ----------------- | --------------------------- -->
+<!-- 1.0.0 KTomiak | 20070802 21:37:42 | Original version            -->
+<!--                                                                 -->
+
+<html>
+ <!---
+ Author: Kenneth E Tomiak
+ updt2htm.pl Copyright (c) 02007 by Kenneth E Tomiak
+ --->
+
+<head>
+ <title>
+ zosutil.seq - HCD Examples
+ </title>
+
+ <!--META_START-->
+
+ <meta HTTP-EQUIV="Content-Type" content="text/html ; charset=iso8859-1">
+ <meta name="ROBOTS" content="INDEX, FOLLOW">
+ <meta name="abstract" content="Web pages for files in zosutil.seq">
+ <meta name="Keywords" content="zosutil.seq">
+ <meta name="owner" content="Author of zosutil.seq">
+ <meta name="author" content="d:\home\ktomiak\PERL\updt2htm.pl">
+ <meta name="modified" content="20070802">
+ <meta name="review" content="20071231">
+ <meta name="security" content="public">
+ <meta name="ms.locale" content="EN-US">
+ <meta name="Generator" content="Kenneth Tomiak's perl program d:\home\ktomiak\PERL\updt2htm.pl">
+
+ <!--META_END-->
+
+</head>
+<BODY BGCOLOR="#FFFFFF" LINK="#000066" ALINK="#000088">
+
+ <A NAME="pgtop"></A>
+
+ <center>
+ <h1>
+ <a href="../zosutil.seq.html">zosutil.seq</a> - HCD Examples
+ </h1>
+ </center>
+
+<hr noshade size="4" color="#66CCCC">
+
+<pre>
+./ ADD NAME=HCD      0666-07209-07209-1501-00001-00001-00000-DIR2UPDT
+>< ADD NAME=HCD      0103-07003-07016-2344-00007-00007-00000-KTOMIAK
+
+HCD$01 Allocate &sysuid..HCD.PROFILE, TRACE, MSGLOG, TERM
+HCD$02 Copy sample entries for HCD.PROFILE
+HCD$03 Sample &sysuid..HCD.PROFILE entries
+HCD$04 Sample HCM Server
+HCD$05 Sample HCM Agent
+>< ADD NAME=MGHCP    0101-07003-07016-2348-00005-00005-00000-KTOMIAK
+
+MGHCP$01  Allocate data sets to use the Hardware Configuration Dialog
+MGHCP$02  Initialize an IODF
+MGHCP$03  Copy one IODF to another
+
+
+>< ADD NAME=HCD$01   0102-07003-07003-2114-00017-00017-00000-KTOMIAK
+//ALLOC   EXEC PGM=IEFBR14
+//PROFILE  DD  DISP=(NEW,CATLG),DSN=&SYSUID..HCD.PROFILE,
+//             UNIT=SYSALLDA,SPACE=(TRK,(1,1)),
+//             DCB=(DSORG=PS,RECFM=FB,BLKSIZE=0,LRECL=80)
+//HCDTRACE DD  DISP=(NEW,CATLG),DSN=&SYSUID..HCD.TRACE,
+//             UNIT=SYSALLDA,SPACE=(TRK,(10,1)),
+//             DCB=(DSORG=PS,RECFM=FB,BLKSIZE=0,LRECL=80)
+//HCMTRACE DD  DISP=(NEW,CATLG),DSN=&SYSUID..HCM.TRACE,
+//             UNIT=SYSALLDA,SPACE=(TRK,(10,1)),
+//             DCB=(DSORG=PS,RECFM=FB,BLKSIZE=0,LRECL=80)
+//TERM     DD  DISP=(NEW,CATLG),DSN=&SYSUID..HCD.TERM,
+//             UNIT=SYSALLDA,SPACE=(TRK,(1,1)),
+//             DCB=(DSORG=PS,RECFM=FB,BLKSIZE=0,LRECL=80)
+//MSGLOG   DD  DISP=(NEW,CATLG),DSN=&SYSUID..HCD.MSGLOG,
+//             UNIT=SYSALLDA,SPACE=(TRK,(5,1)),
+//             DCB=(DSORG=PS,RECFM=FB,BLKSIZE=0,LRECL=133)
+//
+>< ADD NAME=HCD$02   0100-07003-07003-2114-00005-00005-00000-KTOMIAK
+//GENER   EXEC PGM=IEBGENER
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  DUMMY
+//SYSUT1   DD  DISP=SHR,DSN=SHARE.MVSSCPU.CNTL(HCD#03)
+//SYSUT2   DD  DISP=OLD,DSN=&SYSUID..HCD.PROFILE
+>< ADD NAME=HCD$03   0100-07003-07003-2114-00107-00107-00000-KTOMIAK
+/*********************************************************************/
+/*                                                                   */
+/* Make sure you "UNNUM" your profile !                              */
+/*                                                                   */
+/*********************************************************************/
+/*********************************************************************/
+/*                                                                   */
+/*             HCD PROFILE FOR OS/390 RELEASE 9 HCD                  */
+/*                                                                   */
+/*********************************************************************/
+/*                                                                   */
+/* Make sure you "UNNUM" your profile !                              */
+/*                                                                   */
+/*********************************************************************/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+/* Options relieving storage constraints                             */
+/*                                                                   */
+IODF_DATA_SPACE = YES         /*IODF IN OWN DATASPACE                */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+/* Options for tailoring the HCD dialog                              */
+/*                                                                   */
+PANEL_CUP0 = SCREEN           /*DISPLAY ENTIRE SCREEN FOR CBDPCUP0   */
+TSO_NOPREFIX = NO             /*ENABLE TSO  NOPREFIX                 */
+OS_PARM_DEFAULT = LOCANY,YES  /*   DEFAULT PARAMETERS                */
+OS_PARM_DEFAULT = DYNAMIC,NO  /*   DEFAULT PARAMETERS                */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+/* Options for migration                                             */
+/*                                                                   */
+MIGRATE_EXTENDED = YES        /*ENABLE MIGRATION ENHANCEMENTS        */
+MAP_CUTYPE = 3880,3880-23     /*REPLACE CU TYPE DURING MIGRATION     */
+MAP_CUTYPE = 3705,3745        /*REPLACE CU TYPE DURING MIGRATION     */
+ESOTERIC_TOKEN = YES          /*ESOTERIC TOKEN IN ASCENDING ORDER    */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+/* Options for  print/display                                        */
+/*                                                                   */
+LINES_PER_REPORT_PAGE = 60    /*MAX. NUMBER OF LINES PER PAGE        */
+UPPERCASE_ONLY=NO             /*upper and or lower case              */
+GCR_FORMAT = DCF              /*GRAPHIC DATA FORMAT BOOKMASTER       */
+GCR_FONT = X0GT20             /*GOTHIC TEXT 20-PITCH (FOR 3820 PRT)  */
+GCR_COMPACT = YES             /*GRAPHIC COMPACT VIEW                 */
+COLOR_NORM=BLACK              /*DEFAULT = GREEN                      */
+COLOR_TEXT=BLUE               /*DEFAULT = YELLOW                     */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+/* Options for activation                                            */
+/*                                                                   */
+BYPASS_UPD_IODF_FOR_SNA = YES /*NO IODF UPDATE WITH IOCDS DATA       */
+SHOW_IO_CHANGES = YES         /*ENABLE MESSAGE SHOW FOR DYN. ACTIVATE*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+/* Options controlling placement of data sets                        */
+/*                                                                   */
+ACTLOG_VOL = *                /*ACTIVITY LOG ON SAME VOLUME AS IODF  */
+HCDDECK_VOL = METNET          /*VOLUME FOR CONFIGURATION DATA SET    */
+HCDJES3_VOL = METNET          /*VOLUME FOR JES3 OUTPUT DATA SET      */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+/* Options for enhanced validation                                   */
+/*                                                                   */
+BATCH_IODF_NAME_CHECK = YES   /* CHECKS IODF NAMING CONVENTIONS      */
+CU_ATTACHABLE_DEVICE = RS6K,3274   /* EXTENT ATTACHABLE DEVICE LIST  */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+/* Where to find UIM modules, if other than sys1.nucleus             */
+/*                                                                   */
+UIM_LIBNAME = SYS1.NUCLEUS     /* Use * for normal MVS search order  */
+/*                                                                   */
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+/* TRACE for debugging purposes.                                     */
+/*     (WARNING: Do not use comments on the TRACE line)              */
+/*                                                                   */
+/*  trace on,all                                                     */
+/*  TRace--> ON  | trace-category |                                  */
+/*       --> | trace-category |                                      */
+/*       --> OFF                                                     */
+/*           ---> ,CLOSE                                             */
+/*                                                                   */
+/*  trace-category:                                                  */
+/*  ALL                                                              */
+/*     --> ,LEVEL=n                   n=0 to 255, 0 is defauly       */
+/*     --> ,ID=IODF                   can not be specified in profile*/
+/*                 --> ,REPAIR                                       */
+/*     --> ,ID=JCL                                                   */
+/*     --> ,ID=IOOPSOUT                                              */
+/*  Batch                                                            */
+/*  Command                                                          */
+/*  Dialog                                                           */
+/*  DYNamic                                                          */
+/*  HOM                                                              */
+/*  Migration                                                        */
+/*  Repository                                                       */
+/*  RepService                                                       */
+/*  RESET                                                            */
+/*  Service                                                          */
+/*  UIM                                                              */
+/*  UIMService                                                       */
+/*  Utility                                                          */
+/*  Validation                                                       */
+/*  Other                                                            */
+/*                                                                   */
+/*********************************************************************/
+/*                                                                   */
+>< ADD NAME=HCD$04   0100-07003-07003-2114-00018-00018-00000-KTOMIAK
+//*                                                                     00010000
+/*JOBPARM  L=99,S=*                                                     00020000
+//*                                                                     00030000
+//*                                                                     00040000
+//DEFENV   SET ENV='ENVAR(ICLUI_TRACETO=STDERR)'                        00050000
+//DEFJNP   SET JNP='+U'                                                 00060000
+//DEFLOG   SET LOG=NOLOG                                                00070000
+//DEFPORT  SET PORT=51107                                               00080000
+//DEFJSK   SET JSK=+SHARE.MVSSCPU.CNTL(HCD#05)                          00090000
+//DEFP0    SET P0='P0=10000'                                            00100000
+//DEFP1    SET P1='P1=65530'                                            00110000
+//TDIS     EXEC PGM=CBDQTDIS,                                           00120000
+//         PARM='&ENV/&AV L=&LOG P=&PORT JNP=&JNP S=&JSK &P0 &P1'       00130000
+//JCLOUT   DD   SYSOUT=(A,INTRDR)                                       00140000
+//SYSOUT   DD   SYSOUT=*                                                00150000
+//SYSPRINT DD   SYSOUT=*                                                00160000
+//CEEDUMP  DD   SYSOUT=*                                                00170000
+//*                                                                     00180000
+>< ADD NAME=HCD$05   0101-07003-07003-2114-00061-00061-00002-KTOMIAK
+//<JOBNAM> JOB (0700,MID),'<PRGNAM>',CLASS=0,REGION=<REGION>,           00010000
+//         MSGCLASS=<MCLASS>,TIME=NOLIMIT,                              00020000
+//         USER=<USER><PASSWD><NOTIFY>                                  00030000
+//* THE FOLLOWING LINE IS FOR JES2 SYSTEMS (HERE: USED AS DEFAULT)      00040000
+/*JOBPARM SYSAFF=*                                                      00050000
+//* THE FOLLOWING LINE IS FOR JES3 SYSTEMS (HERE: IT IS DISABLED)       00060000
+//* //*MAIN SYSTEM=(<TSYS>)                                             00070000
+//*                                                                     00080000
+//DEFENV   SET ENV='ENVAR(ICLUI_TRACETO=STDERR)'                        00090000
+//DEFPORT  SET PORT='<PORT>'                                            00100000
+//DEFTIME  SET T='<TIMEOUT>'                                            00110000
+//DEFLOG   SET LOG='<ALOGDSN>'                                          00120000
+//DEFAV    SET AV='<AV>'                                                00130000
+//DEFTIME  SET TIMESTMP='<TSTAMP>'                                      00140000
+//************************************************************          00150000
+//* HCM AGENT JOB SKELETON FOR HCM TCP/IP HOST CONNECTION    *          00160000
+//*                                                          *          00170000
+//* BEFORE USING THIS SKELETON, PLEASE ENSURE THAT THE       *          00180000
+//* JOB WILL RUN ON THE LOCAL SYSTEM:                        *          00190000
+//*   FOR JES2 SYSTEMS:                                      *          00200000
+//*     ADAPT THE JOBPARM SYSAFF PARAMETER (IF NECESSARY)    *          00210000
+//*   FOR JES3 SYSTEMS:                                      *          00220000
+//*     COMMENT THE LINE FOR JES2 AND UNCOMMENT THE LINE     *          00230000
+//*     FOR JES3. THEN ADAPT THE MAIN SYSTEM PARAMETER.      *          00240000
+//*     IF YOU DO NOT MODIFY <TSYS> IN THE MAIN STATEMENT    *          00250000
+//*     THEN THE DISPATCHER WILL SUBSTITUE THE LOCAL SYSTEM  *          00260000
+//*     NAME FOR <TSYS>.                                     *          00270000
+//*                                                          *          00280000
+//* YOU SHOULD ALSO SUBSTITUTE ACCOUNTING INFORMATION FOR    *          00290000
+//* '<ACCT>' ABOVE, SO THAT INDIVIDUAL HCM USERS DO NOT HAVE *          00300000
+//* TO. IF YOU LEAVE '<ACCT>' AS A SUBSTITUTABLE PARAMETER,  *          00310000
+//* HCM USERS WILL HAVE TO SPECIFY THEIR PERSONAL            *          00320000
+//* ACCOUNTING INFORMATION IN THE SECTION CBDQAGNTú OF      *          00330000
+//* THEIR EEQHCM.INI FILE ON THE PWS, E.G.,                  *          00340000
+//*       CBDQAGNTú                                         *          00350000
+//*       AJCLACCT=(DE03160,,)                               *          00360000
+//*                                                          *          00370000
+//* ALL OTHER SUBSTITUTABLE PARAMETERS IN THE SKELETON       *          00380000
+//* WILL BE SUPPLIED BY THE DISPATCHER.                      *          00390000
+//*                                                          *          00400000
+//* IF YOU SUBSTITUTE THE VALUES                             *          00410000
+//* <JCLASS> (JOB CLASS), <REGION>, OR <MCLASS> (MESSAGE     *          00420000
+//* CLASS), THEN INDIVIDUAL HCM USERS CAN NO LONGER CONTROL  *          00430000
+//* THESE VALUES FROM WITHIN THEIR EEQHCM.INI FILES.         *          00440000
+//*                                                          *          00450000
+//************************************************************          00460000
+//*     LICENSED MATERIALS - PROPERTY OF IBM                 *          00470000
+//*     5647-A01                                             *          00480000
+//*     (C) COPYRIGHT IBM CORP. 1990, 2000                   *          00490000
+//*     STATUS = HCS6091                                     *          00500000
+//************************************************************          00510000
+//*                                                                     00520000
+//AGNT     EXEC PGM=<PROG>,                                             00530000
+//         PARM='&ENV/P=&PORT T=&T L=&LOG &AV'                          00540000
+//STEPLIB  DD DISP=SHR,DSN=SYS1.SCBDHENU                                00550000
+<STEPLIB>                                                               00560000
+//SYSOUT   DD <SYSOUT>                                                  00570000
+//SYSPRINT DD <SYSPRINT>                                                00580000
+//CEEDUMP  DD <CEEDUMP>                                                 00590000
+<HCDPROF>                                                               00600001
+<HCDTRACE>                                                              00610001
+>< ADD NAME=MGHCP$01 0100-07003-07003-2114-00028-00028-00000-KTOMIAK
+
+Example 1: Allocate data sets to use the Hardware Configuration Dialog
+
+//*
+//STEP001 EXEC PGM=IKJEFT1B,PARM='',
+//             REGION=18M,TIME=1400
+//SYSTSPRT DD  SYSOUT=*
+//SYSTSIN  DD  *
+  "Alloc file(HCDMSGS) DATASET('"user".HCD.MSGLOG')",
+    "UNIT(SYSALLDA) VOL(SHTSO1) SPACE(2 1) TRACKS",
+    "DSORG(PS) RECFM(F B) BLKSIZE(0) LRECL(133)"
+
+  "Alloc file(HCDTERM) DATASET('"user".HCD.TERM')",
+    "UNIT(SYSALLDA) VOL(SHTSO1) SPACE(2 1) TRACKS",
+    "DSORG(PS) RECFM(F B) BLKSIZE(0) LRECL(80)"
+
+  "Alloc file(HCDTRACE) DATASET('"user".HCD.TRACE')",
+    "UNIT(SYSALLDA) VOL(SHTSO1) SPACE(2 2) TRACKS",
+    "DSORG(PS) RECFM(F B) BLKSIZE(0) LRECL(80)"
+
+  "DEFINE CLUSTER (NAME ('"user".IODF00.CLUSTER')",
+                  "LINEAR",
+                  "RECORDS (1500)",
+                  "VOLUMES(SHTSO2)",
+                  ")",
+           "DATA (NAME ('"user".IODF00'))"
+/*
+
+>< ADD NAME=MGHCP$02 0100-07003-07003-2114-00017-00017-00000-KTOMIAK
+
+Example 2: Initialize an IODF
+
+//*
+//*--------------------------------------------------------------------
+//* INITIALIZE &HLQ..IODF00.WORK
+//*--------------------------------------------------------------------
+//INIT01  EXEC PGM=CBDMGHCP,
+//             PARM='INITIODF SIZE=1500,ACTLOG=YES'
+//HCDCNTL  DD  *
+THIS IODF IS BRAND NEW FOR THE HCD LAB
+/*
+//HCDIODFT DD  DISP=OLD,DSN=&HLQ..IODF00
+//HCDMLOG  DD  DISP=OLD,DSN=&HLQ..HCD.MSGLOG     <=MESSAGES
+//HCDTRACE DD  DISP=OLD,DSN=&HLQ..HCD.TRACE      <=TRACE ENTRIES
+//HCDTERM  DD  DISP=OLD,DSN=&HLQ..HCD.TERM       <=I DONT KNOW WHY
+
+>< ADD NAME=MGHCP$03 0100-07003-07003-2114-00011-00011-00000-KTOMIAK
+
+Example 3: Copy one IODF to another
+
+//*
+//*--------------------------------------------------------------------
+//* COPY ONE IODF TO ANOTHER
+//*--------------------------------------------------------------------
+//COPY01  EXEC PGM=CBDMGHCP,
+//             PARM='COPYIODF'
+//HCDIODFS DD  DISP=SHR,DSN=&SRC.IODF00           <= SOURCE
+//HCDIODFT DD  DISP=OLD,DSN=&TGT..IODF00            <= TARGET
+</pre>
+<hr noshade size="4" color="#66CCCC">
+<h2>HCD</h2>
+<a href="HCD$HCD.html">HCD$HCD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<h2>Categories</h2>
+<a href="$$$INDEX.html">$$$INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ADRDSSU.html">ADRDSSU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMASPZAP.html">AMASPZAP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMBLIST.html">AMBLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BATCH.html">BATCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BMC4DB2.html">BMC4DB2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CPPUPDTE.html">CPPUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CUNMITG1.html">CUNMITG1</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DFHCSDUP.html">DFHCSDUP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DITTO.html">DITTO</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTEP2.html">DSNTEP2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAD.html">DSNTIAD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAUL.html">DSNTIAUL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="EDGINERS.html">EDGINERS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FDR.html">FDR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FTP.html">FTP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="HCD.html">HCD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ICKDSF.html">ICKDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IDCAMS.html">IDCAMS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOMPR.html">IEBCOMPR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOPY.html">IEBCOPY</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBDG.html">IEBDG</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBEDIT.html">IEBEDIT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBGENER.html">IEBGENER</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBIMAGE.html">IEBIMAGE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBPTPCH.html">IEBPTPCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBUPDTE.html">IEBUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEFBR14.html">IEFBR14</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHATLAS.html">IEHATLAS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHINITT.html">IEHINITT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHLIST.html">IEHLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHMOVE.html">IEHMOVE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHPROGM.html">IEHPROGM</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEWBLINK.html">IEWBLINK</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFASMFDP.html">IFASMFDP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFHSTATR.html">IFHSTATR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IPCS.html">IPCS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ISRSUPC.html">ISRSUPC</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IXCMIAPU.html">IXCMIAPU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="JOBCARD.html">JOBCARD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="RACF.html">RACF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SDSF.html">SDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SMPE.html">SMPE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SORT.html">SORT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SRCHFOR.html">SRCHFOR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="TRSMAIN.html">TRSMAIN</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="zosutil.seq.html">INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="../index.html">Up one level</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+
+<hr noshade size="4" color="#CCCC66">
+
+<A NAME="pgbottom"></A>
+<hr noshade size="4">
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+document.write("<b>" + location.href + "</b>")
+// -->
+</SCRIPT>
+
+<hr noshade size="4">
+<b> updt2htm.pl Copyright:</b> &copy; 02007 by Kenneth E Tomiak
+<br>
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+var d = new Date(document.lastModified)
+document.write("<b>Last modified:</b> " + d)
+// -->
+</SCRIPT>
+<hr noshade size="4">
+
+</body>
+</html>

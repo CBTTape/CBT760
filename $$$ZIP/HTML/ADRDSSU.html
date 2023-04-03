@@ -1,0 +1,412 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--                                                                 -->
+<!-- Version       | TimeStamp         | Description of change       -->
+<!-- ------------- | ----------------- | --------------------------- -->
+<!-- 1.0.0 KTomiak | 20070802 21:37:42 | Original version            -->
+<!--                                                                 -->
+
+<html>
+ <!---
+ Author: Kenneth E Tomiak
+ updt2htm.pl Copyright (c) 02007 by Kenneth E Tomiak
+ --->
+
+<head>
+ <title>
+ zosutil.seq - ADRDSSU Examples
+ </title>
+
+ <!--META_START-->
+
+ <meta HTTP-EQUIV="Content-Type" content="text/html ; charset=iso8859-1">
+ <meta name="ROBOTS" content="INDEX, FOLLOW">
+ <meta name="abstract" content="Web pages for files in zosutil.seq">
+ <meta name="Keywords" content="zosutil.seq">
+ <meta name="owner" content="Author of zosutil.seq">
+ <meta name="author" content="d:\home\ktomiak\PERL\updt2htm.pl">
+ <meta name="modified" content="20070802">
+ <meta name="review" content="20071231">
+ <meta name="security" content="public">
+ <meta name="ms.locale" content="EN-US">
+ <meta name="Generator" content="Kenneth Tomiak's perl program d:\home\ktomiak\PERL\updt2htm.pl">
+
+ <!--META_END-->
+
+</head>
+<BODY BGCOLOR="#FFFFFF" LINK="#000066" ALINK="#000088">
+
+ <A NAME="pgtop"></A>
+
+ <center>
+ <h1>
+ <a href="../zosutil.seq.html">zosutil.seq</a> - ADRDSSU Examples
+ </h1>
+ </center>
+
+<hr noshade size="4" color="#66CCCC">
+
+<pre>
+./ ADD NAME=ADRDSSU  0666-07209-07209-1504-00001-00001-00000-DIR2UPDT
+>< ADD NAME=SSU      0108-07003-07165-0055-00008-00011-00000-KTOMIAK
+
+SSU$01    ADRDSSU LOGICAL DUMP
+SSU$02    ADRDSSU LOGICAL RESTORE WITH RENAMEUNC
+SSU$03    ADRDSSU COPY
+SSU$04    ADRDSSU COMPRESS DSORG=PO
+SSU$05    ADRDSSU RELEASE UNUSED SPACE
+SSU$06    ADRDSSU DEFRAG - YOU BETTER KNOW WHAT YOU ARE DOING
+SSU$07    ADRDSSU DUMP AN HFS AND THEN RESTORE WITH A NEWNAME
+SSU$08    ADRDSSU DELETE MATCHING DATASETS
+SSU$09    ADRDSSU PRINT CONTENTS ON TRACK
+
+>< ADD NAME=SSU$01   0100-07003-07003-2114-00106-00106-00000-KTOMIAK
+//*                                                                     00040000
+//* SOURCE: DSN=SHARE.MVSSCP.UTL.CNTL(SSU#01)                           00050000
+//* AUTHOR: YOUR NAME <YOUREMAIL@YOURDOMAIN>                            00060000
+//* REMARK: THIS JOB SHOWS how to do a logical backup.                  00070003
+//*
+//RESTART EXEC PGM=IDCAMS
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+  LISTCAT ENTRY('SHARE##.S2820LAB.BACKUP') NONVSAM
+  IF LASTCC = 0 THEN +
+    DO
+      DELETE 'SHARE##.S2820LAB.BACKUP' NONVSAM
+    END
+  ELSE +
+    DO
+      SET MAXCC = 0     /* OKAY TO FAIL */
+    END
+/*
+//IFREST   IF  (RC = 0) THEN
+//BKUP    EXEC PGM=ADRDSSU,PARM='UTILMSG=YES'  ,TYPRUN=NORUN'
+//SYSPRINT DD  SYSOUT=*
+//BKUP     DD  DISP=(NEW,CATLG),DSN=SHARE##.S2820LAB.BACKUP,
+//             UNIT=SYSDA,SPACE=(CYL,(40,10),RLSE)
+//*            DCB=(DSORG=PS,RECFM=U,BLKSIZE=27998,LRECL=0)
+//SYSIN    DD *
+  DUMP  -
+    ALLDATA(*)           /* ALL ALLOCATED SPACE :ALMOST */ -
+    ALLEXCP              /* ALL ALLOCATED SPACE :ALMOST */ -
+    DATASET(             /* LOGICAL DATASET DUMP        */ -
+      INCLUDE(           /* WHAT YOU DO WANT            */ -
+        SHARE##.** -
+      ) -
+      BY(                /* IF IT MATCHES THIS AS WELL  */ -
+        (CREDT GE *,-4) -
+        (DSORG EQ (SAM,PDS,PDSE)) -
+      ) -
+      EXCLUDE(           /* WHAT YOU DO NOT WANT        */ -
+        SHARE##.HCD.** -
+      ) -
+        /* KEYWORD,OPERATOR,ARGUMET                     */ -
+        /*         OPERATOR:                            */ -
+        /*           EQ OR =                            */ -
+        /*           LE OR <=                           */ -
+        /*           LT OR <                            */ -
+        /*           GT OR >                            */ -
+        /*           GE OR >=                           */ -
+        /*           NE OR ^=  (NOTSIGN IS X'5F')       */ -
+        /* KETWORD:                                     */ -
+        /* ALLOC              ALLOCATION TYPE           */ -
+        /*                      CYL    -CYLINDER        */ -
+        /*                      TRK    -TRACK           */ -
+        /*                      BLK    -BLKSIZE         */ -
+        /*                      ABSTR  -ABSOLUTE TRACK  */ -
+        /*                      MOV    -MOVABLE         */ -
+        /* CATLG              CATALOGUED                */ -
+        /*                      0 = NO                  */ -
+        /*                      1 = YES                 */ -
+        /* CREDT              CREATE DATE               */ -
+        /*                      YYYYDDD                 */ -
+        /*                      *    = TODAY            */ -
+        /*                      *,-DDDD = TODAY-DAYS    */ -
+        /* DSCHA              DATASET CHANGED FLAG      */ -
+        /*                      0 = NO                  */ -
+        /*                      1 = YES                 */ -
+        /* DSORG              DATA SET ORGANIZATION     */ -
+        /*                      SAM                     */ -
+        /*                      PAM                     */ -
+        /*                      PDS                     */ -
+        /*                      PDSE                    */ -
+        /*                      BDAM                    */ -
+        /*                      HFS                     */ -
+        /*                      EXCP                    */ -
+        /*                      ISAM                    */ -
+        /*                      VSAM                    */ -
+        /* EXPDT              EXPIRATION DATE           */ -
+        /*                      YYYYDDD                 */ -
+        /*                      NEVER                   */ -
+        /*                      *    = TODAY            */ -
+        /*                      *,-DDDD = TODAY-DAYS    */ -
+        /*                      *,+DDDD = TODAY+DAYS    */ -
+        /* EXTNT              NUMBER OF EXTENTS         */ -
+        /* FSIZE              FILE SIZE IN TRACKS       */ -
+        /* MULTI              MULTI-VOLUME INDICATOR    */ -
+        /*                      0 = NO                  */ -
+        /*                      1 = YES                 */ -
+        /* REFDT              LAST-REFERENCE DATE       */ -
+        /*                      YYYYDDD                 */ -
+        /*                      *    = TODAY            */ -
+        /*                      *,-DDDD = TODAY-DAYS    */ -
+        /*                      *,+DDDD = TODAY+DAYS    */ -
+        /* DATACLAS           SMS DATA CLASS NAME       */ -
+        /* MGMTCLAS           SMS MANAGEMENT CLASS NAME */ -
+        /* STORCLAS           SMS STORAGE CLASS NAME    */ -
+    ) -
+    OPTIMIZE(4)          /* READ 1 CYLINDER AT A TIME   */ -
+       /*   (1)             READ 1 TRACK    AT A TIME   */ -
+       /*   (2)             READ 2 TRACKS   AT A TIME   */ -
+       /*   (3)             READ 5 TRACKS   AT A TIME   */ -
+    OUTDDNAME(BKUP) -
+    SHARE                /* ALLOW OTHER USERS           */ -
+    SPHERE               /* PLUS VSAM AIX AND PATHS     */ -
+    TOLERATE(ENQFAILURE) /* EVEN IF IN USE :ALMOST      */
+/*
+//*
+//IFREST ENDIF
+//
+>< ADD NAME=SSU$02   0100-07003-07003-2114-00020-00020-00000-KTOMIAK
+//*                                                                     00040000
+//* SOURCE: DSN=SHARE.MVSSCP.UTL.CNTL(SSU#02)                           00050000
+//* AUTHOR: YOUR NAME <YOUREMAIL@YOURDOMAIN>                            00060000
+//* REMARK: THIS JOB SHOWS HOW TO DO A LOGICAL RESTORE.                 00070003
+//*
+//REST    EXEC PGM=ADRDSSU,PARM='UTILMSG=YES'  ,TYPRUN=NORUN'
+//SYSPRINT DD  SYSOUT=*
+//BKUP     DD  DISP=(OLD),DSN=SHARE##.S2820LAB.BACKUP
+  RESTORE -
+    CATALOG -
+    DATASET(             /* LOGICAL DATASET RESTORE     */ -
+      INCLUDE(           /* WHAT YOU DO WANT            */ -
+        SHARE##.S2820LAB.** -
+      ) -
+    ) -
+    INDDNAME(BKUP)       /* WHERE THEY COME FROM        */ -
+    RENAMEUNC(           /* WHAT TO NAME THEM           */ -
+      (SHARE##.S2820LAB.**,SHARE##.S2820RST.**) -
+    )
+/*
+>< ADD NAME=SSU$03   0100-07003-07003-2114-00017-00017-00000-KTOMIAK
+//*
+//COPY    EXEC PGM=ADRDSSU,PARM='UTILMSG=YES,TYPRUN=NORUN'
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD *
+  COPY  -
+    ALLDATA(*) -
+    ALLEXCP -
+    CATALOG -
+    DATASET( -
+      INCLUDE( -
+        HLQ.MLQ*.** -
+      ) -
+    ) -
+    RENUNC((HLQ.**,NEWHLQ.**)) -
+    TOLERATE(ENQF)
+/*
+//*
+>< ADD NAME=SSU$04   0101-07003-07003-2114-00014-00014-00014-KTOMIAK
+//DSSUCMP EXEC PGM=ADRDSSU,REGION=3072K,                                00010001
+//             PARM='UTILMSG=YES,TYPRUN=NORUN'                          00020001
+//SYSPRINT DD  SYSOUT=*                                                 00030001
+//YURVOL   DD  DISP=SHR,UNIT=SYSDA,VOL=SER=YURVOL                       00040001
+//SYSIN    DD    *                                                      00050001
+ COMPRESS -                                                             00060001
+   BY(DSORG EQ PDS) -                                                   00070001
+   DDNAME(YURVOL) -                                                     00080001
+   INCLUDE( -                                                           00090001
+     HLQ.** -                                                           00100001
+   ) -                                                                  00110001
+   WAIT(2,2)                                                            00120001
+/*                                                                      00130001
+//                                                                      00140001
+>< ADD NAME=SSU$05   0101-07003-07003-2114-00013-00013-00013-KTOMIAK
+//DSSUREL EXEC PGM=ADRDSSU,REGION=3072K,                                00010001
+//             PARM='UTILMSG=YES,TYPRUN=NORUN'                          00020001
+//SYSPRINT DD  SYSOUT=*                                                 00030001
+//YURVOL   DD  DISP=SHR,UNIT=SYSDA,VOL=SER=YURVOL                       00040001
+//SYSIN    DD    *                                                      00050001
+ RELEASE -                                                              00060001
+   DDNAME(YURVOL) -                                                     00070001
+   INCLUDE( -                                                           00080001
+     HLQ.** -                                                           00090001
+   ) -                                                                  00100001
+   WAIT(2,2)                                                            00110001
+/*                                                                      00120001
+//                                                                      00130001
+>< ADD NAME=SSU$06   0100-07003-07003-2114-00008-00008-00000-KTOMIAK
+//STEP001 EXEC PGM=ADRDSSU,PARM='UTILMSG=YES,TYPRUN=NORUN'
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+  DEFRAG -
+    DDNAME(YURVOL) -
+    BY(LIST(REFDT LT *,-1))  /* DATE LAST REF LT RUN DATE -1 */
+/*
+//YURVOL   DD  DISP=SHR,UNIT=SYSALLDA,VOL=SER=YURVOL
+>< ADD NAME=SSU$07   0100-07055-07055-2142-00046-00046-00000-RJAHMAD
+
+If you are not sharing your HFS datasets then run this on the DUMP on
+the system that owns it. The RESTORE step canbe run on any system.
+Mount the new dataset where you want to use it.
+
+//*-------------------------------------------------------------------*
+//* STEP TO DUMP A HFS TO A DASD DATA SET
+//*-------------------------------------------------------------------*
+//DUMP    EXEC PGM=ADRDSSU
+//SYSPRINT DD  SYSOUT=*
+//TEMPSEQ  DD  DISP=(NEW,CATLG),DSN=yourid.HFS.DUMP,
+//             UNIT=SYSALLDA,
+//             SPACE=(CYL,(20,5),RLSE)    <== SIZE FOR YOUR FILESPACE
+//SYSIN    DD  *
+  DUMP -
+    DATASET( -
+      INCLUDE( -
+         OEHFS.ZOS1.ETC.HFS -
+      ) -
+    ) -
+    OUTDD(TEMPSEQ) -
+    TOL(ENQF)
+/*
+//*
+//*-------------------------------------------------------------------*
+//* STEP TO RESTORE A HFS TO A NEWNAME
+//*-------------------------------------------------------------------*
+//RESTORE EXEC PGM=ADRDSSU,REGION=0M
+//OUT      DD  DISP=SHR,UNIT=SYSALLDA,VOL=SER=volser  <== Change this
+//IN       DD  DISP=SHR,DSN=yourid.HFS.DUMP
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+  RESTORE -
+    INDDNAME(IN) -
+    OUTDDNAME(OUT) -
+    CANCELERROR  -
+    DATASET( -
+      INCLUDE(OEHFS.**) -
+    )  -
+    NULLMGMTCLAS  -
+    RENAMEU(OEHFS.**,OEHFS.SYSD.ETC.HFS) -
+    TOL(ENQF) -
+    REPLACE
+/*
+//
+
+>< ADD NAME=SSU$08   0100-07055-07055-2239-00015-00015-00000-KTOMIAK
+//*
+//DELETE  EXEC PGM=ADRDSSU,PARM='UTILMSG=YES,TYPRUN=NORUN'
+//OUTDD    DD  DUMMY
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD *
+  DUMP  -
+    DELETE -
+    DATASET( -
+      INCLUDE( -
+        HLQ*.MLQ*.** -
+      ) -
+    ) -
+    OUTDD(DUMMY)
+/*
+//*
+>< ADD NAME=SSU$09   0100-07165-07165-0055-00022-00022-00000-KTOMIAK
+
+//* GUIDE:  THIS JOB WILL print the contents of a data set.
+//*
+//PRINT   EXEC PGM=ADRDSSU,PARM='UTILMSG=YES'  ,TYPRUN=NORUN'
+//SYSPRINT DD  SYSOUT=*
+//SEQ      DD  DISP=OLD,DSN=KTOMIAK.CLIST.BAC
+//*            DCB=(DSORG=PS,RECFM=VS,BLKSIZE=32740,LRECL=32736)
+//SYSIN    DD *
+  /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> */
+  /* Print the contents of the dataset                               */
+  /* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+  PRINT DATASET('KTOMIAK.CLIST.BAC') -
+    INDDNAME(SEQ)
+  /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> */
+  /* Print the contents of the VTOC?                                 */
+  /* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+  PRINT -
+    INDDNAME(SEQ)
+/*
+//*
+//
+
+</pre>
+<hr noshade size="4" color="#66CCCC">
+<h2>ADRDSSU</h2>
+<a href="ADRDSSU$ADRDSSU.html">ADRDSSU$ADRDSSU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<h2>Categories</h2>
+<a href="$$$INDEX.html">$$$INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ADRDSSU.html">ADRDSSU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMASPZAP.html">AMASPZAP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMBLIST.html">AMBLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BATCH.html">BATCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BMC4DB2.html">BMC4DB2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CPPUPDTE.html">CPPUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CUNMITG1.html">CUNMITG1</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DFHCSDUP.html">DFHCSDUP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DITTO.html">DITTO</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTEP2.html">DSNTEP2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAD.html">DSNTIAD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAUL.html">DSNTIAUL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="EDGINERS.html">EDGINERS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FDR.html">FDR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FTP.html">FTP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="HCD.html">HCD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ICKDSF.html">ICKDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IDCAMS.html">IDCAMS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOMPR.html">IEBCOMPR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOPY.html">IEBCOPY</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBDG.html">IEBDG</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBEDIT.html">IEBEDIT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBGENER.html">IEBGENER</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBIMAGE.html">IEBIMAGE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBPTPCH.html">IEBPTPCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBUPDTE.html">IEBUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEFBR14.html">IEFBR14</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHATLAS.html">IEHATLAS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHINITT.html">IEHINITT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHLIST.html">IEHLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHMOVE.html">IEHMOVE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHPROGM.html">IEHPROGM</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEWBLINK.html">IEWBLINK</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFASMFDP.html">IFASMFDP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFHSTATR.html">IFHSTATR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IPCS.html">IPCS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ISRSUPC.html">ISRSUPC</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IXCMIAPU.html">IXCMIAPU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="JOBCARD.html">JOBCARD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="RACF.html">RACF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SDSF.html">SDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SMPE.html">SMPE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SORT.html">SORT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SRCHFOR.html">SRCHFOR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="TRSMAIN.html">TRSMAIN</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="zosutil.seq.html">INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="../index.html">Up one level</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+
+<hr noshade size="4" color="#CCCC66">
+
+<A NAME="pgbottom"></A>
+<hr noshade size="4">
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+document.write("<b>" + location.href + "</b>")
+// -->
+</SCRIPT>
+
+<hr noshade size="4">
+<b> updt2htm.pl Copyright:</b> &copy; 02007 by Kenneth E Tomiak
+<br>
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+var d = new Date(document.lastModified)
+document.write("<b>Last modified:</b> " + d)
+// -->
+</SCRIPT>
+<hr noshade size="4">
+
+</body>
+</html>

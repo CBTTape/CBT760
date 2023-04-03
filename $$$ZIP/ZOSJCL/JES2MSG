@@ -1,0 +1,8 @@
+
+/*MESSAGE
+
+Use the /*MESSAGE statement to send messages to the operator
+console when JES2 reads in the job. Like most shops, yours probably
+has way too many messages streaming by on the console for any HUMAN
+to really see this. Pick up te telephone and call them.
+
