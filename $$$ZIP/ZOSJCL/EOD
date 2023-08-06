@@ -1,0 +1,20 @@
+
+/*
+
+A throwback to when a job could allocate the card reader for a ddname.
+The 'Computer Operator' would get a prompt on the console to load
+data into the card reader. Everything fed into the card reader was
+processed as data until the end-of-data card was read. This signalled
+the end of the file. It was common to have a bunch of these laying
+around. They were also handy in slipping them between a mounted
+reel of tape (yeah, real tapes are round like your scotch tape
+dispenser and are called 'reels') to fool the drive into thinking
+the yellow write protect ring was in place for an output tape.
+Pity the poor Operator that mounted the wrong reel and did this.
+
+
+user specified delimiter
+
+The two characters you specify using the DLM parameter. Useful if you
+have instream data that contains the '/*' control card.
+

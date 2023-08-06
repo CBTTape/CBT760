@@ -1,0 +1,72 @@
+//jobname! JOB (),'CONDCODE REPORT',
+//             RESTART=STEP001,           <= REQUIRED FOR TESTING
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(CONDCODE)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO TEST %CONDCODE FOR THE MOST FREQUENT
+//*          STEP STATUS POSSIBILITIES.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Instream procedure
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//PROC001 PROC MYVAR='KEN',VAR2=10
+//STEP00A EXEC PGM=IEFBR14,REGION=4M,
+//             PARM='&VAR2.&MYVAR',COND=((0,LT),EVEN)
+//PROCSTP EXEC PGM=IEFBR14,REGION=4M,PARM='&VAR2.&MYVAR',COND=EVEN
+//        PEND
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* Execute steps so %CONDCODE can be a show off.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP000 EXEC PGM=IKJEFT01
+//STEP001 EXEC PGM=IKJEFT01
+//SYSTSPRT DD  DUMMY
+//STEP002 EXEC PGM=IEBGENER
+//STEP003 EXEC PGM=IEBGENER,COND=EVEN
+//STEP004 EXEC PROC=PROC001
+//STEP005 EXEC PROC=PROC001,COND.PROCSTP=((0,LT,STEP004.STEP00A),EVEN)
+//STEP00A EXEC PGM=S806,COND=EVEN
+//IDIREPRT DD  DUMMY
+//STEP006 EXEC PROC=PROC001
+//STEP007 EXEC PROC=PROC001
+//STEP00B EXEC PGM=S806,COND=EVEN
+//IDIREPRT DD  DUMMY
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* Execute TSO and launch the REXX program, CONDCODE.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP008 EXEC PGM=IKJEFT1B,PARM='',REGION=6M,COND=EVEN
+//SYSPROC  DD  DISP=SHR,DSN=&SYSUID..CLIST
+//SYSEXEC  DD  DISP=SHR,DSN=&SYSUID..REXX
+//*        DD  DISP=SHR,DSN=&SYSUID..REXX(CONDCODE)
+//OUTFILE  DD  SYSOUT=*
+//SYSTSIN  DD  *
+  %CONDCODE
+  LOGOFF
+/*
+//*
+//

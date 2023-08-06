@@ -1,0 +1,273 @@
+>< ADD NAME=INITT    0101-07003-07016-2346-00025-00025-00000-KTOMIAK
+
+The EDGINERS utility of DFSMSrmm is recommended instead of IEHINITT for
+labeling tapes that reside both inside and outside IBM TotalStorage
+Enterprise Automated Tape Library (3495)s for the following reasons:
+
+1. You can label a set of volumes with DFSMSrmm.
+2. DFSMSrmm ensures that the data sets on the volume have expired.
+3. DFSMSrmm validates that the correct volume is mounted before
+   creating the volume label.
+4. DFSMSrmm can track that a volume needs to be labelled and can
+   automate tape labeling using the information in its control data set.
+5. DFSMSrmm also provides facilities for erasing the data on a tape
+   when it expires.
+6. For more information about the EDGINERS utility, see z/OS DFSMSrmm
+   Implementation and Customization Guide. Input and Output
+
+INITT$01  Write EBCDIC Labels on Three Tapes
+INITT$02  Write an ISO/ANSI Label on a Tape
+INITT$03  Place Two Groups of Serial Numbers on Six Tape Volumes
+INITT$04  Place Serial Number on Eight Tape Volumes
+INITT$05  Write EBCDIC Labels in Different Densities
+INITT$06  Write Serial Numbers on Tape Volumes at Two Densities
+INITT$07  Write an ISO/ANSI Label with an Access Code
+INITT$08  Write on a tape following labeling without demounting and
+
+>< ADD NAME=INITT$01 0100-07003-07003-2113-00028-00028-00000-SC26UTL
+
+Example 1: Write EBCDIC Labels on Three Tapes
+
+In this example, serial numbers 001234, 001235 and 001236 are placed on
+three tape volumes. The labels are written in EBCDIC at 800 bits per
+inch. Each volume labeled is mounted, when it is required, on a single
+9-track tape unit.
+
+//LABEL1 JOB ...
+//STEP1   EXEC PGM=IEHINITT
+//SYSPRINT DD  SYSOUT=*
+//LABEL    DD  UNIT=(tape,1,DEFER),
+//             DCB=DEN=2
+//SYSIN    DD  *
+LABEL    INITT SER=001234,NUMBTAPE=3
+/*
+
+
+The control statements are discussed below:
+
+x) LABEL DD defines the tape unit used in the labeling operation.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) LABEL INITT specifies the number of tapes to be labeled (3),
+   beginning with 001234.
+
+>< ADD NAME=INITT$02 0100-07003-07003-2113-00029-00029-00000-SC26UTL
+
+Example 2: Write an ISO/ANSI Label on a Tape
+
+In this example, serial number 001001 is placed on one ISO/ANSI tape
+volume; the label is written at 800 bits per inch. The volume labeled
+is mounted, when it is required, on a 9-track tape unit.
+
+//LABEL2 JOB ...
+//STEP1   EXEC PGM=IEHINITT
+//SYSPRINT DD  SYSOUT=*
+//ASCIILAB DD  UNIT=(tape,1,DEFER),
+//             DCB=DEN=2
+//SYSIN    DD  *
+ASCIILAB INITT SER=001001,OWNER='SAM A. BROWN',LABTYPE=AL
+/*
+
+The control statements are discussed below:
+
+x) ASCIILAB DD defines the tape volume to be used in the labeling
+   operation.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) ASCIILAB INITT specifies the serial number, owner ID and label type
+   for the volume.Because the VERSION keyword was not specified, the
+   ISO/ANSI tape will be created based on what is specified in the
+   DEVSUPxx parmlib member or as a version 3 by default.
+
+>< ADD NAME=INITT$03 0100-07003-07003-2113-00028-00028-00000-SC26UTL
+
+Example 3: Place Two Groups of Serial Numbers on Six Tape Volumes
+
+In this example, two groups of serial numbers (001234, 001235, 001236,
+and 001334, 001335, 001336) are placed on six tape volumes. The labels
+are written in EBCDIC at 800 bits per inch. Each volume labeled is
+mounted, when it is required, on a single 9-track tape unit.
+
+//LABEL3 JOB ...
+//STEP1   EXEC PGM=IEHINITT
+//SYSPRINT DD  SYSOUT=*
+//LABEL    DD  UNIT=(tape,1,DEFER),
+//             DCB=DEN=2
+//SYSIN    DD  *
+LABEL    INITT SER=001234,NUMBTAPE=3
+LABEL    INITT SER=001334,NUMBTAPE=3
+/*
+
+The control statements are discussed below:
+
+x) LABEL DD defines the tape unit to be used in the labeling operation.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) LABEL INITT defines the two groups of serial numbers to be put on
+   six tape volumes.
+
+>< ADD NAME=INITT$04 0100-07003-07003-2113-00034-00034-00000-SC26UTL
+
+Example 4: Place Serial Number on Eight Tape Volumes
+
+In this example, serial numbers 001234, 001244, 001254, 001264, 001274,
+and so forth, are placed on eight tape volumes. The labels are written
+in EBCDIC at 800 bits per inch. Each volume labeled is mounted, when it
+is required, on one of four 9-track tape units.
+
+//LABEL4 JOB ...
+//STEP1   EXEC PGM=IEHINITT
+//SYSPRINT DD  SYSOUT=*
+//LABEL    DD  UNIT=(tape,4,DEFER),
+//             DCB=DEN=2
+//SYSIN    DD  *
+LABEL    INITT SER=001234
+LABEL    INITT SER=001244
+LABEL    INITT SER=001254
+LABEL    INITT SER=001264
+LABEL    INITT SER=001274
+LABEL    INITT SER=001284
+LABEL    INITT SER=001294
+LABEL    INITT SER=001304
+/*
+
+The control statements are discussed below:
+
+x) LABEL DD defines the tape unit used in the labeling operation.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The LABEL INITT statements define the tapes to be labeled by volume
+   serial number.
+
+>< ADD NAME=INITT$05 0100-07003-07003-2113-00032-00032-00000-SC26UTL
+
+Example 5: Write EBCDIC Labels in Different Densities
+
+In this example, serial number TAPE1 is placed on a tape volume, and
+serial numbers 001234 and 001235 are placed on two tape volumes. The
+labels are written in EBCDIC at 800 and 1600 bits per inch,
+respectively.
+
+//LABEL5 JOB ...
+//STEP1   EXEC PGM=IEHINITT
+//SYSPRINT DD  SYSOUT=*
+//LABEL1   DD  UNIT=(tape,1,DEFER),
+//             DCB=DEN=2
+//LABEL2   DD  UNIT=(tape,1,DEFER),
+//             DCB=DEN=3
+//SYSIN    DD  *
+LABEL1    INITT SER=TAPE1
+LABEL2    INITT SER=001234,NUMBTAPE=2
+/*
+
+The control statements are discussed below:
+
+x) LABEL1 DD and LABEL2 DD  define two tape volumes to be used in the
+   labeling operation.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) LABEL1 INITT places the serial number TAPE1 on the tape volume
+   defined in LABEL1 DD. LABEL2 INITT places the serial numbers 001234
+   and 001235 on the tape volume defined in LABEL2 DD.
+
+>< ADD NAME=INITT$06 0100-07003-07003-2113-00032-00032-00000-SC26UTL
+
+Example 6: Write Serial Numbers on Tape Volumes at Two Densities
+
+In this example, the serial number 006250 is written in EBCDIC on a tape
+volume at a density of 6250 bpi, and the serial number 001600 is written
+in EBCDIC on a second volume at a density of 1600 bpi.
+
+//LABEL6 JOB ...
+//STEP1   EXEC PGM=IEHINITT
+//SYSPRINT DD  SYSOUT=*
+//DDFIRST  DD  UNIT=(tape,1,DEFER),
+//             DCB=DEN=4
+//DDSECOND DD  UNIT=(tape,1,DEFER),
+//             DCB=DEN=3
+//SYSIN    DD  *
+DDFIRST  INITT SER=006250
+DDSECOND INITT SER=001600
+/*
+
+The control statements are discussed below:
+
+x) DDFIRST DD defines the first tape volume to be used.
+
+x) DDSECOND DD defines the second tape volume to be used.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) DDFIRST INITT writes the serial number 006250 on the volume defined
+   in DDFIRST DD. DDSECOND INITT writes the serial number 001600 on the
+   volume defined in DDSECOND DD.
+
+>< ADD NAME=INITT$07 0100-07003-07003-2113-00028-00028-00000-SC26UTL
+
+Example 7: Write an ISO/ANSI Label with an Access Code
+
+In this example, a version 4 ISO/ANSI (AL) labeled tape is created with
+a nonblank access code. The volume serial number is TAPE01.
+
+//LABEL7 JOB ...
+//STEP1   EXEC PGM=IEHINITT
+//SYSPRINT DD  SYSOUT=*
+//LABEL    DD  UNIT=(tape,1,DEFER),
+//             DCB=DEN=4
+//SYSIN    DD  *
+LABEL    INITT SER=TAPE01,OWNER=TAPOWNER,LABTYPE=AL,ACCESS=A,VERSION=4
+/*
+
+The control statements are discussed below:
+
+x) LABEL DD defines the device on which the tape is mounted.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The INITT statement creates a Version 4 ISO/ANSI label for the tape
+   with volume serial number TAPE01, owned by TAPOWNER. The ACCESS code
+   is specified as "A", and the operating system that receives this
+   volume must be able to recognize the "A" in order for the volume to
+   be accepted.
+
+>< ADD NAME=INITT$08 0100-07003-07003-2113-00028-00028-00000-SC26UTL
+
+Example 8: Write on a tape following labeling without demounting and
+remounting
+
+In this example, you can label a tape in one step of a job, and then,
+without the system demounting and remounting that tape between steps,
+write to the tape in a subsequent step of the same job. The necessary
+JCL code follows:
+
+//STEP1  EXEC PGM=IEHINITT
+//SYSPRINT DD  SYSOUT=*
+//LABEL    DD  DISP=(,PASS),UNIT=(tape,1,DEFER)     (*1)
+//SYSIN    DD  *
+LABEL    INITT SER=serial,DISP=REWIND               (*2)
+//*
+//STEP2   EXEC PGM=user_program
+//INPUT    DD  DSN=input_dsn,DISP=SHR
+//OUTPUT   DD  DSN=dsname,DISP=(NEW,CATLG),
+//             UNIT=tape,
+//             VOL=(,RETAIN,SER=serial),            (*3)
+//             DCB=(dcbinfo)
+
+   Notes:
+   (1) Either DISP=(NEW,PASS) or VOL=(,RETAIN) must be specified.
+   (2) DISP=REWIND must be specified on the INITT statement.
+   (3) VOL=SER=serial must be specified. VOL=REF=*.STEP1.LABEL will not
+       work.
+

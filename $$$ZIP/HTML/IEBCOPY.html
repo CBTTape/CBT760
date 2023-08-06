@@ -1,0 +1,1145 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--                                                                 -->
+<!-- Version       | TimeStamp         | Description of change       -->
+<!-- ------------- | ----------------- | --------------------------- -->
+<!-- 1.0.0 KTomiak | 20070802 21:37:42 | Original version            -->
+<!--                                                                 -->
+
+<html>
+ <!---
+ Author: Kenneth E Tomiak
+ updt2htm.pl Copyright (c) 02007 by Kenneth E Tomiak
+ --->
+
+<head>
+ <title>
+ zosutil.seq - IEBCOPY Examples
+ </title>
+
+ <!--META_START-->
+
+ <meta HTTP-EQUIV="Content-Type" content="text/html ; charset=iso8859-1">
+ <meta name="ROBOTS" content="INDEX, FOLLOW">
+ <meta name="abstract" content="Web pages for files in zosutil.seq">
+ <meta name="Keywords" content="zosutil.seq">
+ <meta name="owner" content="Author of zosutil.seq">
+ <meta name="author" content="d:\home\ktomiak\PERL\updt2htm.pl">
+ <meta name="modified" content="20070802">
+ <meta name="review" content="20071231">
+ <meta name="security" content="public">
+ <meta name="ms.locale" content="EN-US">
+ <meta name="Generator" content="Kenneth Tomiak's perl program d:\home\ktomiak\PERL\updt2htm.pl">
+
+ <!--META_END-->
+
+</head>
+<BODY BGCOLOR="#FFFFFF" LINK="#000066" ALINK="#000088">
+
+ <A NAME="pgtop"></A>
+
+ <center>
+ <h1>
+ <a href="../zosutil.seq.html">zosutil.seq</a> - IEBCOPY Examples
+ </h1>
+ </center>
+
+<hr noshade size="4" color="#66CCCC">
+
+<pre>
+./ ADD NAME=IEBCOPY  0666-07209-07209-1452-00001-00001-00000-DIR2UPDT
+>< ADD NAME=COPY     0101-07003-07016-2325-00019-00018-00000-KTOMIAK
+
+COPY$01   Copy an Entire Data Set
+COPY$02   Merge Four Data Sets
+COPY$03   Copy and Replace Selected Members of a Data Set
+COPY$04   Unload and Compress a Data Set
+COPY$05   Merge Data Sets and Compress the Merged Data Set
+COPY$06   Multiple Copy Operations with One Output Data Set
+COPY$07   Multiple Copy Operations with Different Output Data Sets
+COPY$08   Loading a Data Set
+COPY$09   Unload Selected Members, Load, Copy and Merge
+COPY$10   Alter Load Modules in Place
+COPY$11   Replace a Load Module Using COPYMOD
+COPY$12   Reblock Load Library and Distribute It to Different Device
+COPY$13   Convert a Partitioned Data Set to a PDSE
+COPY$14   Copy Groups from a PDSE to a PDSE
+COPY$15   Copy Groups from a PDSE to a PDSE with Replace
+COPY$16   Copy a Selected Group from a PDSE to a PDSE
+
+>< ADD NAME=COPY$01  0100-07003-07003-2113-00035-00035-00000-SC26UTL
+
+Example 1: Copy an Entire Data Set
+
+In this example, a partitioned data set (DATASET5) is copied from one
+disk volume to another.
+
+//COPY JOB ...
+//JOBSTEP EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(SHR),DSN=DATASET5
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=DATASET4,
+//             UNIT=disk,
+//             SPACE=(TRK,(5,1,2))
+
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines a partitioned data set, DATASET5, that contains
+   two members (A and C).
+
+x) SYSUT2 DD defines a new partitioned data set, DATASET4, that is to
+   be kept after the copy operation. Five tracks are allocated for the
+   data set; two blocks are allocated for directory entries.
+
+x) Because the partitioned data set has only two members, SYSUT3 and
+   SYSUT4 DD are not needed.
+
+x) Because the input and output data sets are identified as SYSUT1 and
+   SYSUT2, the SYSIN data set is not needed. The SYSUT1 data set will
+   be copied in full to the SYSUT2 data set. After the copy operation
+   is finished, DATASET4 will contain the same members that are in
+   DATASET5. However, there will be no embedded, unused space in
+   DATASET4. If you are copying a PDSE, the processing is the same,
+   except that there is no embedded, unused space in a PDSE.
+
+>< ADD NAME=COPY$02  0100-07003-07003-2113-00060-00060-00000-SC26UTL
+
+Example 2: Merge Four Data Sets
+
+In this example, members are copied from three input partitioned data
+sets (DATASET1, DATASET5, and DATASET6) to an existing output
+partitioned data set (DATASET2). The sequence in which the control
+statements occur controls the manner and sequence in which partitioned
+data sets are processed.
+
+//COPY JOB ...
+//JOBSTEP EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//IN1      DD  DISP=(SHR),DSN=DATASET1
+//IN5      DD  DISP=(OLD),DSN=DATASET5
+//OUT2     DD  DISP=(OLD,KEEP),DSN=DATASET2
+//IN6      DD  DISP=(OLD,DELETE),DSN=DATASET6
+//SYSUT3   DD  UNIT=disk,SPACE=(TRK,(1))
+//SYSIN    DD  *
+COPYOPER COPY OUTDD=OUT2
+         INDD=IN1
+         INDD=IN6
+         INDD=IN5
+/*
+
+The control statements are discussed below:
+
+x) IN1 DD defines a partitioned data set (DATASET1).
+
+x) IN5 DD defines a partitioned data set (DATASET5).
+
+x) OUT2 DD defines a partitioned data set (DATASET2).
+
+x) IN6 DD defines a partitioned data set (DATASET6). This data set
+   is to be deleted when processing is completed.
+
+x) SYSUT3 defines a temporary spill data set.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. The data set contains a COPY statement and three INDD
+   statements.
+
+x) COPY indicates the start of the copy operation. The OUTDD parameter
+   specifies DATASET2 as the output data set.
+
+x) The first INDD statement specifies DATASET1 as the first input data
+   set to be processed. All members (A, B and F) are copied to
+   DATASET2.
+
+x) The second INDD statement specifies DATASET6 as the second input
+   data set to be processed. Processing occurs as follows:
+
+  1. Since replacement is not specified, members B and C, which already
+     exist in DATASET2, are not copied to DATASET2.
+  2. Member D is copied to DATASET2.
+  3. All members in DATASET6 are lost when the data set is deleted.
+
+x) The third INDD statement specifies DATASET5 as the third input data
+   set to be processed. No members are copied to DATASET2 because all
+   exist in DATASET2.
+
+>< ADD NAME=COPY$03  0100-07003-07003-2113-00064-00064-00000-SC26UTL
+
+Example 3: Copy and Replace Selected Members of a Data Set
+
+In this example, two members (A and B) are selected from two input
+partitioned data sets (DATASET5 and DATASET6) and copied to an existing
+output partitioned data set (DATASET1). Member B replaces an
+identically named member that already exists on the output data set.
+
+//COPY JOB ...
+//JOBSTEP EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//OUT1     DD  DISP=(OLD,KEEP),DSN=DATASET1
+//IN6      DD  DISP=(OLD),DSN=DATASET6
+//IN5      DD  DISP=(OLD,KEEP),DSN=DATASET5
+//SYSUT3   DD  UNIT=disk,SPACE=(TRK,(1))
+//SYSUT4   DD  UNIT=disk,SPACE=(TRK,(1))
+//SYSIN    DD  *
+COPYOPER COPY OUTDD=OUT1
+         INDD=IN5,IN6
+         SELECT MEMBER=((B,,R),A)
+/*
+
+The control statements are discussed below:
+
+x) OUT1 DD defines a partitioned data set (DATASET1), which contains
+   three members (A, B and F).
+
+x) IN6 DD defines a partitioned data set (DATASET6), which contains
+   three members (B, C and D).
+
+x) IN5 DD defines a partitioned data set (DATASET5), which contains
+   two members (A and C).
+
+x) SYSUT3 and SYSUT4 DD define temporary spill data sets. One track is
+   allocated for each on a disk volume.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. The data set contains a COPY statement, an INDD statement,
+   and a SELECT statement.
+
+x) COPY indicates the start of the copy operation. The use of a SELECT
+   statement causes a selective copy. The OUTDD parameter specifies
+   DATASET1 as the output data set.
+
+x) INDD specifies DATASET5 as the first input data set to be processed
+   and DATASET6 as the second input data set to be processed.
+   Processing occurs as follows:
+
+  1. Selected members are searched for on DATASET5.
+  2. Member A is found, but is not copied to DATASET1 because DATASET1
+     already has a member named "A", and the replace option is not
+     specified for member A.
+  3. Selected members not found on DATASET5 are searched for on
+     DATASET6.
+  4. Member B is found and copied to DATASET1, even though there is
+     already a DATASET1 member "B" in DATASET1, because the replace
+     option is specified for member B on the member level. The pointer
+     in DATASET1's directory is changed to point to the new (copied)
+     member B; thus, the space occupied by the old member B is unused.
+
+x) SELECT specifies the members to be selected from the input data sets
+   (DATASET5 and DATASET6) to be copied to the output data set
+   (DATASET1).
+
+>< ADD NAME=COPY$04  0100-07003-07003-2113-00073-00073-00000-SC26UTL
+
+Example 4: Unload and Compress a Data Set
+
+In this example, a partitioned data set is unloaded to a tape volume to
+create a backup copy of the data set. If this step is successful, the
+partitioned data set is to be compressed in place.
+
+//SAVEJOB ...
+//STEP1   EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=PARTPDS
+//SYSUT2   DD  DISP=(NEW,KEEP),DSN=SAVDATA,
+//             UNIT=tape,LABEL=(,SL)
+//SYSUT3   DD  DISP=(NEW,DELETE),DSN=&&TEMP1,
+//             UNIT=disk
+//             SPACE=(80,(60,45))
+//SYSIN    DD  DUMMY
+//*
+//STEP2   EXEC PGM=IEBCOPY,COND=(0,NE),PARM='SIZE=500K'
+//SYSPRINT DD  SYSOUT=*
+//COMPDS   DD  DISP=(OLD),DSN=PARTPDS,UNIT=disk,
+//             VOL=SER=PCP001
+//SYSUT3   DD  DISP=(NEW,DELETE),DSN=&&TEMPA,
+//             UNIT=disk,
+//             SPACE=(80,(60,45))
+//SYSIN    DD  *
+         COPY OUTDD=COMPDS,INDD=COMPDS
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines a partitioned data set (PARTPDS) that resides on
+   a disk volume and is assumed to have 700 members. The number of
+   members is used to calculate the space allocation on SYSUT3.
+
+x) SYSUT2 DD defines a sequential data set to hold PARTPDS in unloaded
+   form. Block size information can optionally be added; this data set
+   must be NEW.
+
+x) SYSUT3 DD defines the temporary spill data set. The SYSUT4 data set
+   is never used for an unload operation.
+
+x) SYSIN DD defines the control data set. Because SYSIN is dummied and
+   SYSUT2 defines a sequential data set, all members of the SYSUT1 data
+   set will be unloaded to the SYSUT2 data set.
+
+x) The second EXEC statement marks the beginning of the
+   compress-in-place operation. The SIZE parameter indicates that the
+   buffers are to be as large as possible. The COND parameter indicates
+   that the compress-in-place is to be performed only if the unload
+   operation was successful.
+
+x) COMPDS DD defines a partitioned data set (PARTPDS) that contains 700
+   members and resides on a disk volume.
+
+x) SYSUT3 DD defines the temporary spill data set to be used if there
+   is not enough space in main storage for the input data set's
+   directory entries. TEMPA contains one 80-character record for each
+   member.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. The data set contains a COPY statement.
+
+x) COPY marks the beginning of the copy operation. Because the same DD
+   statement is specified for both the INDD and OUTDD operands, the
+   data set is compressed in place. If a PDSE is being used, this step
+   will not be processed.
+
+If you want to unload more than one data set in a single use of
+IEBCOPY, you must use a separate COPY statement for each unload
+operation. Only one input data set may be specified in an unload
+operation.
+
+>< ADD NAME=COPY$05  0100-07003-07003-2113-00066-00066-00000-SC26UTL
+
+Example 5: Merge Data Sets and Compress the Merged Data Set
+
+In this example, two input partitioned data sets (DATASET5 and
+DATASET6) are copied to an existing output partitioned data set
+(DATASET1). In addition, all members on DATASET6 are copied; members on
+the output data set that have the same names as the copied members are
+replaced. After DATASET6 is processed, the output data set (DATASET1)
+is compressed in place.
+
+//COPY JOB ...
+//JOBSTEP EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//INOUT1   DD  DISP=(OLD,KEEP),DSN=DATASET1
+//IN5      DD  DISP=(OLD),DSN=DATASET5
+//IN6      DD  DISP=(OLD,KEEP),DSN=DATASET6
+//SYSUT3   DD  UNIT=disk,SPACE=(TRK,(1))
+//SYSUT4   DD  UNIT=disk,SPACE=(TRK,(1))
+//SYSIN    DD  *
+COPYOPER COPY OUTDD=INOUT1,INDD=(IN5,(IN6,R),INOUT1)
+/*
+
+
+The control statements are discussed below:
+
+x) INOUT1 DD defines a partitioned data set (DATASET1), which contains
+   three members (A, B and F).
+
+x) IN5 DD defines a partitioned data set (DATASET5), which contains two
+   members (A and C).
+
+x) IN6 DD defines a partitioned data set (DATASET6), which contains
+   three members (B, C and D).
+
+x) SYSUT3 and SYSUT4 DD define temporary spill data sets. One track is
+   allocated for each on a disk volume.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. The data set contains a COPY statement.
+
+x) COPY indicates the start of the copy operation. The OUTDD operand
+   specifies DATASET1 as the output data set.
+
+x) The INDD operand specifies DATASET5 as the first input data set to
+   be processed. It then specifies DATASET6 as the second input data
+   set to be processed. In addition, the replace option is specified
+   for all members copied from DATASET6. Finally, it specifies DATASET1
+   as the last input data set to be processed. Since DATASET1 is also
+   the output data set, DATASET1 is compressed in place. However, if
+   DATASET1 is a PDSE, the compress-in-place operation will not be
+   processed. Processing occurs as follows:
+
+  1. Member A is not copied from DATASET5 into DATASET1 because it
+     already exists on DATASET1 and the replace option was not
+     specified for DATASET5.
+  2. Member C is copied from DATASET5 to DATASET1, occupying the first
+     available space.
+  3. All members are copied from DATASET6 to DATASET1, immediately
+     following the last member. Members B and C are copied even though
+     the output data set already contains members with the same names
+     because the replace option is specified on the data set level. The
+     pointers in DATASET1's directory are changed to point to the new
+     members B and C. Thus, the space occupied by the old members B and
+     C is unused. The members currently on DATASET1 are compressed in
+     place, thereby eliminating embedded unused space.
+
+>< ADD NAME=COPY$06  0100-07003-07003-2113-00099-00099-00000-SC26UTL
+
+Example 6: Multiple Copy Operations with One Output Data Set
+
+In this example, members are selected, excluded, and copied from input
+partitioned data sets onto an output partitioned data set. This example
+is designed to illustrate multiple copy operations.
+
+The example follows.
+
+//COPY JOB ...
+//JOBSTEP EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//INOUTA   DD  DISP=(OLD),DSN=DATASETA
+//INB      DD  DISP=(OLD),DSN=DATASETB
+//INC      DD  DISP=(OLD),DSN=DATASETC
+//IND      DD  DISP=(OLD),DSN=DATASETD
+//INE      DD  DISP=(OLD),DSN=DATASETE
+//OUTX     DD  DISP=(NEW,CATLG),DSN=DATASETX,
+//             UNIT=disk,
+//             SPACE=(TRK,(3,1,2))
+//SYSUT3   DD  UNIT=disk,SPACE=(TRK,(1))
+//SYSIN    DD  *
+COPERST1 COPY    O=OUTX,I=INOUTA
+         COPY    OUTDD=INOUTA,INDD=INOUTA
+         INDD=INB
+         COPY    OUTDD=INOUTA
+         INDD=IND
+         EXCLUDE MEMBER=MM
+         INDD=INC
+         SELECT  MEMBER=((ML,MD,R))
+         INDD=INE
+/*
+
+The control statements are discussed below:
+
+x) INOUTA DD defines a partitioned data, DATASETA, which contains seven
+   members (MA, MB, MC, MD, ME, MF and MG).
+
+x) INB DD defines a partitioned data set, DATASETB, which contains two
+   members (MA and MJ).
+
+x) INC DD defines a partitioned data set,
+   DATASETC, which contains four members (MF, ML, MM and MN).
+
+x) IND DD defines a partitioned data set, DATASETD, which contains two
+   members (MM and MP).
+
+x) INE DD defines a partitioned data set, DATASETE, which contains four
+   members (MD, ME, MF and MT).
+
+x) OUTX DD defines a partitioned data set (DATASETX). This data set is
+  new and is to be kept after the copy operation. Three tracks are
+  allocated for the data set on a disk volume. Two blocks are allocated
+  for directory entries.
+
+x) SYSUT3 defines a temporary spill data set.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. The data set contains two COPY statements, several INDD
+   statements, a SELECT statement, and an EXCLUDE statement.
+
+x) The first COPY statement indicates the start of the first copy
+   operation. This copy operation is done to create a backup copy of
+   DATASETA.
+
+x) The second COPY statement indicates the start of another copy
+   operation. Since DATASETA is specified in both the INDD and OUTDD
+   parameters, DATASETA is compressed in place. The output data set is
+   compressed in place first to save space because it is known that it
+   contains embedded, unused space.
+
+x) The following INDD statement
+   specifies DATASETB as the next input data set to be copied. Only
+   member MJ is copied, because DATASETA already contains a member
+   named "MA".
+
+x) The third COPY statement indicates the start of the third copy
+   operation. The OUTDD parameter specifies DATASETA as the output data
+   set. This copy operation contains more than one copy step.
+
+x) The first INDD statement specifies DATASETD as the first input data
+   set to be processed. Only member MP is copied to DATASETA because
+   the EXCLUDE statement specifies that member MM is to be excluded
+   from the first copy step within this copy operation.
+
+x) The second INDD statement marks the beginning of the second copy
+   step for this copy operation and specifies DATASETC as the second
+   input data set to be processed. The SELECT statement specifies that
+   member ML of DATASETC is to be renamed "MD", and that the new member
+   will replace any member in DATASETA that happens to be named "MD".
+   Member ML is searched for, found, copied to DATASETA and renamed.
+
+x) The third INDD statement marks the beginning of the third copy step
+   for this copy operation and specifies DATASETE as the last data set
+   to be copied. Only member MT is copied, because DATASETA already
+   contains the other members. Because the INDD statement is not
+   followed by an EXCLUDE or SELECT statement, a full copy is
+   performed.
+
+>< ADD NAME=COPY$07  0100-07003-07003-2113-00100-00100-00000-SC26UTL
+
+Example 7: Multiple Copy Operations with Different Output Data Sets
+
+In this example, members are selected, excluded, and copied from input
+partitioned data sets to an output partitioned data set. This example
+is designed to illustrate multiple copy operations.
+
+The example follows:
+
+//COPY JOB ...
+//JOBSTEP EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//OUTA     DD  DISP=(OLD),DSN=DATASETA
+//INOUTB   DD  DISP=(OLD),DSN=DATASETB
+//INOUTC   DD  DISP=(OLD,KEEP),DSN=DATASETC
+//INOUTD   DD  DISP=(OLD),DSN=DATASETD
+//INE      DD  DISP=(OLD),DSN=DATASETE
+//SYSUT3   DD  UNIT=disk,SPACE=(TRK,(1))
+//SYSUT4   DD  UNIT=disk,SPACE=(TRK,(1))
+//SYSIN    DD  *
+         COPY    OUTDD=OUTA
+         INDD=INE
+         SELECT  MEMBER=(MA,MJ)
+         INDD=INOUTC
+         EXCLUDE MEMBER=(MM,MN)
+         COPY    OUTDD=INOUTB,INDD=INOUTD
+         INDD=((INOUTC,R),INOUTB)
+         COPY    OUTDD=INOUTD,INDD=((INOUTB,R))
+         SELECT  MEMBER=MM
+/*
+
+The control statements are discussed below:
+
+x) OUTA DD defines a partitioned data set, DATASETA, which contains
+   three members (MA, MB and MD).
+
+x) INOUTB DD defines a partitioned data set, DATASETB, which contains
+   two members (MA and MJ).
+
+x) INOUTC DD defines a partitioned data set, DATASETC, which contains
+   four members (MF, ML, MM and MN).
+
+x) INOUTD DD defines a partitioned data set, DATASETD, which contains
+   two members (MM and MP).
+
+x) INE DD defines a partitioned data set, DATASETE, which contains
+   three members (MA, MJ and MK).
+
+x) SYSUT3 and SYSUT4 DD define temporary spill data sets. One track is
+   allocated for each on a disk volume.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. The data set contains three COPY statements, two SELECT
+   statements, one EXCLUDE statement, and several INDD statements.
+
+x) The first COPY statement indicates the start of a copy operation.
+   The OUTDD operand specifies DATASETA as the output data set.
+
+x) The first INDD statement specifies DATASETE as the first input data
+   set to be processed. The SELECT statement specifies that members MA
+   and MJ are to be copied from DATASETE to DATASETA. Processing occurs
+   as follows:
+
+  1. Member MA is searched for and found, but is not copied because the
+     replace option is not specified.
+  2. Member MJ is searched for, found, and copied to DATASETA.
+
+x) The second INDD statement marks the end of the first copy step and
+   the beginning of the second copy step within the first copy
+   operation. It specifies DATASETC as the second input data set to be
+   processed. Members MF and ML, which are not named on the EXCLUDE
+   statement, are copied because DATASETA contains neither one of them.
+   EXCLUDE specifies that members MM and MN are not to be copied from
+   DATASETC to DATASETA.
+
+x) The second COPY statement indicates the start of another copy
+   operation. The OUTDD parameter specifies DATASETB as the output data
+   set. The INDD parameter specifies DATASETD as the first input data
+   set to be processed. Members MP and MM are copied to DATASETB.
+
+x) The next INDD statement specifies DATASETC as the second and
+   DATASETB as the third input data set to be processed. Members MF,
+   ML, MM and MN are copied from DATASETC. Member MM is copied,
+   although DATASETB already contains a member MM, because the replace
+   option is specified.
+
+   The pointer in DATASETB's directory is changed to point to the new
+   (copied) member MM. Thus, the space occupied by the replaced member
+   MM is embedded, unused space. DATASETB is then compressed in place
+   to remove embedded, unused space. (DATASETB is specified as both the
+   input and output data sets.)
+
+x) The third COPY statement indicates the start of the last copy
+  operation. The OUTDD parameter specifies DATASETD as the output data
+  set. The INDD parameter specifies DATASETB as the input data set.
+
+x) SELECT specifies that member MM is to be copied from DATASETB to
+   DATASETD. Since the replace option is specified on the data set
+   level, member MM is copied and replaces DATASETDs member MM.
+
+>< ADD NAME=COPY$08  0100-07003-07003-2113-00037-00037-00000-SC26UTL
+
+Example 8: Loading a Data Set
+
+In this example, a sequential data set that was created by an IEBCOPY
+unload operation is loaded.
+
+//LOAD JOB ...
+//STEPA   EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=UNLOADSET
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=DATASET4,
+//             UNIT=disk,
+//             SPACE=(CYL,(10,5,10))
+//SYSUT3   DD  DISP=(NEW,DELETE),DSN=&&TEMP1,
+//             UNIT=disk,
+//             SPACE=(80,(15,1))
+//SYSIN    DD  DUMMY
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines a sequential data set that was previously created
+   by an IEBCOPY unload operation. The data set contains 28 members in
+   sequential organization.
+
+x) SYSUT2 DD defines a new partitioned data set on a disk volume. This
+   data set is to be kept after the load operation. Ten cylinders are
+   allocated for the data set; ten blocks are allocated for directory
+   entries.
+
+x) SYSUT3 DD defines a temporary spill data set on a disk volume.
+
+x) SYSIN DD defines the control data set. Because SYSIN is dummied,
+   SYSUT1 defines a sequential data set, and SYSUT2 defines a
+   partitioned data set, the entire SYSUT1 data set will be loaded into
+   the SYSUT2 data set.
+
+>< ADD NAME=COPY$09  0100-07003-07003-2113-00100-00100-00000-SC26UTL
+
+Example 9: Unload Selected Members, Load, Copy and Merge
+
+In this example, members are selected, excluded, unloaded, loaded, and
+copied. Processing will occur as follows:
+
+  1. unload, excluding members
+  2. unload, selecting members
+  3. load and copy to merge members
+
+//COPY JOB ...
+//STEP    EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//PDS1     DD  DISP=(OLD),DSN=ACCOUNTA
+//PDS2     DD  DISP=(OLD),DSN=ACCOUNTB
+//SEQ1     DD  DISP=(NEW,CATLG),DSN=SAVAC,
+//             UNIT=disk,
+//             SPACE=(CYL,(5,2))
+//SEQ2     DD  DISP=(NEW,CATLG),DSN=SAVACB,
+//             UNIT=tape,
+//             LABEL=(,SL)
+//NEWUP    DD  DISP=(OLD),DSN=NEWACC
+//MERGE    DD  DISP=(OLD),DSN=ACCUPDAT
+//SYSUT3   DD  DISP=(NEW,DELETE),DSN=&&TEMP1,
+//             UNIT=disk,
+//             SPACE=(80,(1,1))
+//SYSUT4   DD  DISP=(NEW,DELETE),DSN=&&TEMP2,
+//             UNIT=disk,
+//             SPACE=(256,(1,1)),DCB=(KEYLEN=8)
+//SYSIN DD  *
+         COPY    OUTDD=SEQ1,INDD=PDS1
+         EXCLUDE MEMBER=(D,C)
+         COPY    OUTDD=SEQ2,INDD=PDS2
+         SELECT  MEMBER=(A,K)
+         COPY    OUTDD=MERGE,INDD=((NEWUP,R),PDS1,PDS2)
+         EXCLUDE MEMBER=A
+/*
+
+The control statements are discussed below:
+
+x) PDS1 DD defines a partitioned data set called ACCOUNTA that contains
+   six members (A, B, C, D, E, and F).
+
+x) PDS2 DD defines a partitioned data set called ACCOUNTB that contains
+   three members (A, K, and L).
+
+x) SEQ1 DD defines a new sequential data set called SAVAC.
+
+x) SEQ2 DD defines a new sequential data set called SAVACB on a tape
+   volume. The tape has IBM standard labels.
+
+x) NEWUP DD defines an old sequential data set called NEWACC that is
+   the unloaded form of a partitioned data set that contains eight
+   members (A, B, C, D, M, N, O, and P). It resides on a tape volume.
+
+x) MERGE DD defines a partitioned data set called ACCUPDAT that
+   contains six members (A, B, C, D, Q, and R).
+
+x) SYSUT3 and SYSUT4 DD define temporary spill data sets.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The first COPY statement indicates the start of the first copy
+   operation. The OUTDD parameter specifies that SAVAC is the output
+   data set, and the INNDD parameter specifies that ACCOUNTA is the
+   input data set. Because SAVAC is a sequential data set, ACCOUNTA
+   will be unloaded in this copy operation.
+
+x) The EXCLUDE statement specifies that members D and C are not to be
+   unloaded to SAVAC with the rest of ACCOUNTA.
+
+x) The second COPY statement indicates the start of the second copy
+   operation.
+
+x) The OUTDD parameter specifies that SAVACB is the output data set,
+   and the INDD parameter specifies that ACCOUNTB is the input data
+   set. Because SAVACB is a sequential data set, ACCOUNTB will be
+   unloaded in this copy operation.
+
+x) The SELECT statement specifies that members A and K are the only
+   members of ACCOUNTB that are to be unloaded to SAVACB.
+
+x) The third COPY statement indicates the start of the last copy
+   operation. The OUTDD parameter specifies that ACCUPDAT is the output
+   data set. The EXCLUDE statement specifies that member A is excluded
+   from this copy operation. The three data sets specified in the INDD
+   parameter will be processed as follows:
+
+  1. The data set NEWACC is a sequential data set, so it is loaded into
+     ACCUPDAT. Because the replace option is specified, members B, C,
+     and D in NEWACC replace identically named members in ACCUPDAT. The
+     remaining members of NEWACC are also copied to ACCUPDAT, except
+     for A, which is excluded from the copy operation.
+  2. The data set ACCOUNTA is a partitioned data set, so its members
+     are copied to ACCUPDAT. Because replacement is not specified, only
+     members E and F are copied.
+  3. The data set ACCOUNTB is a partitioned data set, so its members
+     are copied to ACCUPDAT. Only members K and L are copied.
+
+>< ADD NAME=COPY$10  0100-07003-07003-2113-00047-00047-00000-SC26UTL
+
+Example 10: Alter Load Modules in Place
+
+In this example, all members of data set MODLIBJ, members MODX, MODY,
+and MODZ of data set MODLIBK, and all members of data set MODLIBL,
+except MYMACRO and MYJCL, are altered in place.
+
+//ALTERONE JOB ...
+//STEPA   EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//SYSUT3   DD  UNIT=disk,SPACE=(TRK,(5,1))
+//LIBJ     DD  DISP=(OLD),DSN=MODLIBJ
+//LIBK     DD  DISP=(OLD),DSN=MODLIBK
+//LIBL     DD  DISP=(OLD),DSN=MODLIBL
+//SYSIN    DD  *
+         ALTERMOD OUTDD=LIBJ
+         ALTERMOD OUTDD=LIBK,LIST=NO
+         SELECT   MEMBER=(MODX,MODY,MODZ)
+         ALTERMOD OUTDD=LIBL
+         EXCLUDE  MEMBER=(MYMACRO,MYJCL)
+/*
+
+The control statements are discussed below:
+
+x) LIBJ DD defines the partitioned data set MODLIBJ, which has been
+   previously created and cataloged.
+
+x) LIBK DD defines the partitioned data set MODLIBK, which has been
+   previously created and cataloged.
+
+x) LIBL DD defines the partitioned data set MODLIBL, which has been
+   previously created and cataloged.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The first ALTERMOD statement specifies that the entire data set
+   defined in LIBJ is to be altered in place.
+
+x) The second ALTERMOD statement plus the following SELECT statement
+   indicates that members MODX, MODY, and MODZ are to be altered in
+   place. The remainder of MODLIBK is unchanged.
+
+x) The third ALTERMOD statement plus the following EXCLUDE statement
+  indicates that all of MODLIBL is to be altered in place except the
+  members called MYMACRO and MYJCL. These members remain unchanged.
+
+>< ADD NAME=COPY$11  0100-07003-07003-2113-00050-00050-00000-SC26UTL
+
+Example 11: Replace a Load Module Using COPYMOD
+
+In this example, a load module in an existing load library is replaced
+by another module. The new module originally resides on a 3390 DASD
+device, whereas the load library to which it is copied resides on a
+3380. Because the module has a block size larger than the block size
+assigned to the output data set, the module must be reblocked before it
+is added to the load library.
+
+This example illustrates how you can transfer load modules between
+devices of different sizes. In this case, updated modules are created
+on a 3390 and tested before being added to the load library for general
+use.
+
+//REPLACE JOB ...
+//STEP1   EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//TESTLIB  DD  DISP=(SHR),DSN=JOHNDOE.COBOL.TESTLOAD
+//PRODLIB  DD  DISP=(OLD),DSN=PAYROLL.MASTER.LOADLIB
+//SYSIN    DD  *
+         COPYMOD OUTDD=PRODLIB,INDD=TESTLIB
+         SELECT  MEMBER=((WAGETAX,,R))
+/*
+
+The control statements are discussed below:
+
+x) TESTLIB DD defines a load library on a 3390 direct access device. It
+   has a block size of 23470.
+
+x) PRODLIB DD defines a load library on a 3380 direct access device. It
+   has a block size of 19069.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The COPYMOD statement identifies PAYROLL.MASTER.LOADLIB as the
+   output data set and JOHNDOE.COBOL.TESTLOAD as the input data set.
+   The SELECT statement indicates that the load module WAGETAX is to be
+   copied from the input data set and is to replace any member with
+   that name that is in the output data set. The member is also
+   reblocked to 19069.
+
+Note that, in this case, COPYMOD has to be used in order to copy the
+member WAGETAX into the PAYROLL.MASTER.LOADLIB. Because the original
+block size of WAGETAX is larger than the largest block size that can
+reside in the output data set, attempting this operation with the COPY
+statement would be unsuccessful. The problem would be attributed to a
+DCB validation error because of incorrect block size.
+
+>< ADD NAME=COPY$12  0100-07003-07003-2113-00066-00066-00000-SC26UTL
+
+Example 12: Reblock Load Library and Distribute It to Different Device
+Types
+
+In this example, a load library is distributed (by copying it) to
+devices whose maximum block size differs from that on which the
+original load library resides. The library is first reblocked to a
+maximum block size that is compatible with each of the devices to which
+the library will be copied. Then, the library is copied to those
+devices.
+
+This example illustrates how load libraries can be developed on one
+type of direct access device and then distributed to other types of
+direct access devices.
+
+//RBLKCOPY JOB ...
+//REBLOCK EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//TESTED   DD  DISP=(SHR),DSN=TESTED.MASTER.LOADLIB
+//STDSIZE  DD  DISP=(OLD),DSN=PROGRAM.MASTER.LOADLIB
+//SYSIN    DD  *
+         COPYMOD OUTDD=STDSIZE,INDD=TESTED,MAXBLK=13030
+/*
+//DISTRIB EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//STDSIZE  DD  DISP=(SHR),DSN=PROGRAM.MASTER.LOADLIB
+//LIB3350  DD  DISP=(OLD),DSN=PROGRAM.LIB3380.LOADLIB
+//LIB3330  DD  DISP=(OLD),DSN=PROGRAM.LIB3380.LOADLIB
+//SYSIN    DD  *
+         COPY OUTDD=LIB3380,INDD=STDSIZE
+         COPY OUTDD=LIB3380,INDD=STDSIZE
+/*
+
+The control statements are discussed below:
+
+x) The REBLOCK EXEC statement begins the reblocking step.
+
+x) TESTED DD defines the cataloged load library TESTED.MASTER.LOADLIB.
+
+x) STDSIZE DD defines an existing data set, PROGRAM.MASTER.LOADLIB,
+   which resides on a 3390 direct access device and has a block size of
+   23470.
+
+x) The COPYMOD statement in the SYSIN data set specifies that
+   TESTED.MASTER.LOADLIB is to be merged into PROGRAM.MASTER.LOADLIB.
+   It also specifies that PROGRAM.MASTER.LOADLIB is to be reblocked
+   with a maximum block size of 13030. This block size is chosen
+   because it is small enough to fit on both 3380 and 3390 direct
+   access devices.
+
+x) The DISTRIB EXEC statement begins the distribution step, where the
+   reblocked data set is copied to devices with different maximum block
+   sizes.
+
+x) STDSIZE DD defines the same data set that was reblocked in the
+   previous step.
+
+x) LIB3380 DD defines the data set PROGRAM.LIB3380.LOADLIB, which
+   resides on a 3380 direct access device.
+
+x) The COPY statements in the SYSIN data set specify that the data set
+   PROGRAM.MASTER.LOADLIB is to be copied to the output data sets
+   without being reblocked. If PROGRAM.MASTER.LOADLIB had not been
+   reblocked to the smaller block size, this step would end
+   unsuccessfully.
+
+>< ADD NAME=COPY$13  0100-07003-07003-2113-00034-00034-00000-SC26UTL
+
+Example 13: Convert a Partitioned Data Set to a PDSE
+
+In this example, a partitioned data set is converted to a PDSE.
+
+//CONVERT JOB ...
+//STEP1   EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(SHR),DSN=PDSSET
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=PDSESET,
+//             LIKE=PDSSET,DSNTYPE=LIBRARY,
+//             STORCLAS=SCLASX,DATACLAS=DCLASY
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set, PDSSET, which is a partitioned
+   data set.
+
+x) SYSUT2 DD defines the output data set, PDSESET, which is a
+   partitioned data set extended. This new data set will be SMS-managed
+   because it has a storage class.
+
+x) The LIKE parameter indicates that the DCB and SPACE attributes for
+   PDSESET are to be copied from PDSSET. The DSNTYPE parameter defines
+   the new data set as a PDSE rather than as a partitioned data set.
+   DATACLAS=DCLASY identifies the PPDSE as a program object PDSE with
+   undefined logical record length.
+
+x) The Storage Management Subsystem chooses an appropriate volume for
+   the allocation, based on how SCLASX was defined.
+
+x) Since the ddnames "SYSUT1" and "SYSUT2" are used to define the input
+   and output data sets, no SYSIN data set is required.
+
+>< ADD NAME=COPY$14  0100-07003-07003-2113-00045-00045-00000-SC26UTL
+
+Example 14: Copy Groups from a PDSE to a PDSE
+
+In this example, members and their aliases (groups) are copied from a
+PDSE to a PDSE (full data set copy). See "Copying Program Objects
+(COPYGRP Statement)" on page 28 for information about copying groups.
+
+//CPYGRP JOB ...
+//STEP1   EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//DDIN     DD  DISP=(SHR),DSN=PDSESETA
+//DDOUT    DD  DISP=(NEW,CATLG),DSN=PDSESETB,
+//             LIKE=PDSESETA,DSNTYPE=LIBRARY
+//SYSUT3   DD  UNIT=disk,SPACE=(TRK,(1,1))
+//SYSIN    DD  *
+GROUPCPY COPYGRP INDD=DDIN,OUTDD=DDOUT
+/*
+
+The control statements are discussed below:
+
+x) DDIN DD defines the input data set, PDSESETA, which is a partitioned
+   data set extended.
+
+x) DDOUT DD defines the output data set, PDSESETA, which is a
+   partitioned data set extended.
+
+x) The LIKE subparameter indicates that the DCB and SPACE attributes
+   for PDSESETB are to be copied from PDSESETA. The DSNTYPE
+   subparameter defines the new data set as a PDSE.
+
+x) The Storage Management Subsystem chooses an appropriate volume for
+   the allocation.
+
+x) SYSUT3 DD defines a temporary spill data set.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. The data set contains a COPYGRP statement, an INDD
+   statement, and an OUTDD statement.
+
+x) COPYGRP indicates the start of the copy operation.
+
+x) The INDD parameter shows PDSESETA as the input data set.
+
+x) The OUTDD parameter shows PDSESETB as the output data set.
+
+>< ADD NAME=COPY$15  0100-07003-07003-2113-00049-00049-00000-SC26UTL
+
+Example 15: Copy Groups from a PDSE to a PDSE with Replace
+
+In this example, members and their aliases are copied in groups from a
+PDSE to a PDSE with the replace (R) option. See "Replacing Program
+Objects" on page 29 for information about replacing groups with
+COPYGRP.
+
+//CPYGRP JOB ...
+//STEP1   EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//DDIN     DD  DISP=(SHR),DSN=PDSESETA
+//DDOUT    DD  DISP=(NEW,CATLG),DSN=PDSESETB,
+//             LIKE=PDSESETA,DSNTYPE=LIBRARY
+//SYSUT3   DD  UNIT=disk,SPACE=(TRK,(1,1))
+//SYSIN    DD  *
+GROUPCPY COPYGRP INDD=((DDIN,R)),OUTDD=DDOUT
+/*
+
+The control statements are discussed below:
+
+x) DDIN DD defines the input data set, PDSE, which is a partitioned
+   data set extended.
+
+x) DDOUT DD defines the output data set, PDSE, which is a partitioned
+   data set extended.
+
+x) The LIKE parameter indicates that the DCB and SPACE attributes for
+   PDSESETB are to be copied from PDSESETA.
+
+x) The DSNTYPE parameter defines the new data set as a PDSE.
+
+x) The Storage Management Subsystem chooses an appropriate volume for
+   the allocation.
+
+x) SYSUT3 DD defines a temporary spill data set.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. The data set contains a COPYGRP statement, an INDD
+   statement, and an OUTDD statement.
+
+x) COPYGRP indicates the start of the copy operation.
+
+x) The ((INDD,R)) parameter shows PDSESETA as the input data set
+   containing members to replace members with the same name in
+   PDSESETB.
+
+x) The OUTDD parameter shows PDSESETB as the output data set.
+
+>< ADD NAME=COPY$16  0100-07003-07003-2113-00055-00055-00000-SC26UTL
+
+Example 16: Copy a Selected Group from a PDSE to a PDSE
+
+In this example, a selected member and its aliases are copied from a
+PDSE to a PDSE. Either the member's name or a maximum of eight
+characters can be given on the SELECT statement. See "Copying Program
+Objects (COPYGRP Statement)" on page 28 for information about selecting
+groups on COPYGRP.
+
+//CPYGRP JOB ...
+//STEP1   EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//DDIN     DD  DISP=(SHR),DSN=PDSESETA
+//DDOUT    DD  DISP=(NEW,CATLG),DSN=PDSESETB,
+               LIKE=PDSESETA,DSNTYPE=LIBRARY
+//SYSUT3   DD  UNIT=disk,SPACE=(TRK,(1,1))
+//SYSIN    DD  *
+GROUPCPY COPYGRP INDD=DDIN,OUTDD=DDOUT
+         SELECT  MEMBER=(ALIAS001)
+/*
+
+The control statements are discussed below:
+
+x) DDIN DD defines the input data set, PDSE, which is a partitioned
+   data set extended.
+
+x) DDOUT DD defines the output data set, PDSE, which is a partitioned
+   data set extended.
+
+x) All PDSEs must be managed by the Storage Management Subsystem.
+
+x) The LIKE parameter indicates that the DCB and SPACE attributes for
+   PDSESETB are to be copied from PDSESETA.
+
+x) The DSNTYPE parameter defines the new data set as a PDSE.
+
+x) The Storage Management Subsystem chooses an appropriate volume for
+   the allocation.
+
+x) SYSUT3 DD defines a temporary spill data set.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. The data set contains a COPYGRP statement, an INDD
+   statement, and an OUTDD statement.
+
+x) COPYGRP indicates the start of the copy operation.
+
+x) The INDD parameter shows PDSESETA as the input data set.
+
+x) The OUTDD parameter shows PDSESETB as the output data set.
+
+x) The SELECT statement indicates that a group that has the alias
+   ALIAS001 is to be selected from the input data set (PDSESETA) and
+   copied to the output data set (PDSESETB).
+
+</pre>
+<hr noshade size="4" color="#66CCCC">
+<h2>IEBCOPY</h2>
+<a href="IEBCOPY$IEBCOPY.html">IEBCOPY$IEBCOPY</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<h2>Categories</h2>
+<a href="$$$INDEX.html">$$$INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ADRDSSU.html">ADRDSSU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMASPZAP.html">AMASPZAP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMBLIST.html">AMBLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BATCH.html">BATCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BMC4DB2.html">BMC4DB2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CPPUPDTE.html">CPPUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CUNMITG1.html">CUNMITG1</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DFHCSDUP.html">DFHCSDUP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DITTO.html">DITTO</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTEP2.html">DSNTEP2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAD.html">DSNTIAD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAUL.html">DSNTIAUL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="EDGINERS.html">EDGINERS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FDR.html">FDR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FTP.html">FTP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="HCD.html">HCD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ICKDSF.html">ICKDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IDCAMS.html">IDCAMS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOMPR.html">IEBCOMPR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOPY.html">IEBCOPY</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBDG.html">IEBDG</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBEDIT.html">IEBEDIT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBGENER.html">IEBGENER</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBIMAGE.html">IEBIMAGE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBPTPCH.html">IEBPTPCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBUPDTE.html">IEBUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEFBR14.html">IEFBR14</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHATLAS.html">IEHATLAS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHINITT.html">IEHINITT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHLIST.html">IEHLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHMOVE.html">IEHMOVE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHPROGM.html">IEHPROGM</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEWBLINK.html">IEWBLINK</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFASMFDP.html">IFASMFDP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFHSTATR.html">IFHSTATR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IPCS.html">IPCS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ISRSUPC.html">ISRSUPC</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IXCMIAPU.html">IXCMIAPU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="JOBCARD.html">JOBCARD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="RACF.html">RACF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SDSF.html">SDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SMPE.html">SMPE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SORT.html">SORT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SRCHFOR.html">SRCHFOR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="TRSMAIN.html">TRSMAIN</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="zosutil.seq.html">INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="../index.html">Up one level</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+
+<hr noshade size="4" color="#CCCC66">
+
+<A NAME="pgbottom"></A>
+<hr noshade size="4">
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+document.write("<b>" + location.href + "</b>")
+// -->
+</SCRIPT>
+
+<hr noshade size="4">
+<b> updt2htm.pl Copyright:</b> &copy; 02007 by Kenneth E Tomiak
+<br>
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+var d = new Date(document.lastModified)
+document.write("<b>Last modified:</b> " + d)
+// -->
+</SCRIPT>
+<hr noshade size="4">
+
+</body>
+</html>

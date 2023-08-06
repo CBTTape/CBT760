@@ -1,0 +1,87 @@
+
+// IF/THEN/ELSE/ENDIF
+
+A set of statements that make it easier to write when you want a step
+to run. The COND=() parameter on the EXEC card uses inverse logic,
+you actually code when not to run the step.
+
+//*
+//MYPROCS JCLLIB ORDER=(MYSYS.IVPLIB,SYS1.PROCLIB)
+//*
+//* LIB: MYSYS.IVPLIB(JES2IVP3)
+//* GDE: IBM REMOTE SERVICES - KENNETH E. TOMIAK
+//* DOC: TESTS JES2 PROC IN A PROC, PRIVATE PROCEDURE LIBRARIES,
+//*      AND THE IF/THEN/ELSE/ENDIF CONSTRUCTS.
+//*
+//I       PROC
+//        EXEC PGM=IEFBR14
+//P02#03  EXEC PGM=IEBGENER
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  DUMMY
+//SYSUT1   DD  DISP=SHR,DSN=MYSYS.IVPLIB(JES2IVP3)
+//SYSUT2   DD  SYSOUT=*
+//I       PEND
+//J       PROC
+//TESTJ    IF (RC < 1) THEN                       <==== IF
+//J0      EXEC PROC=I
+//        ENDIF                                   <==== ENDIF
+//J       PEND
+//L       PROC
+//TESTL    IF (RC = 0) THEN
+//P0      EXEC PROC=J
+//        ENDIF
+//L       PEND
+//*
+//INC1    INCLUDE MEMBER=JES2INC
+//TEST1    IF (P02#03.RC = 0) THEN                <==== IF
+//S1      EXEC PGM=IEFBR14
+//S2      EXEC PROC=L
+//S3      EXEC PROC=L
+//        ELSE                                    <==== ELSE
+//T1      EXEC PGM=IEFBR14
+//T2      EXEC PROC=L                             <==== ENDIF
+//        ENDIF
+//TEST3    IF (S1.RUN = TRUE) THEN
+//S4      EXEC PROC=L
+//S5      EXEC PROC=L
+//        ELSE
+//T3      EXEC PROC=L
+//        ENDIF
+
+                   Order of
+Operator Operation Evaluation
+-------- --------- ----------
+NOT operator:
+NOT or ^ NOT first
+Comparison operators:
+GT or > Greater than second
+LT or < Less than second
+NG or ^> Not greater than second
+NL or ^< Not less than second
+EQ or = Equal to second
+NE or ^= Not equal to second
+GE or >= Greater than or equal to second
+LE or <= Less than or equal to second
+Logical operators:
+AND or & AND third
+OR or | OR third
+
+Relational-Expression Keywords
+The following keywords are the only keywords supported by IBM and
+recommended for use in relational-expressions. Any other keywords, even
+if accepted by the system, are not intended or supported keywords.
+
+Keyword Use
+RC      indicates a return code
+ABEND   indicates an abend condition occurred
+        =TRUE
+        =FALSE
+^ABEND  indicates no abend condition occurred
+ABENDCC indicates a system or user completion code
+        =SB37
+        =U0100
+RUN     indicates that the specified step started execution
+        =TRUE
+        =FALSE
+^RUN    indicates that the specified step did not start execution
+

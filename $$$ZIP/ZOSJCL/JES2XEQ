@@ -1,0 +1,6 @@
+
+/*XEQ
+
+Does the same as /*ROUTE XEQ. Routes the job to another node for
+execution.
+

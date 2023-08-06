@@ -1,0 +1,232 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--                                                                 -->
+<!-- Version       | TimeStamp         | Description of change       -->
+<!-- ------------- | ----------------- | --------------------------- -->
+<!-- 1.0.0 KTomiak | 20070802 21:37:42 | Original version            -->
+<!--                                                                 -->
+
+<html>
+ <!---
+ Author: Kenneth E Tomiak
+ updt2htm.pl Copyright (c) 02007 by Kenneth E Tomiak
+ --->
+
+<head>
+ <title>
+ zosutil.seq - IEBUPDTE Examples
+ </title>
+
+ <!--META_START-->
+
+ <meta HTTP-EQUIV="Content-Type" content="text/html ; charset=iso8859-1">
+ <meta name="ROBOTS" content="INDEX, FOLLOW">
+ <meta name="abstract" content="Web pages for files in zosutil.seq">
+ <meta name="Keywords" content="zosutil.seq">
+ <meta name="owner" content="Author of zosutil.seq">
+ <meta name="author" content="d:\home\ktomiak\PERL\updt2htm.pl">
+ <meta name="modified" content="20070802">
+ <meta name="review" content="20071231">
+ <meta name="security" content="public">
+ <meta name="ms.locale" content="EN-US">
+ <meta name="Generator" content="Kenneth Tomiak's perl program d:\home\ktomiak\PERL\updt2htm.pl">
+
+ <!--META_END-->
+
+</head>
+<BODY BGCOLOR="#FFFFFF" LINK="#000066" ALINK="#000088">
+
+ <A NAME="pgtop"></A>
+
+ <center>
+ <h1>
+ <a href="../zosutil.seq.html">zosutil.seq</a> - IEBUPDTE Examples
+ </h1>
+ </center>
+
+<hr noshade size="4" color="#66CCCC">
+
+<pre>
+./ ADD NAME=IEBUPDTE 0666-07210-07210-1544-00001-00001-00000-DIR2UPDT
+>< ADD NAME=UPDTE    0102-07003-07166-1102-00014-00015-00000-KTOMIAK
+
+UPDTE$01  Place Two Procedures in SYS1.PROCLIB
+UPDTE$02  Create a Three-Member Library
+UPDTE$03  Create New Library Using SYS1.MACLIB as a Source
+UPDTE$04  Update a Library Member
+UPDTE$05  Create New Master Data Set and Delete Selected Records
+UPDTE$06  Create and Update a Library Member
+UPDTE$07  Insert Records into a Library Member
+UPDTE$08  Renumber and Insert Records into a Library Member
+UPDTE$09  Create a Sequential Data Set from Card Input
+UPDTE$10  Copy Sequential Data Set from One Volume to Another
+UPDTE$11  Create a New Partitioned Data Set
+UPDTE$12  Erase it?
+UPDTE$13  Add a member with an alias
+
+>< ADD NAME=UPDTE$01 0101-07003-07003-2113-00069-00069-00000-SC26UTL
+
+Example 1: Place Two Procedures in SYS1.PROCLIB
+
+In this example, two procedures are to be placed in the cataloged
+procedure library, SYS1.PROCLIB. The example assumes that the two
+procedures can be accommodated within the space originally allocated to
+the procedure library.
+
+//UPDATEJOB ...
+//STEP1   EXEC PGM=IEBUPDTE,PARM=MOD
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.PROCLIB
+//SYSUT2   DD  DISP=(OLD),DSN=SYS1.PROCLIB
+//*                                          <==== SHIFT THE DATA LEFT
+//SYSIN    DD  DATA
+  ./       ADD    LIST=ALL,NAME=ERASE,LEVEL=01,SOURCE=0
+  ./       NUMBER NEW1=10,INCR=10
+  //ERASE   EXEC PGM=IEBUPDTE
+  //DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=111111
+  //SYSPRINT DD  SYSOUT=*
+  ./       REPL   LIST=ALL,NAME=LISTPROC
+  ./       NUMBER NEW1=10,INCR=10
+  //LIST    EXEC PGM=IEBGENER
+  //SYSPRINT DD  SYSOUT=*
+  //SYSUT1   DD  DISP=SHR,DSN=SYS1.PROCLIB(&MEMBER)
+  //SYSUT2   DD  SYSOUT=*,DCB=(RECFM=F,BLKSIZE=80)
+  //SYSIN    DD  DATA
+  ./ ENDUP
+/*
+//                                           <==== SHIFT THE DATA LEFT
+
+The control statements are discussed below:
+
+x) SYSUT1 and SYSUT2 DD define the SYS1.PROCLIB data set, which is
+   assumed to be cataloged.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. The data set contains the utility control statements and the
+   data to be placed in the procedure library.
+
+x) The ADD function statement indicates that records (data statements)
+   in the control data set are to be placed in the output. The newly
+   created procedure, ERASE, is listed in the message data set.
+
+   The ADD function will not take place if a member named ERASE already
+   exists in the new master data set referenced by SYSUT2.
+
+x) The first NUMBER detail statement indicates that the new and
+   replacement procedures are to be assigned sequence numbers. The
+   first record of each procedure is assigned sequence number 10; the
+   next record is assigned sequence number 20, and so on.
+
+x) The ERASE EXEC statement marks the beginning of the first new
+   procedure.
+
+x) The REPL function statement indicates that records (data statements)
+   in the control data set are to replace an already existing member.
+   The member is stored in the new master data set referenced by
+   SYSUT2. The REPL function will only take place if a member named
+   LISTPROC already exists in the old master data set referenced by
+   SYSUT1.
+
+x) The second NUMBER detail statement is a duplicate of the first.
+
+x) The LIST EXEC statement marks the beginning of the second new
+   procedure.
+
+x) The ENDUP statement marks the end of the SYSIN DD input data.
+
+>< ADD NAME=UPDTE$02 0101-07003-07003-2113-00057-00057-00000-SC26UTL
+
+Example 2: Create a Three-Member Library
+
+In this example, a three-member partitioned library is created. The
+input data is contained solely in the control data set.
+
+//UPDATEJOB ...
+//STEP1   EXEC PGM=IEBUPDTE,PARM=NEW
+//SYSPRINT DD  SYSOUT=*
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=OUTLIB,
+//             UNIT=disk,
+//             SPACE=(TRK,(50,,10)),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//*                                          <==== SHIFT THE DATA LEFT
+//SYSIN DD  DATA
+</pre>
+<hr noshade size="4" color="#66CCCC">
+<h2>IEBUPDTE</h2>
+<a href="IEBUPDTE$IEBUPDTE.html">IEBUPDTE$IEBUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<h2>Categories</h2>
+<a href="$$$INDEX.html">$$$INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ADRDSSU.html">ADRDSSU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMASPZAP.html">AMASPZAP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMBLIST.html">AMBLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BATCH.html">BATCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BMC4DB2.html">BMC4DB2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CPPUPDTE.html">CPPUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CUNMITG1.html">CUNMITG1</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DFHCSDUP.html">DFHCSDUP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DITTO.html">DITTO</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTEP2.html">DSNTEP2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAD.html">DSNTIAD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAUL.html">DSNTIAUL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="EDGINERS.html">EDGINERS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FDR.html">FDR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FTP.html">FTP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="HCD.html">HCD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ICKDSF.html">ICKDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IDCAMS.html">IDCAMS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOMPR.html">IEBCOMPR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOPY.html">IEBCOPY</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBDG.html">IEBDG</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBEDIT.html">IEBEDIT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBGENER.html">IEBGENER</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBIMAGE.html">IEBIMAGE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBPTPCH.html">IEBPTPCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBUPDTE.html">IEBUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEFBR14.html">IEFBR14</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHATLAS.html">IEHATLAS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHINITT.html">IEHINITT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHLIST.html">IEHLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHMOVE.html">IEHMOVE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHPROGM.html">IEHPROGM</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEWBLINK.html">IEWBLINK</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFASMFDP.html">IFASMFDP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFHSTATR.html">IFHSTATR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IPCS.html">IPCS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ISRSUPC.html">ISRSUPC</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IXCMIAPU.html">IXCMIAPU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="JOBCARD.html">JOBCARD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="RACF.html">RACF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SDSF.html">SDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SMPE.html">SMPE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SORT.html">SORT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SRCHFOR.html">SRCHFOR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="TRSMAIN.html">TRSMAIN</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="zosutil.seq.html">INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="../index.html">Up one level</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+
+<hr noshade size="4" color="#CCCC66">
+
+<A NAME="pgbottom"></A>
+<hr noshade size="4">
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+document.write("<b>" + location.href + "</b>")
+// -->
+</SCRIPT>
+
+<hr noshade size="4">
+<b> updt2htm.pl Copyright:</b> &copy; 02007 by Kenneth E Tomiak
+<br>
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+var d = new Date(document.lastModified)
+document.write("<b>Last modified:</b> " + d)
+// -->
+</SCRIPT>
+<hr noshade size="4">
+
+</body>
+</html>

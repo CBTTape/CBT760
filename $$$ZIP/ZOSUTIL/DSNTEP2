@@ -1,0 +1,86 @@
+>< ADD NAME=TEP2     0102-07003-07021-2253-00004-00005-00000-KTOMIAK
+
+TEP2$01  A simple SELECT using defaults
+TEP2$02  A complex CREATE overriding defaults
+TEP2$03  Some tips for writing SQL
+
+>< ADD NAME=TEP2$01  0100-07003-07003-2114-00026-00026-00000-KTOMIAK
+
+Example 1: A simple SELECT using defaults
+
+//*
+//STEP001 EXEC PGM=IKJEFT1B,PARM='',
+//             REGION=18M,TIME=1400
+//SYSTSPRT DD  SYSOUT=*
+//SYSTSIN  DD  *
+  DSN SYSTEM(DB2D)
+    RUN PROGRAM(DSNTEP2) PLAN(DSNTEP2) +
+      LIB('DSN1.RUNLIB.LOAD') +
+      PARMS('ALIGN(MID)')
+    END
+/*
+//SYSIN    DD  *
+-- a comment
+*  another comment
+  SELECT SUBSTR(
+    STRIP(CREATOR) || '.' || NAME,1,27)
+    FROM SYSIBM.SYSTABLES TB
+    WHERE TB.TYPE = 'V'
+  ;
+//SYSPRINT DD  DISP=(MOD,CATLG),DSN=&SYSUID..DSN1.DSNTEP2.OUT,
+//             UNIT=SYSALLDA,SPACE=(TRK,(15,15),RLSE),
+//             DCB=(DSORG=PS,RECFM=FBA,BLKSIZE=0,LRECL=133)
+
+>< ADD NAME=TEP2$02  0100-07003-07003-2114-00033-00033-00000-KTOMIAK
+
+Example 2: A complex CREATE overriding defaults
+
+//*
+//STEP001 EXEC PGM=IKJEFT1B,PARM='',
+//             REGION=18M,TIME=1400
+//SYSTSPRT DD  SYSOUT=*
+//SYSTSIN  DD  *
+  DSN SYSTEM(DB2D)
+    RUN PROGRAM(DSNTEP2) PLAN(DSNTEP2) +
+      LIB('DSN1.RUNLIB.LOAD') +
+      PARMS('ALIGN(LHS)')
+    END
+/*
+//SYSIN    DD  *
+-- a comment
+*  another comment
+--#SET TERMINATOR #
+    CREATE TRIGGER NEW_HIRE
+      AFTER INSERT ON EMP
+      FOR EACH ROW MODLE DB2SQL
+      BEGIN ATOMIC
+        UPDATE COMPANY_STATS SET NBEMP = NBEMP + 1 ;
+    END#
+--#SET ROWS_FETCH 12
+    Select * from SYSIBM.SYSCOLUMNS #
+--#SET ROWS_OUT 10
+--#SET TERMINATOR ;
+    Select * from SYSIBM.SYSCOLUMNS ;
+//SYSPRINT DD  DISP=(MOD,CATLG),DSN=&SYSUID..DSN1.DSNTEP2.OUT,
+//             UNIT=SYSALLDA,SPACE=(TRK,(15,15),RLSE),
+//             DCB=(DSORG=PS,RECFM=FBA,BLKSIZE=0,LRECL=133)
+
+>< ADD NAME=TEP2$03  0100-07021-07021-2252-00018-00018-00000-KTOMIAK
+
+COUNT(*) returns a count of all rows that qualify against the WHERE
+clause.
+
+COUNT(colname) returns a count of all rows that qualify against the
+WHERE clause, with null occurrences of colname removed.
+
+COUNT(DISTINCT colname) counts distinct occurrences of colname, with
+nulls removed.
+
+Comparison operators:
+ <>
+ <=
+ =>
+ =
+ LIKE
+ IN
+

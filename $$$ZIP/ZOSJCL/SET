@@ -1,0 +1,11 @@
+
+// SET
+
+An enhancement that allows setting a value for a SYMBOLIC. This does
+not require using PROCs!
+
+//MYLABEL SET SOMEVAR='THIS IS THE DATA'
+//URLABEL SET MOREVAR='AND THIS IS TEXT'
+//*
+//STEP001 EXEC PGM=MYPGM,PARM='&SOMEVAR.&MOREVAR'
+

@@ -1,0 +1,9 @@
+
+IBM came up with a marvelous ISRCONFG dialog to save ISPF settings
+and then botched it by saving 80 bytes records in a LRECL=255
+PDS. So we need a special PDS to hold these values.
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------                                                                                                                                                                                    EOR!
+$$$INDEX This member
+

@@ -1,0 +1,26 @@
+rexx_VIEWHELP: /* We still need rexx in comment if read from SYSPROC */
+/*---------REXX viewhelp ------------------------------*/
+/*                                                     */
+/* LIB: REXX(viewhelp)                                 */
+/* DOC: THIS REXX EXEC Captures the output of the      */
+/*      help command and then invokes view.            */
+/*                                                     */
+/*---------REXX viewhelp ------------------------------*/
+PARSE ARG full_cmd
+/*                                                                 */
+  bulk_dd = "BULK"RIGHT("0000"RANDOM(99999),4)
+  "ALLOC FILE("bulk_dd") SPACE(5 5) RECFM(F B)",
+    "BLKSIZE(0) LRECL(80) DSORG(PS) NEW DELETE",
+    "UNIT(SYSALLDA) DIR(0)"
+  quiet = Outtrap("HLP.")
+  "help" full_cmd
+  quiet = Outtrap("OFF")
+  "EXECIO" HLP.0 "DISKW" bulk_dd "(FINIS STEM HLP."
+  "ISPEXEC CONTROL ERRORS RETURN"
+  "ISPEXEC LMINIT DATAID(PNLID) DDNAME("bulk_dd")"
+  "ISPEXEC VIEW DATAID("PNLID")"
+  "ISPEXEC LMCLOSE DATAID("PNLID")"
+  "ISPEXEC LMFREE DATAID("PNLID")"
+  "FREE FILE("bulk_dd")"
+EXITIT:
+  EXIT

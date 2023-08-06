@@ -1,0 +1,15 @@
+
+This dataset (sub-directory) contains some sample PROCedures used
+to transform source and object decks into load modules, allocate
+common datasets, and show how to almost have SYSTEM symbolics
+in a batch job.
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------
+$$$INDEX This member
+ASM2LMOD PROC to assemble and link source to an LMOD.
+ASM2OBJ  PROC to assemble and save OBJECT deck.
+IEASYM00 Set statements to simulate SYSTEM Symbolics for batch jobs.
+OBJ2LMOD PROC to link an OBJECT deck to an LMOD.
+ISPFPROC PROCedure to INCLUDE TSOPROC and allocate ISPF datasets.
+TSOPROC  PROCedure to allocate TSO datasets.

@@ -1,0 +1,51 @@
+rexx_XMIT2PDS: /* REXX -
+ +------------------------------------------------------------------+
+ | Name:       XMIT2PDS                                             |
+ | Type:       REXX exec                                            |
+ | Purpose:    Convert sequential data set to a PDS.                |
+ | Release:    1.0                                                  |
+ | Programmer: Kenneth E. Tomiak                                    |
+ | Date:       1999-11-04  1999.308                                 |
+ | Abstract:   Use the TSO receive command to convert a sequential  |
+ |             data set back to its original format.                |
+ |                                                                  |
+ | Call Format:  %XMIT2PDS dsname                                   |
+ |                                                                  |
+ +------------------------------------------------------------------+ */
+
+/* +-----------------------------------------+
+   | Procedures and functions defined below. |
+   +-----------------------------------------+ */
+
+    Parse upper arg dsn newname
+
+    sysuid = SYSVAR("SYSUID")
+    memlist = ""
+    if members >< "" then,
+      memlist = "MEMBERS("members")"
+
+    say 'dsn='dsn
+
+    ndsn = strip(dsn,"B","'")
+    newname = "'"ndsn".pds'"
+    call test_if_pds
+    Say "Attempting to store" dsn "as" newname
+    xc = PROMPT("ON")
+    Queue "Dataset("newname")"
+    Queue "end"
+    "RECEIVE",
+      "INDATASET("dsn")"
+
+    xmit_rc = RC
+    if xmit_rc > 0 then,
+      Say "RECEIVE returned =" xmit_rc"."
+
+    exit
+
+test_if_pds:
+    openparen = pos("(",ndsn)
+    if openparen = 0 then return
+    ndsn = strip(dsn,"B","'")
+    parse var ndsn justdsn '(' justmbr ')' .
+    newname = "'"justdsn".PDSMBR."justmbr"'"
+    return

@@ -1,0 +1,32 @@
+
+/*ROUTE
+
+/*ROUTE PRINT
+/*ROUTE PUNCH
+/*ROUTE XEQ
+
+Send the output of your job to another location or for execution.
+
+/*ROUTE {PRINT} {ANYLOCAL }
+        {PUNCH} {LOCAL }
+        {name }
+        {Nnnnn }
+        {NnnRmmmm }
+        {NnnnRmmm }
+        {NnnnnRmm }
+        {nodename.userid }
+        {nodename:userid }
+        {nodename/userid }
+        {nodename(userid)}
+        {Rnnnn }
+        {RMnnnn }
+        {RMTnnnn }
+        {Unnnn }
+        {Userid }
+/*ROUTE XEQ {name }
+            {Nnnnn }
+            {nodename.vmguestid }
+            {nodename:vmguestid }
+            {nodename/vmguestid }
+            {nodename(vmguestid)}
+

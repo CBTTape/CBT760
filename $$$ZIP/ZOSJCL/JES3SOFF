@@ -1,0 +1,8 @@
+
+//*SIGNOFF
+
+Used to disconnect a remote session with JES3.
+
+Note that, unlike other JES3 statements, this statement starts
+with only one slash.
+

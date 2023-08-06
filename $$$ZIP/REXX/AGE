@@ -1,0 +1,124 @@
+rexx_AGE:         /*              REXX                      */
+  Address IsrEdit "MACRO (newmbr)"
+  rexxpgm_version = "02.00"
+  Address IspExec "CONTROL ERRORS Return"
+  Address IsrEdit "CAPS OFF"
+  Address IsrEdit "(MEMBER) = MEMBER"
+  Address IsrEdit "(MYDSN,yourdsn,libnum) = DATASET"
+  Address IsrEdit "(MYvol1,myvolq) = VOLUME"
+  Address ISPEXEC,
+    "LMINIT DATAID(dataidv) DATASET('"mydsn"') ENQ(SHRW)",
+    "VOLUME("myvol1")"
+  ISP_RC = RC
+  If (ISP_RC >< 0) then,        /* RETURN CODES                     */
+                                /*  8 - Data set or file not        */
+                                /*      allocated                   */
+                                /*    - DDname not found            */
+                                /*    - Data set or file            */
+                                /*      organization not supported  */
+                                /* 12 - Invalid parameter value     */
+                                /* 16 - Truncation or translation   */
+                                /*      error in accessing dialog   */
+                                /*      variables                   */
+                                /* 20 - Severe error                */
+    Do
+      ZERRHM = "*"
+      ZERRALRM = "YES"
+      ZERRSM = "LMINIT 1 ERROR ("isp_rc")"
+      ZERRLM = "AN ISPF ERROR PREVENTED LMINIT from working."
+      ADDRESS ISPEXEC "VPUT (ZERRSM ZERRLM ZERRHM ZERRALRM) SHARED"
+      ADDRESS ISPEXEC "SETMSG MSG(ISRZ002)"
+      exit isp_rc
+    End
+  Address ISPEXEC,
+    "LMINIT DATAID(dataidu) DATASET('"mydsn"') ENQ(SHRW)",
+    "VOLUME("myvol1")"
+  ISP_RC = RC
+  If (ISP_RC >< 0) then,        /* RETURN CODES                    */
+    Do
+      ZERRHM = "*"
+      ZERRALRM = "YES"
+      ZERRSM = "LMINIT 2 ERROR ("isp_rc")"
+      ZERRLM = "AN ISPF ERROR PREVENTED LMINIT from working."
+      ADDRESS ISPEXEC "VPUT (ZERRSM ZERRLM ZERRHM ZERRALRM) SHARED"
+      ADDRESS ISPEXEC "SETMSG MSG(ISRZ002)"
+      exit isp_rc
+    End
+  Address ISPEXEC,
+    "LMCOPY FROMID("dataidv") FROMMEM("member")",
+         "TODATAID("dataidu")   TOMEM("newmbr")",
+         "REPLACE"
+  ISP_RC = RC
+  If (ISP_RC >< 0) then,        /* RETURN CODES                    */
+                          /*  4 - Member not available: in an LMF  */
+                          /*      controlled ISPF library and      */
+                          /*      currently owned by another user  */
+                          /*    - Member not available: in an LMF  */
+                          /*      controlled ISPF library and user */
+                          /*      is not a valid user as specified */
+                          /*      by member access id              */
+                          /*    - "From" data set is empty         */
+                          /*    - No members match pattern         */
+                          /*    - Tried to lock a member in an     */
+                          /*      SCLM-controlled library          */
+                          /*  8 - "From" member not found          */
+                          /* 10 - No data set associated with the  */
+                          /*      given data-id                    */
+                          /* 12 - Invalid data set organization    */
+                          /*    - Data set attribute invalid for   */
+                          /*      packed data                      */
+                          /*    - Member already exists in "to"    */
+                          /*      data set and "REPLACE" was       */
+                          /*      not specified                    */
+                          /*    - Open error                       */
+                          /* 16 - Truncation error                 */
+                          /* 20 - Severe error                     */
+    Do
+      ZERRHM = "*"
+      ZERRALRM = "YES"
+      ZERRSM = "LMCOPY ERROR ("isp_rc")"
+      ZERRLM = "AN ISPF ERROR PREVENTED LMCOPY from working."
+      ADDRESS ISPEXEC "VPUT (ZERRSM ZERRLM ZERRHM ZERRALRM) SHARED"
+      ADDRESS ISPEXEC "SETMSG MSG(ISRZ002)"
+    End
+    Address ISPEXEC,
+      "LMFREE  DATAID("dataidv")"
+    FREE_RC = RC
+    If (FREE_RC >< 0) then,     /* RETURN CODES                    */
+                                /*   8 - Free data set or file     */
+                                /*       failed                    */
+                                /*  10 - No data set or file       */
+                                /*       associated with data-id   */
+                                /*  20 - Severe error              */
+    Do
+      ZERRHM = "*"
+      ZERRALRM = "YES"
+      ZERRSM = "LMFREE ERROR ("isp_rc")"
+      ZERRLM = "AN ISPF ERROR PREVENTED LMFREE from working."
+      ADDRESS ISPEXEC "VPUT (ZERRSM ZERRLM ZERRHM ZERRALRM) SHARED"
+      ADDRESS ISPEXEC "SETMSG MSG(ISRZ002)"
+    End
+    Address ISPEXEC,
+      "LMFREE  DATAID("dataidu")"
+    FREE_RC = RC
+    If (FREE_RC >< 0) then,     /* RETURN CODES                    */
+                                /*   8 - Free data set or file     */
+                                /*       failed                    */
+                                /*  10 - No data set or file       */
+                                /*       associated with data-id   */
+                                /*  20 - Severe error              */
+    Do
+      ZERRHM = "*"
+      ZERRALRM = "YES"
+      ZERRSM = "LMFREE ERROR ("isp_rc")"
+      ZERRLM = "AN ISPF ERROR PREVENTED LMFREE from working."
+      ADDRESS ISPEXEC "VPUT (ZERRSM ZERRLM ZERRHM ZERRALRM) SHARED"
+      ADDRESS ISPEXEC "SETMSG MSG(ISRZ002)"
+    End
+  ZERRHM = "*"
+  ZERRALRM = "YES"
+  ZERRSM = "AGED to" newmbr"!"
+  ZERRLM = "It worked. AGE copied" member "to" newmbr"."
+  ADDRESS ISPEXEC "VPUT (ZERRSM ZERRLM ZERRHM ZERRALRM) SHARED"
+  ADDRESS ISPEXEC "SETMSG MSG(ISRZ002)"
+  exit 0

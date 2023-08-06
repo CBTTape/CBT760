@@ -1,0 +1,50 @@
+>< ADD NAME=LINK     0101-07007-07016-2348-00005-00005-00000-KTOMIAK
+
+LINK$01   Link from passed input
+LINK$02   Link from object library
+LINK$03   ReLink from load library
+
+>< ADD NAME=LINK$01  0100-07007-07007-0031-00017-00017-00000-KTOMIAK
+//LINKOBJ PROC                                                          00010000
+//L       EXEC PGM=HEWL,PARM='MAP,LET,LIST,NCAL'                        00020000
+//SYSLIN   DD  DSN=&&OBJ,DISP=(OLD,DELETE)                              00030000
+//         DD  DDNAME=SYSIN                                             00040000
+//SYSLMOD  DD  DISP=(,PASS),UNIT=SYSALLDA,SPACE=(CYL,(1,1,1)),          00050000
+//             DSN=&&GOSET(GO)                                          00060000
+//SYSUT1   DD  DSN=&&SYSUT1,SPACE=(1024,(120,120),,,ROUND),             00070000
+//             UNIT=SYSALLDA,DCB=BUFNO=1                                00080000
+//SYSPRINT DD  SYSOUT=*                                                 00090000
+//LINKOBJ PEND                                                          00100000
+//*                                                                     00110000
+//STEP001 EXEC PROC=LINKOBJ                                             00120000
+//SYSIN    DD  *                                                        00130000
+ NAME  PDSUPDTE(R)                                                      00140000
+/*                                                                      00150000
+//SYSLMOD  DD  DISP=SHR,DSN=SHARE##.SHR.LOADLIB                         00160000
+//                                                                      00170000
+>< ADD NAME=LINK$02  0100-07007-07007-0026-00012-00012-00000-KTOMIAK
+//*
+//RELINK  EXEC PGM=IEWBLINK,REGION=1024K,
+//             PARM='NCAL,LET,LIST,MAP'    ,AMODE=31,RMODE=ANY'
+//LOADLIB  DD  DISP=SHR,DSN=SHARE##.SHR.LOADLIB
+//SYSLIN   DD  *
+ INCLUDE LOADLIB(PDSUPDTE)
+ ENTRY PDSUPDTE
+ NAME  PDSUPDTE(R)
+/*
+//SYSLMOD  DD  DISP=SHR,DSN=SHARE##.SHR.LOADLIB
+//SYSPRINT DD  SYSOUT=*
+//
+>< ADD NAME=LINK$03  0101-07007-07007-0032-00012-00012-00012-KTOMIAK
+//*                                                                     00010001
+//LINKLMD EXEC PGM=IEWBLINK,REGION=1024K,                               00020001
+//             PARM='NCAL,LET,LIST,MAP'                                 00030001
+//LOADLIB  DD  DISP=SHR,DSN=SHARE##.SHR.LOADLIB                         00040001
+//SYSLIN   DD  *                                                        00050001
+ INCLUDE LOADLIB(PDSUPDTE)                                              00060001
+ ENTRY PDSUPDTE                                                         00070001
+ NAME  PDSUPDTE(R)                                                      00080001
+/*                                                                      00090001
+//SYSLMOD  DD  DISP=SHR,DSN=SHARE##.SHR.LOADLIB                         00100001
+//SYSPRINT DD  SYSOUT=*                                                 00110001
+//                                                                      00120001

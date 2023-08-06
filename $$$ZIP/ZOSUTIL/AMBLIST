@@ -1,0 +1,46 @@
+>< ADD NAME=AMB      0103-07016-07155-2106-00003-00004-00000-KTOMIAK
+
+AMB$01    LIST load module, object
+AMB$02    LIST LPA
+
+>< ADD NAME=AMB$01   0100-07003-07003-2113-00021-00021-00000-KTOMIAK
+                                                                        00010000
+//*                                                                     00020000
+//STEP010 EXEC PGM=AMBLIST                                              00030000
+//SYSPRINT DD  SYSOUT=*                                                 00040000
+//OBJLIB   DD  DISP=SHR,DSN=KTOMIAK.SHR.OBJLIB                          00050000
+//LOADLIB  DD  DISP=SHR,DSN=KTOMIAK.SHR.LOADLIB                         00051000
+//SYSIN    DD  *                                                        00060000
+ LISTOBJ DDN=OBJLIB,MEMBER=PDSUPDTE                                     00071000
+ LISTIDR DDN=LOADLIB,MEMBER=PDSUPDTE                                    00071100
+ LISTLOAD DDN=LOADLIB,MEMBER=PDSUPDTE                                   00072000
+ LISTLPA FLPA                                                           00073000
+ LISTLPA MLPA                                                           00074000
+ LISTLPA PLPA                                                           00075000
+/*                                                                      00080000
+//* Other options:                                                      00090000
+//* LISTIDR DDN=LOADLIB,MEMBER=COBTEST                                  00100000
+//* LISTLOAD DDN=LOADLIB,MEMBER=COBTEST                                 00110000
+//* LISTOBJ DDN=LOADLIB,MEMBER=COBTEST                                  00120000
+//* LISTLPA FLPA|MLPA|PLPA                                              00130000
+//*                                                                     00140000
+                                                                        00150000
+>< ADD NAME=AMB$02   0100-07155-07155-2106-00018-00018-00000-KTOMIAK
+                                                                        00010000
+//*                                                                     00020000
+//STEP010 EXEC PGM=AMBLIST                                              00030000
+//SYSPRINT DD  SYSOUT=*                                                 00040000
+//OBJLIB   DD  DISP=SHR,DSN=KTOMIAK.SHR.OBJLIB                          00050000
+//LOADLIB  DD  DISP=SHR,DSN=KTOMIAK.SHR.LOADLIB                         00051000
+//SYSIN    DD  *                                                        00060000
+ LISTLPA FLPA                                                           00073000
+ LISTLPA MLPA                                                           00074000
+ LISTLPA PLPA                                                           00075000
+/*                                                                      00080000
+//* Other options:                                                      00090000
+//* LISTIDR DDN=LOADLIB,MEMBER=COBTEST                                  00100000
+//* LISTLOAD DDN=LOADLIB,MEMBER=COBTEST                                 00110000
+//* LISTOBJ DDN=LOADLIB,MEMBER=COBTEST                                  00120000
+//* LISTLPA FLPA|MLPA|PLPA                                              00130000
+//*                                                                     00140000
+                                                                        00150000

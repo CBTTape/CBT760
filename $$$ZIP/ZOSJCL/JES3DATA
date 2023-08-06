@@ -1,0 +1,16 @@
+
+//*DATASET
+
+Used to start in-stream data.
+
+//*DATASET DDNAME=ddname[,parameter]...
+
+The parameters are:
+MODE= {E}
+      {C}
+J= {YES}
+   {NO }
+CLASS= {NO }
+       {MSGCLASS}
+       {class }
+

@@ -1,0 +1,1043 @@
+rexx_REXFTPSK: /* We still need rexx in comment if read from SYSPROC */
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+ Dataset:  KTOMIAK.REXX(REXFTPSK)
+ Author:   KTomiak
+ Contact:  "Kenneth Tomiak"<KenTomiak@KTomiak.org>
+ Syntax:   REXFTPSK {ftp_site}
+ Overview: Use the SOCKET() api to effectively do an FTP.
+
+=======================================================================
+
+ History of Modifications
+ ------------------------
+  When     Who      What you did
+  -------- -------- ---------------------------------------------------
+  20070506 KTOMIAK  Original code.
+
+=======================================================================
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+  Parse Arg all_my_arguments
+  Numeric Digits 12
+
+rexx_Main_REXFTPSK:
+  return_code = rexx_Initialize()
+  If (return_code = 0) then,
+    Do
+      return_code = rexx_Process()
+      return_code = rexx_Termination()
+    End
+  Return 0
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we open any files and initialize any
+ constants we might need.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Initialize:
+  PARSE VERSION,
+    version_rexx_name,
+    version_rexx_version,
+    version_rexx_date
+  PARSE SOURCE,
+    source_host_env,
+    source_call_type,
+    source_uc_exec_name,
+    source_hostdd,
+    source_hostdsn,
+    source_nf_exec_name,
+    source_initial_cmd_env,
+    source_asid_name,
+    source_char8_user_token,
+    source_hostother
+  Address_Environment = Address()
+  job_specs = rexx_jobspecs()
+  say ""
+  say Copies("=",55)
+  say left("=" source_uc_exec_name rexxpgm_version,53) "="
+  say left("=" "executing under" source_host_env,53) "="
+  say left("=" "as a" source_call_type,53) "="
+  say left("=  on" date() "at" time()".",53) "="
+  say Copies("=",55)
+  say ""
+  return_code = 0
+  sysvar_sysuid=SYSVAR("SYSUID")
+  sysvar_sysenv = SYSVAR("SYSENV")
+
+  If (source_host_env >< "TSO") Then,
+    Do
+      Say "Wrong host environment" source_host_env
+      return_code = 16
+    End
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we do our processing.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Process:
+  parse var all_my_arguments  ftp_site arguments "(" options
+
+/* ------------------------------------------------------------------*/
+/* ----------------------- Main Program ---------------------------- */
+/* ------------------------------------------------------------------*/
+  Call init_rtn                   /* Initialize the variables        */
+  Call Initialize_TCPIP_Services
+  if (initialized = 1) then,
+    do
+      Call main_rtn               /* Receive lines and send commands */
+    end
+  if (initialized = 1) then,
+    do
+      Call Terminate_TCPIP_Services
+    end
+  Call shut_rtn                   /* Terminate the program           */
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we close files and finish up.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Termination:
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Place any of your subroutines and procedures below this.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_jobspecs:
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO CVT FROM PSA                                */
+  /*---------------------------------------------------------------*/
+  PTR2PSA = 0
+  CVTPTR = STORAGE(D2X(PTR2PSA + 16),4)
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO SMCA, THEN GET SMF SYSTEM ID                */
+  /*---------------------------------------------------------------*/
+  CVTSMCA = STORAGE(D2X(C2D(CVTPTR)+197),3)
+  SMFID = STORAGE(D2X(C2D(CVTSMCA)+16),4)
+  /*---------------------------------------------------------------*/
+  /* GET JOBNAME, STEP, AND PROCEDURE                              */
+  /*---------------------------------------------------------------*/
+  PSATOLD  = STORAGE(21C,4)                    /* POINTER TO TCB   */
+  PTRTIOT  = STORAGE(D2X(C2D(PSATOLD)+12),4)   /* POINTER TO TIOT  */
+  JOBNAME  = STORAGE(D2X(C2D(PTRTIOT)),8)
+  STEPNAME = STORAGE(D2X(C2D(PTRTIOT)+8),8)
+  PROCNAME = STORAGE(D2X(C2D(PTRTIOT)+16),8)
+  Tcbjscbb = Storage(D2x(C2d(Psatold)+181),3)              /* jscb */
+  jscbssib = STORAGE(D2X(C2D(tcbjscbb)+316),4)      /* Ptr to SSIB */
+  ssibjbid = STORAGE(D2X(C2D(jscbssib)+12),8)    /* job identifier */
+  Return JOBNAME SSIBJBID STEPNAME PROCNAME
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ describe your routines here
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/* ------------------------------------------------------------------*/
+/* ----------------------- MAIN Routine ---------------------------- */
+/* ------------------------------------------------------------------*/
+main_rtn:                         /* Start of routine                */
+  say uc_exec_name "main_rtn"
+  do while translate(Command) >< "QUIT"
+    call get_response
+    if (ftp_cont = " ") then,
+      do
+        say uc_exec_name "Enter command:"
+        parse pull command
+        parse var command command ";" .
+        command = strip(command,"B"," ")
+        say "Command("command")"
+/*      if (command = "LIST *") then trace ?ilrs  */
+        sendrc = SendCommand(Socket, Command)
+      end
+  end
+  Return
+
+get_response:
+  site_response = read_from_socket(o_d)
+  parse var site_response ftp_rc ftp_prot ftp_port ftp_ipaddr ftp_len,
+    site_response
+  do while site_response >< ""
+    parse var site_response one_line (cr_lf) site_response
+    say one_line
+  end
+  if (o_d = c_d) then,
+    call analyze_rtn
+  Return
+
+/* ------------------------------------------------------------------*/
+/* ----------------------- INIT Routine ---------------------------- */
+/* ------------------------------------------------------------------*/
+init_rtn:                         /* Start of routine                */
+  sys_sysenv  = SYSVAR("SYSENV")  /* FORE means I can prompt         */
+  sys_sysispf = SYSVAR("SYSISPF") /* ACTIVE means I could do a panel */
+  if (pos("trace",options) > 0) then,
+    interpret options
+  if (ftp_site = "") then,
+    do
+      say "I require a site name or ip address."
+      ftp_site = "localhost"
+      say "Defaulting to" ftp_site
+    end
+  mvs_sysname = MVSVAR("SYSNAME")
+  sys_sysuid = SYSVAR("SYSUID")
+  if (translate(ftp_site) = mvs_sysname) then,
+    do
+      say copies("*",79)
+      say left("* You really want to ftp to the same system?",77) "*"
+      say copies("*",79)
+      pull answer
+      if (left(answer,1) >< "Y") then exit 0
+      ftp_site = "localhost"
+    end
+  if (translate(ftp_site) = "ZOS1") then ftp_site = "192.168.1.10"
+  if (translate(ftp_site) = "ZOS2") then ftp_site = "192.168.2.21"
+  if (translate(ftp_site) = "ZVM1") then ftp_site = "192.168.3.32"
+  if (translate(ftp_site) = "ZVM2") then ftp_site = "192.168.4.43"
+  /*
+  "Alloc file(NETRC) dataset(cor.cntl(netrc)) shr reuse"
+  */
+  allcblk = ddbycblk()
+  call de_parse
+  find_dd = "NETRC"
+  netrc_dd = tiotddnm.find_dd
+  if (netrc_dd >< "") then,
+    do
+      say "NETRC("netrc_dd")"
+      netrc_dsns = dd_dsname.netrc_dd.0
+      do ds_x = 1 to netrc_dsns
+        say "  DSN="dd_dsname.netrc_dd.ds_x
+      end
+      call read_netrc
+    end
+  else,
+    do
+      say "Since NETRC is not allocated to your session,"
+      say "I will require a userid and password for" ftp_site"."
+      call get_user
+      call get_pswd
+    end
+  find_dd = "SYSFTPD"
+  netrc_dd = tiotddnm.find_dd
+  if (netrc_dd >< "") then,
+    do
+      say "I hope your FTP Client overrides are OK for" ftp_site
+      say "SYSFTPD("netrc_dd")"
+      netrc_dsns = dd_dsname.netrc_dd.0
+      do ds_x = 1 to netrc_dsns
+        say "  DSN="dd_dsname.netrc_dd.ds_x
+      end
+    end
+/*
+  "Alloc file(SYSFTPD) dataset(cor.cntl(ftpclnt)) shr reuse"
+  "Alloc file(NETRC) dataset(cor.cntl(netrc)) shr reuse"
+*/
+  cr_lf  = x2c('0D25')
+  rcvdata = ""
+  initialized = 0
+  port = 21
+  return                          /* Return to caller                */
+
+get_user:
+  net_user = ""
+  do while net_user = ""
+    say "Enter userid:"
+    parse pull net_user
+  end
+  return
+
+get_pswd:
+  net_pswd = ""
+  do while net_pswd = ""
+    say "Enter" net_user"'s password:"
+    parse pull net_pswd
+    parse var net_pswd net_pswd ";" .
+  end
+  return
+
+read_netrc:
+  Address TSO "EXECIO * DISKR NETRC (FINIS stem netpswd.)"
+  myrc = rc
+  if (myrc >< 0) then,
+    do
+      say "NETRC is allocated but 'I canna read it captain.'."
+      return
+    end
+  if (netpswd.0 = 0) then,
+    do
+      say "NETRC is allocated but 'Dr. Spock! Look at this,"
+      say "theare argh no records onna it.'"
+      return
+    end
+  good_site = 0
+  do net_x = 1 to netpswd.0
+    good_site = pos(ftp_site,netpswd.net_x)
+    if (good_site > 0) then leave
+  end
+  if (good_site = 0) then,
+    do
+      say ftp_site "is not listed in NETRC so,"
+      say "I will require a userid and password for" ftp_site"."
+    end
+  else,
+    do
+      netpswd.net_x = space(netpswd.net_x)
+      parse var netpswd.net_x . "login" net_user "password" net_pswd
+      select
+        when ((net_user = "") & (net_pswd = "")) then,
+          do
+            say "Even though" ftp_site "is listed in NETRC,"
+            say "I still require a userid and password."
+            call get_user
+            call get_pswd
+          end
+        when (net_user = "") then,
+          do
+            say "Even though" ftp_site "is listed in NETRC,"
+            say "I still require a userid."
+            call get_user
+          end
+        when (net_pswd = "") then,
+          do
+            say "Even though" ftp_site "is listed in NETRC,"
+            say "I still require a password."
+            call get_pswd
+          end
+        otherwise
+          say "I sure hope" net_user "and" new_pswd "are valid."
+      end
+    end
+  return                          /* Return to caller                */
+
+de_parse:
+/* #dds;dd#;ddname;#dsn;dsn#;dsname;...                        */
+  allofit = allcblk
+  tiotddnm. = ""
+  tiotddnm.0 = 0
+  parse var allofit nbr_dds ";" allofit
+  do dd_x = 1 to nbr_dds
+    parse var allofit dd_nbr ";" dd_name ";" nbr_dsns ";" allofit
+    tiotddnm.dd_name = dd_x
+    dd_dsname.dd_x. = ""
+    do ds_x = 1 to nbr_dsns
+      parse var allofit ds_nbr ";" ds_name ";" allofit
+      dd_dsname.dd_x.ds_x = ds_name
+    end
+    dd_dsname.dd_x.0 = ds_x - 1
+  end
+  tiotddnm.0 = dd_x - 1
+  return
+
+/* ------------------------------------------------------------------*/
+
+    /*------------------------------------------------------*/
+    /*                                                      */
+    /* Procedure: Establish_A_Socket                        */
+    /* Purpose:   Get the TCP/IP socket primed.             */
+    /* Arguments: None                                      */
+    /* Returns:   rc                                        */
+    /*                                                      */
+    /*------------------------------------------------------*/
+Initialize_TCPIP_Services:
+
+ /*----------------------------------------------------------------*/
+ /* Initialize the Socket                                          */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('Initialize', uc_exec_name, 3)
+  parse var so_txt s_rc s_subtask s_maxdesc s_servicename
+  socket_rc = s_rc
+  if s_rc = 0 then,
+    Do
+      initialized = 1
+/*
+      Say s_servicename":"s_subtask "initialized" s_maxdesc "sockets"
+*/
+    End
+  else,
+    call error 'E', 40, 'Unable to initialize SOCKET' uc_exec_name s_rc
+
+ /*----------------------------------------------------------------*/
+ /* Show the version of the sockets                                */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('Version')
+  parse var so_txt s_rc s_results
+  if s_rc = 0 then,
+    Do
+/*
+      Say "'Socket' version="s_results
+*/
+    End
+  else,
+    call error 'W', 50, 'Unable to get SOCKET version' s_rc
+
+ /*----------------------------------------------------------------*/
+ /* Open a socket                                                  */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('Socket', 'AF_INET', 'STREAM', 'TCP')
+  parse var so_txt s_rc s_results
+  if s_rc >< 0 then,
+    do
+      call error 'E', 60, 'SOCKET(SOCKET) rc='s_rc
+    end
+  else,
+    Do
+/*
+      say "Socket(STREAM)="so_txt
+*/
+      c_d = s_results
+      o_d = c_d
+    End
+
+ /*----------------------------------------------------------------*/
+ /* Turn  on               EBCDIC-Ascii conversion                 */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('SetSockOpt',c_d,'SOL_SOCKET','SO_ASCII','On')
+  parse var so_txt s_rc s_results
+  if s_rc = 0 then,
+    Do
+      Say "Socket('SetSockOpt',So_ASCII)" so_txt" turned on."
+    End
+  else,
+    call error 'W', 70, 'Unable to set SOCKET So_ASCii' s_rc
+
+ /*----------------------------------------------------------------*/
+ /* See if ftp_site is an ipaddres or resolve name                 */
+ /*----------------------------------------------------------------*/
+  parse var ftp_site d1 '.' d2 '.' d3 '.' d4
+  must_be_name = "N"
+  if datatype(d1) >< "NUM" then must_be_name = "Y"
+  if datatype(d2) >< "NUM" then must_be_name = "Y"
+  if datatype(d3) >< "NUM" then must_be_name = "Y"
+  if datatype(d4) >< "NUM" then must_be_name = "Y"
+  if must_be_name = "Y" then,
+    do
+      so_txt = Socket('Gethostbyname', ftp_site)
+      parse var so_txt s_rc s_results
+      if s_rc >< 0 then,
+        do
+          call error 'I', 80, 'GetHostByName for',
+            ftp_site 'failed' s_rc
+        end
+      else,
+        Do
+          max_ip_addresses = 0
+          Do while s_results >< ""
+            max_ip_addresses = max_ip_addresses + 1
+            parse var s_results ip_address s_results
+            smtp_ipaddr.max_ip_addresses = ip_address
+/*
+            say max_ip_addresses '=' ip_address
+*/
+          End
+          smtp_ipaddr.0 = max_ip_addresses
+/*
+          Say ftp_site "resolved into" smtp_ipaddr.0 "address(es)"
+*/
+        End
+    end
+  else,
+    do
+      so_txt = Socket('Gethostbyaddr', ftp_site)
+      parse var so_txt s_rc s_results
+      if s_rc >< 0 then,
+        do
+          call error 'I', 90, 'GetHostByaddr for',
+            ftp_site 'failed' s_rc
+        end
+      else,
+        Do
+/*
+          say ftp_site "resolved to" s_results
+*/
+          ftp_name = s_results    /* not that I use it, just nice */
+        end
+    end
+
+ /*----------------------------------------------------------------*/
+ /* Find domain name                                               */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('Getdomainname')
+  parse var so_txt s_rc s_results
+  if s_rc >< 0 then,
+    do
+      call error 'W', 105, 'Getdomainname failed' s_rc
+    end
+  else,
+    Do
+      domain = s_results
+    end
+
+ /*----------------------------------------------------------------*/
+ /* Find IP address of client's machine                            */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('Gethostid')
+  parse var so_txt s_rc s_results
+  if s_rc >< 0 then,
+    do
+      call error 'E', 100, 'GetHostID failed' s_rc
+    end
+  else,
+    Do
+      max_ip_addresses = 0
+      Do while s_results >< ""
+        max_ip_addresses = max_ip_addresses + 1
+        parse var s_results ip_address s_results
+        client_ipaddr.max_ip_addresses = ip_address
+/*
+        say max_ip_addresses '=' ip_address
+*/
+      End
+      client_ipaddr.0 = max_ip_addresses
+/*
+      Say "Client resolved into" client_ipaddr.0 "address(es)"
+*/
+    End
+  clientip = client_ipaddr.1
+  so_txt = Socket('Gethostbyaddr', clientip)
+  parse var so_txt s_rc s_results
+  if s_rc >< 0 then,
+    do
+      call error 'W', 110, 'GetHostByaddr for' client 'failed' s_rc
+    end
+  else,
+    Do
+/*
+      say clientip "resolved to" s_results
+*/
+      client = s_results
+    end
+ /*----------------------------------------------------------------*/
+ /* Connect the socket                                             */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('Connect', c_d, 'AF_INET' port ftp_site)
+  parse var so_txt s_rc s_results
+  if s_rc >< 0 then,
+    do
+      call error 'W', 120, 'SOCKET(CONNECT) rc='s_rc
+    end
+  else,
+    Do
+/*
+      say "Connected to" ftp_site s_results
+*/
+    End
+
+
+ /*----------------------------------------------------------------*/
+ /* Determine   blocking mode                                      */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('Fcntl', c_d, 'F_GETFL')
+  parse var so_txt s_rc s_results
+  if s_rc >< 0 then,
+    do
+      call error 'W', 140, 'SOCKET(Fcntl) rc='s_rc
+    end
+  else,
+    Do
+/*
+      say "Running in "s_results "mode"
+*/
+    End
+  Return
+
+connect_new_port:
+  parse arg my_port
+
+ /*----------------------------------------------------------------*/
+ /* Open a socket                                                  */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('Socket', 'AF_INET', 'STREAM', 'TCP')
+  parse var so_txt s_rc s_results
+  if s_rc >< 0 then,
+    do
+      call error 'E', 60, 'SOCKET(SOCKET) rc='s_rc
+    end
+  else,
+    Do
+/*
+      say "Socket(STREAM)="so_txt
+*/
+      f_d = s_results
+    End
+
+ /*----------------------------------------------------------------*/
+ /* Turn  on               EBCDIC-Ascii conversion                 */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('SetSockOpt',f_d,'SOL_SOCKET','SO_ASCII','On')
+  parse var so_txt s_rc s_results
+  if s_rc = 0 then,
+    Do
+      Say "Socket('SetSockOpt',So_ASCII)" so_txt"."
+    End
+  else,
+    call error 'W', 70, 'Unable to set SOCKET So_ASCii' s_rc
+ /*----------------------------------------------------------------*/
+ /* Connect the socket                                             */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('Connect', f_d, 'AF_INET' my_port ftp_site)
+  parse var so_txt s_rc s_results
+  if s_rc >< 0 then,
+    do
+      call error 'W', 120, 'SOCKET(CONNECT) rc='s_rc
+    end
+  else,
+    Do
+/*
+      say "Connected to" ftp_site s_results
+*/
+    End
+  return
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Procedure: LineOut                                   */
+  /* Purpose:   Output the line using EXECIO.             */
+  /* Arguments: ddname                                    */
+  /*            TextString                                */
+  /* Returns:   rc                                        */
+  /*                                                      */
+  /*------------------------------------------------------*/
+LineOut:
+  outddname = arg(1)
+  TextString = arg(2)
+  push TextString
+  "EXECIO 1 DISKW" outddname
+  Return
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Procedure: Close_Socket                              */
+  /* Purpose:   Close the socket                          */
+  /* Arguments: Socket - active socket number             */
+  /* Returns:   nothing                                   */
+  /*                                                      */
+  /*------------------------------------------------------*/
+Close_socket:
+  so_txt = Socket('Shutdown', c_d, 'BOTH')
+  parse var so_txt s_rc s_results
+  if s_rc <> 0 then,
+    do
+      call error 'W', 232, 'Shutdown rc='s_rc
+    end
+
+  so_txt = Socket('Close', c_d)
+  parse var so_txt s_rc s_results
+  if s_rc <> 0 then,
+    do
+      call error 'W', 234, 'Close rc='s_rc
+    end
+
+  so_txt = Socket('Close', f_d)
+  parse var so_txt s_rc s_results
+  if s_rc <> 0 then,
+    do
+      call error 'W', 234, 'Close rc='s_rc
+    end
+  Return
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Function:  SendCommand                               */
+  /* Purpose:   Send a command via the specified socket   */
+  /*            and return the full response to caller.   */
+  /* Arguments: Socket - active socket number             */
+  /*            Command - command string                  */
+  /* Returns:   Response from server or empty string if   */
+  /*            failed.                                   */
+  /*                                                      */
+  /*------------------------------------------------------*/
+SendCommand:
+  Parse Arg Socket, Command
+
+  /* append CRLF to end the command string */
+  ftp_cmd = Command || cr_lf
+
+  so_txt = Socket('Write', c_d,ftp_cmd)
+  parse var so_txt s_rc s_results
+  if s_rc <> 0 then,
+    do
+      call error 'E', 230, 'SOCKET(WRITE) rc='s_rc
+    end
+  else,
+    Do
+      c_data_len = s_results
+      if c_data_len < 1 then say "Writing nothing?" c_data_len
+    End
+  return so_txt
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Function:  Read_From_Socket                          */
+  /* Purpose:   Retrieve the results of a command or      */
+  /*            socket call.                              */
+  /* Arguments: Socket - active socket number             */
+  /* Returns:   Response from server or empty string if   */
+  /*            failed.                                   */
+  /*                                                      */
+  /*------------------------------------------------------*/
+Read_from_socket:
+  parse arg my_d
+  read_lines = ""
+  so_txt = Socket('Recvfrom', my_d)
+  parse var so_txt s_rc s_results
+  if s_rc >< 0 then,
+    do
+      call error 'E', 240, 'SOCKET(RecvFrom) rc='s_rc
+    end
+  Return so_txt
+
+  /*------------------------------------------------------*/
+  /* Syntax error routine                                 */
+  /*------------------------------------------------------*/
+syntax:
+  xrc = rc
+  signal off syntax
+  say "xrc="xrc
+  sigl_record = sigl
+  MY_DATA=SOURCELINE(SIGL_RECORD)
+  say sigl_record my_data
+  call error 'E', rc, '==> REXX Error No.' xrc '@ line',
+    sigl_record
+  signal on syntax
+  return
+
+  /*------------------------------------------------------*/
+  /* Halt   error routine                                 */
+  /*------------------------------------------------------*/
+halt:
+  call error 'E', 220, '==> REXX Interrupted'
+  return
+
+  /*------------------------------------------------------*/
+  /* Common error routine                                 */
+  /*------------------------------------------------------*/
+error:
+  type = arg(1)
+  retc = arg(2)
+  text = arg(3)
+  ecretc = right(retc,3,'0')
+  ectype = translate(type)
+  ecfull = uc_exec_name || ecretc || ectype
+  say '===> 'type":" ecfull text
+  if type <> 'E' then return
+  if (initialized = 0) then,
+    do
+      so_txt = Socket('SocketSetStatus')
+      parse var so_txt s_rc s_severreason
+      if (s_rc <> 'Connected') then,
+        say 'The status of the socket set is' s_rc s_severreason
+    end
+  else,
+    do
+      so_txt = Socket('SocketSetStatus')
+      parse var so_txt s_rc s_severreason
+      if (s_rc <> 'Connected') then,
+        say 'The status of the socket set is' s_rc s_severreason
+    end
+  so_txt = Socket('Terminate')
+  exit retc
+
+ /*-------------------------------------------------------*/
+ /* Terminate the socket and exit                         */
+ /*-------------------------------------------------------*/
+Terminate_TCPIP_Services:
+  Call Close_Socket
+  so_txt = Socket('Terminate')
+  initialize = 0
+  Return
+
+shut_rtn:
+  say "Done."
+  Return
+
+analyze_rtn:       /* Per RFC-959 */
+  parse var one_line,
+            ftp_resp +3 ftp_cont +1 ftp_text,
+            0 ,
+            ftprx +1 ftpry +1 ftprz +1 .
+  select
+    when (ftp_resp = 110) then, /* Restart marker                    */
+      do
+        ftp_action = "soso"
+      end
+    when (ftp_resp = 120) then, /* Service ready in nnn minutes      */
+      do
+        ftp_action = "soso"
+      end
+    when (ftp_resp = 125) then, /* Data connection already open, xfr */
+      do
+        ftp_action = "soso"
+        o_d = f_d
+        call get_response
+      end
+    when (ftp_resp = 150) then, /* file status okay;about to open    */
+      do
+        ftp_action = "soso"
+      end
+    when (ftp_resp = 200) then, /* Command okay                      */
+      do
+        ftp_action = "okay"
+      end
+    when (ftp_resp = 202) then, /* Command not implemented, superflu */
+      do
+        ftp_action = "okay"
+      end
+    when (ftp_resp = 211) then, /* System status or system help reply*/
+      do
+        ftp_action = "okay"
+      end
+    when (ftp_resp = 212) then, /* Directory status                  */
+      do
+        ftp_action = "okay"
+      end
+    when (ftp_resp = 213) then, /* File status                       */
+      do
+        ftp_action = "okay"
+      end
+    when (ftp_resp = 214) then, /* Help message                      */
+      do
+        ftp_action = "okay"
+      end
+    when (ftp_resp = 215) then, /* NAME system type                  */
+      do
+        ftp_action = "okay"
+      end
+    when (ftp_resp = 220) then, /* Service ready for new user        */
+      do
+        ftp_action = "okay"
+        if (ftp_cont = " ") then,
+          call send_USER
+      end
+    when (ftp_resp = 221) then, /* Service closing control connection*/
+      do
+        ftp_action = "okay"
+      end
+    when (ftp_resp = 225) then, /* Data connection open, no xfr      */
+      do
+        ftp_action = "okay"
+      end
+    when (ftp_resp = 226) then, /* Closing data connection, OK       */
+      do
+        ftp_action = "okay"
+      end
+    when (ftp_resp = 227) then, /* Entering Passive Mode             */
+      do
+        parse var ftp_text . "(" i.1 "," i.2 "," i.3 "," i.4,
+          "," i.5 "," i.6 ")" .
+        n_port =  ((i.5*256)+i.6)
+        say "Now I should start using port" n_port"."
+        call connect_new_port n_port
+        ftp_action = "okay"
+      end
+    when (ftp_resp = 230) then, /* User logged in, proceed           */
+      do
+        ftp_action = "okay"
+      end
+    when (ftp_resp = 250) then, /* Requested file action okay        */
+      do
+        ftp_action = "okay"
+        o_d = c_d
+      end
+    when (ftp_resp = 257) then, /* "Pathname" created                */
+      do
+        ftp_action = "okay"
+      end
+    when (ftp_resp = 331) then, /* User name ok, need password       */
+      do
+        call send_PASS
+        ftp_action = "more"
+      end
+    when (ftp_resp = 332) then, /* Need account for login            */
+      do
+        ftp_action = "more"
+      end
+    when (ftp_resp = 350) then, /* Req file action pending           */
+      do
+        ftp_action = "more"
+      end
+    when (ftp_resp = 421) then, /* Service not available, closing    */
+      do
+        ftp_action = "iffy"
+      end
+    when (ftp_resp = 425) then, /* Can't open data connection        */
+      do
+        ftp_action = "iffy"
+      end
+    when (ftp_resp = 426) then, /* Closing data connection, aborted  */
+      do
+        ftp_action = "iffy"
+      end
+    when (ftp_resp = 450) then, /* Req file action not taken, busy   */
+      do
+        ftp_action = "iffy"
+      end
+    when (ftp_resp = 451) then, /* Req action aborted, local error   */
+      do
+        ftp_action = "iffy"
+      end
+    when (ftp_resp = 452) then, /* Req action not taken, S80A abend  */
+      do
+        ftp_action = "iffy"
+      end
+    when (ftp_resp = 500) then, /* Syntax error, command unrecognized*/
+      do
+        ftp_action = "failed"
+      end
+    when (ftp_resp = 501) then, /* Syntax error  in parameters or arg*/
+      do
+        ftp_action = "failed"
+      end
+    when (ftp_resp = 502) then, /* Command not implemented           */
+      do
+        ftp_action = "failed"
+      end
+    when (ftp_resp = 503) then, /* Bad sequence of commands          */
+      do
+        ftp_action = "failed"
+      end
+    when (ftp_resp = 504) then, /* Command not implemented for parm  */
+      do
+        ftp_action = "failed"
+      end
+    when (ftp_resp = 530) then, /* Lot logged in                     */
+      do
+        ftp_action = "failed"
+      end
+    when (ftp_resp = 532) then, /* need account for storing files    */
+      do
+        ftp_action = "failed"
+      end
+    when (ftp_resp = 550) then, /* Req action not taken, notfound    */
+      do
+        ftp_action = "failed"
+      end
+    when (ftp_resp = 551) then, /* Req action aborted, page type err */
+      do
+        ftp_action = "failed"
+      end
+    when (ftp_resp = 552) then, /* Req file action aborted, Sx37     */
+      do
+        ftp_action = "failed"
+      end
+    when (ftp_resp = 553) then, /* Req action not taken, not allowed */
+      do
+        ftp_action = "failed"
+      end
+    otherwise
+      ftp_action = ""
+    say uc_exec_name "doesn't know what ("ftprx||ftpry||ftprz") means."
+  end
+  if (ftp_action >< "") then return
+  select
+    when (ftprx = 1) then,      /* positive preliminary reply        */
+      do
+        try_again = "hopefully"
+      end
+    when (ftprx = 2) then,      /* positive completion reply         */
+      do
+        try_again = "okay"
+      end
+    when (ftprx = 3) then,      /* positive intermediate reply       */
+      do
+        try_again = "more to come."
+      end
+    when (ftprx = 4) then,      /* transient negative completion     */
+      do
+        try_again = "try, try, again"
+      end
+    when (ftprx = 5) then,      /* permanent negative completion     */
+      do
+        try_again = "not at all"
+      end
+    otherwise
+      try_again = ""
+    say uc_exec_name "doesn't know what ("ftprx")"ftpry||ftprz "means."
+  end
+  if (try_again = "") then return
+
+  select
+    when (ftpry = 0) then,      /* syntax                            */
+      do
+        try_type = "syntax"
+      end
+    when (ftpry = 1) then,      /* information                       */
+      do
+        try_type = "info"
+      end
+    when (ftpry = 2) then,      /* connections                       */
+      do
+        try_type = "conn"
+      end
+    when (ftpry = 3) then,      /* authentication and accounting     */
+      do
+        try_type = "auth"
+      end
+    when (ftpry = 4) then,      /* reserved                          */
+      do
+        try_type = "file"
+      end
+    when (ftpry = 5) then,      /* file system                       */
+      do
+        try_type = "file"
+      end
+    otherwise
+    say uc_exec_name "doesn't know what "ftprx"("ftpry")"ftprz "means."
+  end
+  if (try_type = "") then return
+  return
+
+/*
+
+EZY2640I Using dd:SYSFTPD=DATA(FTPCLNT) for local site configuration
+         n parameters.
+EZA1450I IBM FTP CS V1R7
+EZA1554I Connecting to:   192.168.2.22 port: 21.
+220-FTPD1 IBM FTP CS V1R7 at ZOSJES2, 17:06:25 on 2007-01-19.
+220 Connection will close if idle for more than 5 minutes.
+EZA1701I >>> USER ktomiak
+331 Send password please.
+EZA1789I PASSWORD:
+
+EZA1701I >>> PASS
+501 password missing from PASS command
+EZA1460I Command:
+EZA1619I For a list of the available commands, say HELP
+EZA1460I Command:
+
+*/
+send_USER:
+  say uc_exec_name ">> USER" net_user
+  Command = "USER" net_user
+  sendrc = SendCommand(Socket, Command)
+  call get_response
+  call analyze_rtn
+  return
+
+send_NAME:                 /* I have no idea why I was trying this. */
+  say uc_exec_name ">> NAME"
+  Command = "NAME"
+  sendrc = SendCommand(Socket, Command)
+  call get_response
+  call analyze_rtn
+  return
+
+send_PASS:
+  say uc_exec_name ">> PASS"
+  Command = "PASS" net_pswd
+  sendrc = SendCommand(Socket, Command)
+  call get_response
+  call analyze_rtn
+  return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+__DATA__
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */

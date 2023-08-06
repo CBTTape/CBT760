@@ -1,0 +1,15 @@
+//OBJ2LMOD PROC MBRNAME=DUMMY
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* LINK THE OBJECT DECK INTO A LOAD MODULE.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//LKED    EXEC PGM=IEWBLINK,
+//             PARM='NCAL,MAP,LIST,LET'
+//SYSUT1   DD  UNIT=SYSALLDA,SPACE=(2048,(200,20))
+//SYSPRINT DD  SYSOUT=*
+//EXELIB   DD  DISP=SHR,DSN=&SYSUID..EXELIB
+//SYSLMOD  DD  DISP=SHR,DSN=&SYSUID..EXELIB
+//SYSLIN   DD  DISP=SHR,DSN=&SYSUID..OBJLIB(&MBRNAME)
+//         DD  DDNAME=LNKPARM
+//*
+//        PEND

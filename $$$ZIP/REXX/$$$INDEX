@@ -1,0 +1,69 @@
+rexx_$$$INDEX: /* We still need rexx in comment if read from SYSPROC */
+  $$$index_version = "01.00"
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+ Dataset:  REXX($$$INDEX)
+ Author:   "Kenneth Tomiak"<CBT_Ken@KTomiak.biz>
+ Overview: Some simple descriptions of the members.
+
+=======================================================================
+
+Miscelleaneous
+-------- --------------------------------------------------------------
+BATCHISP Launch ISPF and passed command
+
+Edit macros
+-------- --------------------------------------------------------------
+AGE      Edit macro giving you chance to save that member as a new one
+JOBCARD  Add a jobcard using an instream template.
+JCLDSCB  Add DSCB information as comment lines in JCL
+
+Information gathering
+-------- --------------------------------------------------------------
+ACEETRID Follow control blocks to ACEE and your terminal id
+DDBYCBLK DDNAME by following control blocks
+DDBYLSTA DDNAME by parsing LISTALC STATUS output
+DDBYQLIB DDNAME by ISPF QBASELIB
+DDBYTSTR DDNAME IVP using ddbycblk, ddbylsta, and ddtrap
+DDTRAP   DDNAME by parsing LISTALC STATUS output, poorly written
+RACFINFO List everything a user can access
+
+Utilitarian commands
+-------- --------------------------------------------------------------
+HLQSPACE Sample of using ISPF 3.4 like facility
+VIEWHELP Invoke help, capture output and view it
+UPDREFDT Access datasets to update the last-reference date
+
+How to samples
+-------- --------------------------------------------------------------
+BUBLSORT Sort by comparing two entries and swapping
+IPCSIVP  An assortment of IPCS commands to demonstrate how to
+REXXUSS  Rexx invoking Unix System Services functions
+XYGRID   a real use of x,y grid using negative and positive values
+
+Transporting data
+-------- --------------------------------------------------------------
+HEX2OBJ  Sample output from running OBJ2HEX
+OBJ2HEX  Convert an object into a rexx program that converts it back
+PDS2UPDT Use ISPF services to convert a PDS to an IEBUPDTE stream
+PDS2XMIT Front-end to the TRANSMIT command to produce a sequential file
+REXUPDTE Convert IEBUPDTE stream into PDS members with statistics
+SDSFDISK Simple way to capture output to disk
+TXT2STEM Convert a text string into stem variables
+XMIT2PDS Front-end to the RECEIVE command to produce the original file
+
+TCP/IP oriented
+-------- --------------------------------------------------------------
+URLCHECK Check if url has been updated since last run
+
+=======================================================================
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+  Return 0
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+__DATA__
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */

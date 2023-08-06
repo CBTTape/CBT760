@@ -1,0 +1,36 @@
+>< ADD NAME=CPP      0102-07010-07016-2326-00003-00004-00000-KTOMIAK
+
+CPP$01   CPPUPDTE used by server pac to update an entire PDS
+CPP$02   IPOUPDTE used by CBPDO to update an entire PDS
+
+>< ADD NAME=CPP$01   0100-07010-07010-2310-00023-00023-00000-KTOMIAK
+
+//* CPPUPDTE
+//CPAC    SET CPAC='some.hlq'  <== Your HLQ
+//*
+//STEP001 EXEC PGM=CPPUPDTE,PARM='CHECK'       PARM='UPDATE'
+//STEPLIB  DD  DISP=SHR,DSN=&CPAC..OS290338.LOADLIB
+//SYSPRINT DD  SYSOUT=*
+//DD2      DD  DISP=SHR,DSN=<==this.pds.is.not.used
+//@DD1     DD  DISP=SHR,DSN=<==a.pds.of.JCL.CNTL
+//@DD3     DD  DISP=SHR,DSN=<==another.pds.of.JCL.CNTL
+//SYSIN    DD  *
+old.string<new.string<if.this.exists<
+old.string<+
+new.string<+
+if.this.exists<
+CICS.DEVL.SDFHLOAD<CICS.OLD.LOADLIB<<
+SYS2.LOADLIB<SYS2.OUTDATED.LOADLIB<+
+DSN=<
+/*
+//
+
+Beware what you ask for. DSN= is not the same as DSNAME=.
+
+>< ADD NAME=CPP$02   0100-07010-07010-2313-00007-00007-00000-KTOMIAK
+
+IOUPDTE is Deprecated!
+
+If you still have the loadlib, get rid of it. Switch over to
+CPPUPDTE.
+

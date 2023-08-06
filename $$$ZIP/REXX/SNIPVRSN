@@ -1,0 +1,4 @@
+  PARSE VERSION,
+    version_rexx_name,
+    version_rexx_version,
+    version_rexx_date

@@ -1,0 +1,1120 @@
+./ ADD NAME=$$$INDEX 0666-07213-07213-1913-00001-00001-00000-DIR2UPDT
+
+This dataset (sub-directory) contains JCL to invoke the programs and
+REXX code I have under a BATCH TMP process.
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------
+$$$INDEX This member
+
+CONDCODE IVP for testing %CONDCODE which shows prior steps cond code.
+FTPBLIND Invoke FTP and blindly pass sub-commands.
+FTPNETRC Invoke FTP hiding userid and password in NETRC file.
+FTPSYSFT Invoke FTP and use SYSFTPD to provide client defaults.
+HX2PR    Convert input to two hexadecimal print lines.
+HX2PR$A  Assemble and link source.
+HX2PR4   Convert input to four hexadecimal print lines.
+HX2PR4$A Assemble and link source.
+II13288  Run FTP to get some IBM tools.
+IPCSIVP  Run IPCS in batch to demonstrate some features.
+PDSLOAD  IEBUPDTE alternative preserves ISPF statistics.
+PDSLOAD$ Link object deck.
+PR2HX    Convert two print lines back to EBCDIC format.
+PR2HX$A  Assemble and link source.
+PR42HX   Convert four print lines back to EBCDIC format.
+PR42HX$A Assemble and link source.
+REXBLIND Invoke FTP and blindly pass sub-commands
+REXFTPAP Invoke REXX code that uses TCPIP REXX FTPAPI.
+REXFTPQU Invoke REXX code that QUEUEs commands and invokes FTP.
+REXFTPSK Invoke REXX code that uses TCPIP SOCKET API to do do FTP.
+URLCHECK Invoke TSO and run REXX code that uses TCPIP sockets.
+
+./ ADD NAME=CONDCODE 0666-07214-07214-1938-00001-00001-00000-DIR2UPDT
+//jobname! JOB (),'CONDCODE REPORT',
+//             RESTART=STEP001,           <= REQUIRED FOR TESTING
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(CONDCODE)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO TEST %CONDCODE FOR THE MOST FREQUENT
+//*          STEP STATUS POSSIBILITIES.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Instream procedure
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//PROC001 PROC MYVAR='KEN',VAR2=10
+//STEP00A EXEC PGM=IEFBR14,REGION=4M,
+//             PARM='&VAR2.&MYVAR',COND=((0,LT),EVEN)
+//PROCSTP EXEC PGM=IEFBR14,REGION=4M,PARM='&VAR2.&MYVAR',COND=EVEN
+//        PEND
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* Execute steps so %CONDCODE can be a show off.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP000 EXEC PGM=IKJEFT01
+//STEP001 EXEC PGM=IKJEFT01
+//SYSTSPRT DD  DUMMY
+//STEP002 EXEC PGM=IEBGENER
+//STEP003 EXEC PGM=IEBGENER,COND=EVEN
+//STEP004 EXEC PROC=PROC001
+//STEP005 EXEC PROC=PROC001,COND.PROCSTP=((0,LT,STEP004.STEP00A),EVEN)
+//STEP00A EXEC PGM=S806,COND=EVEN
+//IDIREPRT DD  DUMMY
+//STEP006 EXEC PROC=PROC001
+//STEP007 EXEC PROC=PROC001
+//STEP00B EXEC PGM=S806,COND=EVEN
+//IDIREPRT DD  DUMMY
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* Execute TSO and launch the REXX program, CONDCODE.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP008 EXEC PGM=IKJEFT1B,PARM='',REGION=6M,COND=EVEN
+//SYSPROC  DD  DISP=SHR,DSN=&SYSUID..CLIST
+//SYSEXEC  DD  DISP=SHR,DSN=&SYSUID..REXX
+//*        DD  DISP=SHR,DSN=&SYSUID..REXX(CONDCODE)
+//OUTFILE  DD  SYSOUT=*
+//SYSTSIN  DD  *
+  %CONDCODE
+  LOGOFF
+/*
+//*
+//
+./ ADD NAME=FTPBLIND 0666-07214-07214-1938-00001-00001-00000-DIR2UPDT
+//jobname! JOB (),'JCL: BLIND EYED FTP',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(FTPBLIND)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO RUN FTP, BLINDLY. SUB-COMMANDS ARE
+//*          STACKED AND IF IT FAILS, WELL IT FAILS BIG TIME.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* Invoke FTP with verbose, issue RC, and timeout of 5 minutes.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP001 EXEC PGM=FTP,REGION=2M,
+//             PARM='-v 127.0.0.1 (EXIT TIMEOUT 300'
+//OUTPUT   DD  SYSOUT=*,RECFM=VB,LRECL=160
+//INPUT    DD  *
+userid  ;
+password ;
+pwd ;            print working directory
+dir ;            show what is at this level
+quit ;
+;
+;  comments can be used by starting with a semi-colon in column 1,
+;  or after any command when preceeded by a space.
+;
+;  Following this convention, you can use NUM ON as long as every
+;  data line uses a semi-colon. Otherwise, the numbers in columns
+;  73-80 are part of the command.
+;
+/*
+//*
+//
+./ ADD NAME=FTPNETRC 0666-07214-07214-1938-00001-00001-00000-DIR2UPDT
+//jobname! JOB (),'JCL: BLIND EYED HIDE',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(FPTNETRC)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO RUN FTP, BLINDLY. SUB-COMMANDS ARE
+//*          STACKED AND IF IT FAILS, WELL IT FAILS BIG TIME.
+//*          THE USERIRD AND PASSWORD ARE HIDDEN IN NETRC.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* Invoke FTP with verbose, issue RC, and timeout of 5 minutes.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP001 EXEC PGM=FTP,REGION=2M,
+//             PARM='-v 127.0.0.1 (EXIT TIMEOUT 300'
+//NETRC    DD  DISP=SHR,DSN=&SYSUID..DATA(NETRC)
+//OUTPUT   DD  SYSOUT=*,RECFM=VB,LRECL=160
+//INPUT    DD  *
+dir ;
+quit ;
+/*
+//*
+//
+./ ADD NAME=FTPSYSFT 0666-07214-07214-1938-00001-00001-00000-DIR2UPDT
+//jobname! JOB (),'JCL: BLIND EYE OVRD',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(FTPSTSFT)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO RUN FTP, BLINDLY. SUB-COMMANDS ARE
+//*          STACKED AND IF IT FAILS, WELL IT FAILS BIG TIME.
+//*          USERID AND PASSWORD ARE HIDDEN IN NETRC.
+//*          CLIENT SIDE DEFAULT OVERRIDES ARE IN SYSFPTD.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* Invoke FTP with verbose, issue RC, and timeout of 5 minutes.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP001 EXEC PGM=FTP,REGION=2M,
+//             PARM='-v 127.0.0.1 (EXIT TIMEOUT 300'
+//NETRC    DD  DISP=SHR,DSN=&SYSUID..DATA(NETRC)
+//SYSFTPD  DD  DISP=SHR,DSN=&SYSUID..DATA(FTCDATA)
+//OUTPUT   DD  SYSOUT=*,RECFM=VB,LRECL=160
+//INPUT    DD  *
+dir ;
+quit ;
+/*
+//*
+//
+./ ADD NAME=HX2PR    0666-07214-07214-1943-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'CONVERT TO 2 LINES',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(HX2PR)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO READ AN INPUT AND WRITE TWO LINES
+//*          REPRESENTING THE HEX VALUES. THIS IS USEFUL FOR CONVERTING
+//*          DATA THAT GETS MANGLED WITH FTP INTO NUMBERS AND LETTERS.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* HEX TO PRINT PROGRAM - EXECUTION
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//LOAD    EXEC PGM=HX2PR
+//STEPLIB  DD  DISP=SHR,DSN=&SYSUID..EXELIB
+//SYSUT1   DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD)
+//SYSUT2   DD  DISP=SHR,DSN=&SYSUID..DATA(PDSLOAD2)
+//SYSPRINT DD  SYSOUT=*
+//*
+//
+./ ADD NAME=HX2PR$A  0666-07214-07214-1939-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'ASSEMBLE AND LINK',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(HX2PR$A)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO ASSEMBLE AND LINK THE HX2PR SOURCE
+//*          INTO A LOAD MODULE.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE PROCEDURE TO ASSEMBLE AND LINK THE SOURCE TO AN LMOD.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP010  EXEC PROC=ASM2LMOD,MBRNAME=HX2PR
+//LKED.LNKPARM  DD  *
+  SETCODE AC(0)
+  NAME    HX2PR(R)
+/*
+//*
+//
+./ ADD NAME=HX2PR4   0666-07214-07214-1939-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'CONVERT TO 4 LINES',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(HX2PR$A)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO ASSEMBLE AND LINK THE HX2PR SOURCE
+//*          INTO A LOAD MODULE.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//*  HEX TO PRINT PROGRAM - EXECUTION - PRODUCE FOUR-LINE PRINT
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//LOAD    EXEC PGM=HX2PR4
+//STEPLIB  DD  DISP=SHR,DSN=&SYSUID..EXELIB
+//SYSUT1   DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD)
+//SYSUT2   DD  DISP=SHR,DSN=&SYSUID..DATA(PDSLOAD4)
+//SYSPRINT DD  SYSOUT=*
+//*
+//
+./ ADD NAME=HX2PR4$A 0666-07214-07214-1942-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'ASSEMBLE AND LINK',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(HX2PR4$A)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO ASSEMBLE AND LINK THE HX2PR4 SOURCE
+//*          INTO A LOAD MODULE.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE PROCEDURE TO ASSEMBLE AND LINK THE SOURCE TO AN LMOD.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP010  EXEC PROC=ASM2LMOD,MBRNAME=HX2PR4
+//LKED.LNKPARM  DD  *
+  SETCODE AC(0)
+  NAME    HX2PR4(R)
+/*
+//*
+//
+./ ADD NAME=II13288  0666-07214-07214-1948-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'FTP: GET IBM TOOOLS'
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+//* UPDATES: YOU NEED TO ENTER YOUR EMAIL ADDRESS ON LINE 54
+//*          YOU MAY NEED TO ENTER A VALIF VOLSER ON LINE 71
+//*          OR REMOVE THE VOLUME(VOLSER) PARAMETER.
+//*
+//*          YOU SHOULD HAVE A &SYSUID..EXELIB DATASET.
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(II13288)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO FTP TO AN IBM FTP SERVER AND RETRIEVE
+//*          TRSMAIN AND INDXCISZ. TRSMAIN IS RECEIVED SO THAT INDXCISZ
+//*          CAN BE UNTERSED.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE PROCEDURE TO ASSEMBLE AND LINK THE SOURCE TO AN LMOD.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* LIB: DSN=&SYSUID..ZOSCNTL(II13288)
+//* AUTHOR: "KENNETH E TOMIAK"<CBT_Ken@KTomiak.org>
+//* GUIDE:  THIS JOB WILL RETRIEVE THE IBM TERSE TOOL AND THE
+//*         INDEX CI SIZER TOOL.
+//*
+//FTP     EXEC PGM=FTP,REGION=5000K,
+//             PARM='( EXIT'
+//OUTPUT   DD  SYSOUT=*
+//INPUT    DD  *
+ftp.software.ibm.com ;   207.25.253.40 if no DNS available.
+anonymous ;
+                      ;  <= Enter your email address here
+bin ;
+locsite recfm=fb lrecl=1024 blksize=0 tracks pri=3 sec=3 ;
+locsite volume=csi001 ;
+cd s390/mvs/tools ;
+get INDXCISZ.JCL.TRSD INDXCISZ.TERSED ;
+ls ;
+cd packlib ;
+locsite recfm=fb lrecl=80 blksize=0 tracks pri=3 sec=3 ;
+get trsmain.bin TRSMAIN.XMI ;
+quit ;
+/*
+//*
+//RECEIVE EXEC PGM=IKJEFT01,REGION=4M,DYNAMNBR=99,COND=(0,LT)
+//SYSTSPRT DD  SYSOUT=*
+//SYSTSIN  DD  *
+  RECEIVE INDATASET(TRSMAIN.XMI)
+    DATASET(EXELIB) VOLUME(volser)
+/*
+//*
+//UNTERSE EXEC PGM=TRSMAIN,PARM=UNPACK,COND=(0,LT)
+//STEPLIB  DD  DISP=SHR,DSN=&SYSUID..EXELIB
+//SYSPRINT DD  SYSOUT=*
+//INFILE   DD  DISP=SHR,DSN=&SYSUID..INDXCISZ.TERSED
+//OUTFILE  DD  DISP=(NEW,CATLG,DELETE),DSN=&SYSUID..INDXCISZ.UNTERSED,
+//             UNIT=SYSALLDA,
+//             SPACE=(TRK,(10,10,0),RLSE)
+//             DCB=(DSORG=PS,RECFM=FB.BLKSIZE=0,LRECL=80)
+//*
+//
+./ ADD NAME=IPCSIVP  0666-07214-07214-1953-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'IPCS ALLOC AND IVP',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//        SET DUMPDSN=SYS1.DUMP01           <== POINT TO YOUR DUMP
+//*
+//* Change your_userid to what your userid is.
+//* Change your_volser to a valid volser where datasets with your
+//* userid will reside.
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(IPCSIVP)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB WILL ALLOCATE AN IPCS DUMP DIRECTORY,
+//*          INVOKE IPCS TO PRODUCE A SIMPLE REPORT, AND RUN A
+//*          SAMPLE REXX IVP OF IPCS COMMANDS.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ALLOCATE AN IPCS DUMP DIRECTORY.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//ALLOC   EXEC PGM=IDCAMS
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         DEFINE +
+           CLUSTER( +
+             NAME('your_userid.DDIR') +
+             INDEXED +
+             REUSE +
+             VOLUME(your_volser) +
+             SHAREOPTIONS(1,3) +
+           ) +
+           DATA( +
+             NAME('your_userid.DDIR.D') +
+             BUFFERSPACE(1024000) +
+             KEYS(128,0) +
+             RECORDS(15000,15000) +
+             RECORDSIZE(2560 3072) +
+           ) +
+           INDEX( +
+             NAME('your_userid.DDIR.I') +
+             CONTROLINTERVALSIZE(4096) +
+             RECORDS(150,150) +
+           )
+/*
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* PRODUCE A STANDARD PROBLEM SCREENING REPORT REGARDING THE DUMP.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//CBSVA   EXEC PGM=IKJEFT1B,REGION=5M,
+//             PARM='%BLSCBSVA &DUMPDSN'
+//SYSPROC  DD  DISP=SHR,DSN=SYS1.SBLSCLI0
+//SYSTSPRT DD  SYSOUT=*,
+//             DCB=(RECFM=VB,LRECL=124,BLKSIZE=4096)
+//IPCSDDIR DD  DISP=SHR,DSN=&SYSUID..DDIR
+//IPCSDUMP DD  DISP=SHR,DSN=&DUMPDSN
+//IPCSTOC  DD  SYSOUT=*
+//IPCSPRNT DD  SYSOUT=*
+//SYSTSIN  DD  DUMMY
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* RUN A SAMPLE IPCS IVP WITH REXX.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//IPCSIVP EXEC PGM=IKJEFT1B,REGION=5M,
+//             PARM='%ISPFSTRT %IPCSIVP'
+//SYSEXEC  DD  DISP=SHR,DSN=&SYSUID..ZOSREXX
+//SYSPROC  DD  DISP=SHR,DSN=SYS1.SBLSCLI0
+//SYSTSPRT DD  SYSOUT=*,
+//             DCB=(RECFM=VB,LRECL=124,BLKSIZE=4096)
+//IPCSDDIR DD  DISP=SHR,DSN=&SYSUID..DDIR
+//IPCSDUMP DD  DISP=SHR,DSN=&DUMPDSN
+//IPCSTOC  DD  SYSOUT=*
+//IPCSPRNT DD  SYSOUT=*
+//SYSTSIN  DD  DUMMY
+//*
+//
+./ ADD NAME=OBJ2HEX  0666-07214-07214-2128-00001-00001-00000-DIR2UPDT
+//jobname! JOB (),'CONDCODE REPORT',
+//             RESTART=STEP001,           <= REQUIRED FOR TESTING
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(OBJ2HEX)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO INVOKE TSO AND RUN A REXX PROGRAM
+//*          THAT READS AN INPUT AND OUTPUTS TWO LINES FOR EACH RECORD
+//*          IN A REXX PROGRAM THAT WOULD CONVERT BACK TO ITS ORIGINAL
+//*          EBCDIC FORMAT.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE PROCEDURE TO RUN TSO.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//TSOREXX EXEC PROC=TSOPROC                                             00100000
+//SYSEXEC  DD  DISP=SHR,DSN=&SYSUID..REXX                               00120000
+//* CODE   DD  DISP=SHR,DSN=&SYSUID..REXX(OBJ2HEX)                      00130000
+//* CODE   DD  DISP=SHR,DSN=&SYSUID..REXX(HEX2OBJ)                      00140000
+//SYSTSPRT DD  SYSOUT=*                                                 00150000
+//SYSTSIN  DD  *                                                        00160000
+%OBJ2HEX                                                                00170004
+%OBJ2HEX TXTIN                                                          00180007
+%OBJ2HEX OBJIN TXTOT                                                    00190007
+%PDSLOAD%                                                               00200003
+%UK04497 OBJOT                                                          00210006
+%UK04497 DSPOT                                                          00211007
+/*                                                                      00220000
+//OBJIN    DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD                     00230000
+//TXTIN    DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD)                    00231007
+//HEXOT    DD  DISP=OLD,DSN=&SYSUID..REXX(PDSLOAD@)                     00240007
+//TXTOT    DD  DISP=OLD,DSN=&SYSUID..CNTL(UK04497#)                     00241007
+//OBJOT    DD  DISP=OLD,DSN=&SYSUID..CNTL(UK04497@)                     00250002
+//DSPOT    DD  DISP=OLD,DSN=&SYSUID..CNTL(UK04497$)                     00251007
+//*                                                                     00260000
+//                                                                      00270000
+./ ADD NAME=PDSLOAD  0666-07214-07214-1956-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'ASSEMBLE AND LINK',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(PDSLOAD)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO EXECUTE THE PDSLOAD PROGRAM THAT
+//*          READ AN IEBUPDTE STREAM AND LOADS A PDS. IT CAN PRESERVE
+//*          ISPF STATISTICS IF PRESENT ON THE ./ ADD CONTROL CARD. IT
+//*          ALSO ACCEPTS A PARM FOR AN ALTERNATE IEBUPDTE IDENTIFIER.
+//*          THE DEFAULT IS TO USE './'. A COMMON ALTERNATIVE IS '><'.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE PROCEDURE TO ASSEMBLE AND LINK THE SOURCE TO AN LMOD.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* SAMPLE PDSLOAD PROGRAM EXECUTION
+//LOAD    EXEC PGM=PDSLOAD                     ,PARM='><'
+//STEPLIB  DD  DISP=SHR,DSN=&SYSUID..EXELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=SHR,DSN=&SYSUID..IEBUPDTE.DATA
+//SYSUT2   DD  DISP=OLD,DSN=&SYSUID..pdslib
+//*
+//
+./ ADD NAME=PDSLOAD$ 0666-07214-07214-1957-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'OBJDECK TO LMOD',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(PDSLOAD$)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO LINK THE PDSLOAD OBJECT DECK
+//*          INTO A LOAD MODULE.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE LINKAGE EDITOR TO LINK THE OBJECT DECK INTO AN LMOD.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP010  EXEC PROC=OBJ2LMOD,MBRNAME=PDSLOAD
+//LKED.LNKPARM  DD  *
+  SETCODE AC(0)
+  ENTRY   PDSLOAD
+  NAME    PDSLOAD(R)
+/*
+//*
+//
+./ ADD NAME=PR2HX    0666-07214-07214-2006-00001-00001-00000-DIR2UPDT
+//USERID!  JOB (ACCT),'2 LINES TO EBCDIC',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(PR2HX)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO CONVERT 2 LINES to EBCDIC.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* 2 PRINT LINE TO HEX PROGRAM - EXECUTION
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//LOAD    EXEC PGM=PR2HX
+//STEPLIB  DD  DISP=SHR,DSN=&SYSUID..EXELIB
+//SYSUT1   DD  DISP=SHR,DSN=&SYSUID..DATA(PDSLOAD2)
+//SYSUT2   DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD2)
+//SYSPRINT DD  SYSOUT=*
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* COMPARE WITH THE REAL OBJECT DECK.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SUPERC  EXEC PGM=ISRSUPC,
+//             PARM=(DELTAL,LINECMP,'','')
+//OLDDD    DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD)
+//NEWDD    DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD2)
+//OUTDD    DD  SYSOUT=*
+//SYSIN    DD  DUMMY
+//*
+//
+./ ADD NAME=PR2HX$A  0666-07214-07214-2009-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'ASSEMBLE AND LINK',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(PR2HX$A)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO ASSEMBLE AND LINK THE PR2HX SOURCE
+//*          INTO A LOAD MODULE.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE PROCEDURE TO ASSEMBLE AND LINK THE SOURCE TO AN LMOD.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP010  EXEC PROC=ASM2LMOD,MBRNAME=PR2HX
+//LKED.LNKPARM  DD  *
+  SETCODE AC(0)
+  NAME    PR2HX(R)
+/*
+//*
+//
+./ ADD NAME=PR42HX   0666-07214-07214-2014-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'4 LINES TO EBCDIC',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(PR42HX)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO CONVERT 4 LINES TO EBCDIC.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* 4 PRINT LINES TO HEX PROGRAM - EXECUTION
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//LOAD    EXEC PGM=PR42HX
+//STEPLIB  DD  DISP=SHR,DSN=&SYSUID..EXELIB
+//SYSUT1   DD  DISP=SHR,DSN=&SYSUID..DATA(PDSLOAD4)
+//SYSUT2   DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD4)
+//SYSPRINT DD  SYSOUT=*
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* COMPARE WITH THE REAL OBJECT DECK.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SUPERC  EXEC PGM=ISRSUPC,
+//             PARM=(DELTAL,LINECMP,'','')
+//OLDDD    DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD)
+//NEWDD    DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD4)
+//OUTDD    DD  SYSOUT=*
+//SYSIN    DD  DUMMY
+//*
+//
+./ ADD NAME=PR42HX$A 0666-07214-07214-2014-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'ASSEMBLE AND LINK',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(PR42HX$A)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO ASSEMBLE AND LINK THE PR42HX SOURCE
+//*          INTO A LOAD MODULE.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE PROCEDURE TO ASSEMBLE AND LINK THE SOURCE TO AN LMOD.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP010  EXEC PROC=ASM2LMOD,MBRNAME=PR42HX
+//LKED.LNKPARM  DD  *
+  SETCODE AC(0)
+  NAME    PR42HX(R)
+/*
+//*
+//
+./ ADD NAME=REXFTPAP 0666-07214-07214-2039-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'TCPIP REXX FTPAPI',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(REXFTPAP)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO INVOKE TSO AND RUN A REXX PROGRAM
+//*          THAT USES THE Z/OS 1.8 TCPIP REXX FTPAPI INTERFACE.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE PROCEDURE TO RUN TSO.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//RXFTPAP EXEC PROC=TSOPROC
+//* CODE   DD  DISP=SHR,DSN=&SYSUID..REXX(REXFTPAP)
+//SYSTSIN  DD  *
+%REXFTPAP YES
+LOGOFF
+/*
+//*
+//
+./ ADD NAME=REXFTPQU 0666-07214-07214-2137-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'FTP WITH QUEUED CMD',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(REXFTPQU)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO INVOKE TSO AND RUN A REXX PROGRAM
+//*          THAT USES QUEUES FTP SUB-COMMANDS TO A TEMPORARY DATASET
+//*          AND CALLS FTP BLIND EYEd.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE PROCEDURE TO RUN TSO.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP001 EXEC PROC=TSOPROC
+//* CODE   DD  DISP=SHR,DSN=&SYSUID...REXX(REXFTPQU)
+//SYSTSPRT DD  SYSOUT=*
+//OUTPUT   DD  SYSOUT=*,RECFM=VB,LRECL=160
+//SYSTSIN  DD  *
+%REXFTPQU 127.0.0.1 password (NO OPTIONS)
+/*
+//*
+//
+./ ADD NAME=REXFTPSK 0666-07214-07214-2038-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'TCPIP REXX SOCKET',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(REXFTPSK)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO INVOKE TSO AND RUN A REXX PROGRAM
+//*          THAT USES THE Z/OS 1.8 TCPIP REXX SOCKET INTERFACE FOR
+//*          FTP.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE PROCEDURE TO RUN TSO.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//FTPSCKT EXEC PROC=TSOPROC
+//* CODE   DD  DISP=SHR,DSN=&SYSUID..REXX(REXFTPSK)
+//SYSTSIN  DD  *
+%REXFTPSK 127.0.0.1 (NO OPTIONS)
+userid ;
+password ;
+HELP ;
+STAT ;
+SYST ;
+QUIT ;
+LOGOFF
+/*
+//*
+//
+./ ADD NAME=URLCHECK 0666-07214-07214-2044-00001-00001-00000-DIR2UPDT
+//userid!  JOB (ACCT),'ASSEMBLE AND LINK',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(URLCHECK)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO INVOKE TSO AND RUN A REXX PROGRAM
+//*          THAT USES THE Z/OS 1.8 TCPIP REXX SOCKET INTERFACE FOR
+//*          HTTP TO FIND IF URL PAGES HAVE CHANGED.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE PROCEDURE TO RUN TSO.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP001 EXEC PROC=TSO,PARM='%URLCHECK URLS HTML',
+//SYSTSIN  DD  DUMMY
+//URLS     DD  DISP=OLD,DSN=&SYSUID..DATA(URLCHECK)
+//HTML     DD  SYSOUT=*
+//*SYSTCPD  DD  DISP=SHR,DSN=SYS1.TCPPARMS(TCPDATA)  <=== WHEN REQUIRED
+//*
+//
+./ ENDUP

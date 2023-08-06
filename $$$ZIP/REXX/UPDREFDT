@@ -1,0 +1,186 @@
+/* REXX                                                               */00010000
+/* ****************************************************************** */00020000
+/*                                                                    */00030000
+/* LIB: REXX(UPDREFDT)                                                */00040000
+/* GDE: KENNETH E. TOMIAK                                             */00050000
+/* DOC: USE ISPF SERVICES TO GET A LIST OF DATASETS AND READ EACH.    */00060000
+/*      Effectively causes the last-reference date to be updated.     */00070000
+/*                                                                    */00070000
+/* ****************************************************************** */00080000
+/*  TRACE Result                                                      */00090000
+arg uid                                                                 00100000
+if (uid = '') then,                                                     00110000
+  do                                                                    00120000
+    say 'Must have a userid or can not do a list'                       00130000
+    exit 8                                                              00140000
+  end                                                                   00150000
+say 'Allocating data sets for' uid                                      00160000
+/* ****************************************************************** */00170000
+/* Setup ISPF services.                                               */00180000
+/* ****************************************************************** */00190000
+"ISPEXEC CONTROL ERRORS RETURN";                                        00200000
+/* ****************************************************************** */00210000
+/* Initialize  a data set list.                                       */00220000
+/* ****************************************************************** */00230000
+"ISPEXEC LMDINIT LISTID(DSNLIST)",                                      00240000
+               "LEVEL("uid")"                                           00250000
+RCSAVE = RC                                                             00260000
+IF (RCSAVE \= 0) THEN                                                   00270000
+  do                                                                    00280000
+    SAY 'LMDINIT DSNLIST RC=' RCSAVE;                                   00290000
+    exit(4)                                                             00300000
+  end                                                                   00310000
+/* ****************************************************************** */00320000
+/* Obtain the dslist list one entry at a time.                        */00330000
+/* ****************************************************************** */00340000
+DSNID = ' '                                                             00350000
+rclist = 0                                                              00360000
+say 'Dataset volume dsorg last-ref-date'                                00370000
+DO while RCLIST = 0                                                     00380000
+  "ISPEXEC LMDLIST LISTID("DSNLIST"),                                   00390000
+                   OPTION(LIST),                                        00400000
+                   DATASET(DSNID),                                      00410000
+                   STATS(YES)"                                          00420000
+  RCLIST = RC                                                           00430000
+  IF (RCLIST \= 0) THEN                                                 00440000
+    do                                                                  00450000
+      "ISPEXEC LMDLIST LISTID(&DSNLIST) OPTION(FREE)"                   00460000
+    end                                                                 00470000
+  else                                                                  00480000
+    do                                                                  00490000
+      say DSNID zdlvol zdldsorg zdlrdate                                00500000
+      if (left(zdlvol,6) = "MIGRAT") then,                              00501001
+        do                                                              00502001
+          "HRECALL ('"dsnid"') WAIT"                                    00503002
+        end                                                             00504001
+      SELECT                                                            00510000
+        when (zdlvol = "*ALIAS") then,                                  00511003
+          do                                                            00512003
+            say "We do not migrate ALIASES."                            00513003
+          end                                                           00514003
+        WHEN ZDLDSORG = 'PO-E' THEN                                     00520004
+          DO                                                            00530000
+            ADDRESS ISPEXEC,                                            00540000
+             "LMINIT DATAID(DATIDVR)",                                  00550000
+             "DATASET('"DSNID"') ENQ(SHR)"                              00560000
+            RCTEMP = RC                                                 00570000
+            IF (RCTEMP \= 0) THEN                                       00580000
+              do                                                        00590000
+                say 'PO LMINIT failed rc='RCTEMP                        00600003
+              end                                                       00610000
+            ADDRESS ISPEXEC,                                            00620000
+             "LMOPEN DATAID("DATIDVR") OPTION(INPUT)"                   00630000
+            RCTEMP = RC                                                 00640000
+            IF (RCTEMP \= 0) THEN                                       00650000
+              do                                                        00660000
+                if (zdlrecfm \= 'U') then,                              00670000
+                say 'PO LMOPEN failed rc='RCTEMP                        00680003
+              end                                                       00690000
+            ADDRESS ISPEXEC,                                            00700000
+             "LMCLOSE DATAID("DATIDVR")"                                00710000
+            ADDRESS ISPEXEC,                                            00720000
+             "LMFREE DATAID(DATIDVR)"                                   00730000
+          END                                                           00740000
+        WHEN ZDLDSORG = 'PO' THEN                                       00741004
+          DO                                                            00742004
+            ADDRESS ISPEXEC,                                            00743004
+             "LMINIT DATAID(DATIDVR)",                                  00744004
+             "DATASET('"DSNID"') ENQ(SHR)"                              00745004
+            RCTEMP = RC                                                 00746004
+            IF (RCTEMP \= 0) THEN                                       00747004
+              do                                                        00748004
+                say 'PO LMINIT failed rc='RCTEMP                        00749004
+              end                                                       00749104
+            ADDRESS ISPEXEC,                                            00749204
+             "LMOPEN DATAID("DATIDVR") OPTION(INPUT)"                   00749304
+            RCTEMP = RC                                                 00749404
+            IF (RCTEMP \= 0) THEN                                       00749504
+              do                                                        00749604
+                if (zdlrecfm \= 'U') then,                              00749704
+                say 'PO LMOPEN failed rc='RCTEMP                        00749804
+              end                                                       00749904
+            ADDRESS ISPEXEC,                                            00750004
+             "LMCLOSE DATAID("DATIDVR")"                                00750104
+            ADDRESS ISPEXEC,                                            00750204
+             "LMFREE DATAID(DATIDVR)"                                   00750304
+          END                                                           00750404
+        WHEN ZDLDSORG = 'PS' THEN                                       00751004
+          DO                                                            00760000
+            ADDRESS ISPEXEC,                                            00770000
+             "LMINIT DATAID(DATIDVR)",                                  00780000
+             "DATASET('"DSNID"') ENQ(SHR)"                              00790000
+            RCTEMP = RC                                                 00800000
+            IF (RCTEMP \= 0) THEN                                       00810000
+              do                                                        00820000
+                say 'PS LMINIT failed rc='RCTEMP                        00830003
+              end                                                       00840000
+            ADDRESS ISPEXEC,                                            00850000
+             "LMOPEN DATAID("DATIDVR") OPTION(INPUT)"                   00860000
+            RCTEMP = RC                                                 00870000
+            IF (RCTEMP \= 0) THEN                                       00880000
+              do                                                        00890000
+                if (zdllrecl < 255) then,                               00900000
+                say 'PS LMOPEN failed rc='RCTEMP                        00910003
+              end                                                       00920000
+            ADDRESS ISPEXEC,                                            00930000
+             "LMCLOSE DATAID("DATIDVR")"                                00940000
+            ADDRESS ISPEXEC,                                            00950000
+             "LMFREE DATAID(DATIDVR)"                                   00960000
+          END                                                           00970000
+        WHEN ZDLVOL = '*VSAM*' THEN                                     00980003
+          DO                                                            00990000
+            "VERIFY dataset('"DSNID"')"                                 01000003
+            RCTEMP = RC                                                 01010003
+            IF (RCTEMP \= 0) THEN                                       01020003
+              do                                                        01030003
+                say 'Verify failed rc='RCTEMP                           01040003
+              end                                                       01050003
+          END                                                           01060000
+        WHEN ZDLDSORG = 'VS' THEN                                       01061004
+          DO                                                            01062003
+            say 'We do not touch vsam components'                       01062103
+          END                                                           01063003
+        OTHERWISE                                                       01070000
+          DO                                                            01080000
+            ADDRESS ISPEXEC,                                            01090000
+             "LMINIT DATAID(DATIDVR)",                                  01100000
+             "DATASET('"DSNID"') ENQ(SHR)"                              01110000
+            RCTEMP = RC                                                 01120000
+            IF (RCTEMP \= 0) THEN                                       01130000
+              do                                                        01140000
+                say 'otherwise LMINIT failed rc='RCTEMP                 01150003
+              end                                                       01160000
+            ADDRESS ISPEXEC,                                            01170000
+             "LMOPEN DATAID("DATIDVR") OPTION(INPUT)"                   01180000
+            RCTEMP = RC                                                 01190000
+            IF (RCTEMP \= 0) THEN                                       01200000
+              do                                                        01210000
+                if (zdllrecl < 255) then,                               01220000
+                  say 'otherwise LMOPEN failed rc='RCTEMP',',           01230003
+                    'lrecl='zdllrecl                                    01231003
+              end                                                       01240000
+            ADDRESS ISPEXEC,                                            01250000
+             "LMCLOSE DATAID("DATIDVR")"                                01260000
+            ADDRESS ISPEXEC,                                            01270000
+             "LMFREE DATAID(DATIDVR)"                                   01280000
+          END                                                           01290000
+      END                                                               01300000
+      /* zdlvol    - volume */                                          01310000
+      /* zdldev    - device type */                                     01320000
+      /* zdldsorg  - dsorg  */                                          01330000
+      /* zdlrecfm  - recfm  */                                          01340000
+      /* zdllrecl  - lrecl  */                                          01350000
+      /* zdlblksz  - blksize */                                         01360000
+      /* zdlsize   - size in tracks */                                  01370000
+      /* zdlused   - used tracks */                                     01380000
+      /* zdlnext   - number of extents */                               01390000
+      /* zdlcdate  - create date */                                     01400000
+      /* zdledate  - expiration date */                                 01410000
+      /* zdlrdate  - referenced last date */                            01420000
+      /* zdlpages  - pdse pages allocated or blank */                   01430000
+      /* zdldtype  - dsname type pds, library, or blank */              01440000
+      /* zdlpused  - percent used if pdse or blank */                   01450000
+    end                                                                 01460000
+end                                                                     01470000
+"ISPEXEC LMDFREE DATAID(&DSNLIST)"                                      01480000
+EXIT                                                                    01490000

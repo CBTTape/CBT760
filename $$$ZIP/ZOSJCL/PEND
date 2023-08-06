@@ -1,0 +1,6 @@
+
+// PEND
+
+Used to end an in-stream PROC. Not required for a PROC pulled in from
+a PROCLIB member.
+

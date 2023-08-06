@@ -1,0 +1,10 @@
+//TSOPROC PROC PARM=''
+//TSO     EXEC PGM=IKJEFT1B,DYNAMNBR=300,
+//             PARM=&PARM'
+//*
+//* TSO DATASETS
+//*
+//SYSTSPRT DD  SYSOUT=*
+//SYSPROC  DD  DISP=SHR,DSN=&SYSUID..CLIST                    <= YOURS
+//SYSEXEC  DD  DISP=SHR,DSN=&SYSUID..REXX                     <= YOURS
+//        PEND

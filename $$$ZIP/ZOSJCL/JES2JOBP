@@ -1,0 +1,42 @@
+
+/*$JOBPARM
+//*
+/*JOBPARM  L=99,S=*
+
+/*JOBPARM parameter[,parameter]...
+The parameters are:
+{BURST} = {Y}
+{B }      {N}
+{BYTES} = nnnnnn
+{M }
+{CARDS} = nnnnnnnn
+{C }
+{COPIES} = nnn
+{N }
+{FORMS} = {xxxxxxxx}
+{F } {STD }
+{LINECT} = nnn
+{K }
+{LINES} = nnnnnn
+{L }
+{NOLOG}
+{J }
+{PAGES} = nnnnnnnn
+{G }
+{PROCLIB} = ddname
+{P }
+{RESTART} = {Y}
+{E } {N}
+{ROOM} = xxxx
+{R }
+{SYSAFF} = {* }
+{S } {(*[,IND]) }
+     {ANY }
+     {(ANY[,IND]) }
+{cccc }
+{(cccc[,IND]) }
+{(cccc[,cccc]...) }
+{((cccc[,cccc]...)[,IND])}
+{TIME} = nnnn
+{T }
+

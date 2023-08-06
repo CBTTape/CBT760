@@ -1,0 +1,16 @@
+
+/*$command
+
+Should you really be entering JES commands this way? If you are
+authorized to issue commands this way, they execute as they are
+processed, not when your job starts.
+
+You can enter the following JES2 commands in the input stream.
+
+$A $E $I $O $T
+$B $F $L $P $TRACE
+$C $G $M $R $VS
+$D $H $N $S $Z
+
+/*$D A,L
+

@@ -1,0 +1,30 @@
+>< ADD NAME=JOBC     0101-07010-07016-2347-00004-00004-00000-KTOMIAK
+
+JOBC$01  Basic jobcard
+JOBC$02  with an output statement
+
+>< ADD NAME=JOBC$01  0100-07010-07010-2317-00008-00008-00000-KTOMIAK
+//SHARE##H JOB (0700,MID),'SHARE-MVS SCP',                              00010001
+//             CLASS=A,MSGCLASS=T,MSGLEVEL=(1,1),                       00020000
+//             NOTIFY=&SYSUID,REGION=6M,TIME=400                        00030000
+//*                                                                     00040000
+//* SOURCE: DSN=SHARE##.S2820.CNTL(JOBC4SHR)                            00040000
+//* AUTHOR: YOUR NAME <YOUREMAIL@YOURDOMAIN>                            00060000
+//* REMARK: THIS JOB ....................................               00070003
+//*                                                                     00040000
+>< ADD NAME=JOBC$02  0100-07010-07010-2320-00015-00015-00000-KTOMIAK
+//SHARE##H JOB (0700,MID),'SHARE-MVS SCP',                              00010000
+//             CLASS=A,MSGCLASS=T,MSGLEVEL=(1,1),                       00020000
+//             NOTIFY=&SYSUID,REGION=6M,TIME=400                        00030000
+//*                                                                     00040000
+//* SOURCE: DSN=SHARE##.S2820.CNTL(JOBC4SHR)                            00050000
+//* AUTHOR: YOUR NAME <YOUREMAIL@YOURDOMAIN>                            00060000
+//* REMARK: THIS JOB ....................................               00070000
+//*                                                                     00080000
+//MYPROCS JCLLIB ORDER=(DSN1,DSN2,...)                                  00090000
+//*                                                                     00100000
+//JESDS OUTPUT DEFAULT=YES,                                             00110000
+//             JESDS=ALL,                                               00120000
+//             OUTDISP=(HOLD,HOLD),                                     00130000
+//             NAME='KENNETH E. TOMIAK'                                 00140000
+//*                                                                     00150000

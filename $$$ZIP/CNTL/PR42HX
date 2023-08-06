@@ -1,0 +1,50 @@
+//userid!  JOB (ACCT),'4 LINES TO EBCDIC',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(PR42HX)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO CONVERT 4 LINES TO EBCDIC.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* 4 PRINT LINES TO HEX PROGRAM - EXECUTION
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//LOAD    EXEC PGM=PR42HX
+//STEPLIB  DD  DISP=SHR,DSN=&SYSUID..EXELIB
+//SYSUT1   DD  DISP=SHR,DSN=&SYSUID..DATA(PDSLOAD4)
+//SYSUT2   DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD4)
+//SYSPRINT DD  SYSOUT=*
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* COMPARE WITH THE REAL OBJECT DECK.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SUPERC  EXEC PGM=ISRSUPC,
+//             PARM=(DELTAL,LINECMP,'','')
+//OLDDD    DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD)
+//NEWDD    DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD4)
+//OUTDD    DD  SYSOUT=*
+//SYSIN    DD  DUMMY
+//*
+//

@@ -1,0 +1,20 @@
+
+// OUTPUT
+//*
+//OUTDS OUTPUT ADDRESS=('address line 1   ',
+//             'line 2, these can be',
+//             'up to 65 characters each'),
+//             BUILDING='65chr max',
+//             CHARS=GT12,
+//             DEFAULT=YES,
+//             DEPT='SYSTEM PROGRAMMING',
+//             FORMDEF=0101LA,                 BLANK/LANDSCAPE
+//             ROOM='13th FLOOR',
+//             JESDS=ALL,
+//             NAME='KENNETH E. TOMIAK',
+//             PAGEDEF=06080,
+//*            PAGEDEF=06080               BLANK/LANDSCAPE/60LINES/8LPI
+//*            PAGEDEF=08081               BLANK/PORTRAIT /80LINES/8LPI
+//             TITLE='*** PRINTOUT FROM A BATCH JOB ***'
+//*USAGE   DD  SYSOUT=*,OUTPUT=(*.OUTDS)
+

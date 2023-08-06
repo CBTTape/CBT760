@@ -1,0 +1,41 @@
+//userid!  JOB (ACCT),'CONVERT TO 4 LINES',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(HX2PR$A)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO ASSEMBLE AND LINK THE HX2PR SOURCE
+//*          INTO A LOAD MODULE.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//*  HEX TO PRINT PROGRAM - EXECUTION - PRODUCE FOUR-LINE PRINT
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//LOAD    EXEC PGM=HX2PR4
+//STEPLIB  DD  DISP=SHR,DSN=&SYSUID..EXELIB
+//SYSUT1   DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD)
+//SYSUT2   DD  DISP=SHR,DSN=&SYSUID..DATA(PDSLOAD4)
+//SYSPRINT DD  SYSOUT=*
+//*
+//

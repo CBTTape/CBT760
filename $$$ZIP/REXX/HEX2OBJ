@@ -1,0 +1,246 @@
+rexx_HEX2OBJ:  /* We still need rexx in comment if read from SYSPROC */
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+  Dataset:  REXX(HEX2OBJ)
+  Author:   "Kenneth Tomiak"<KenTomiak@KTomiak.biz>
+  Syntax:   HEX2OBJ
+  Overview: Reconstructs a member that was save in hexadecimal
+            format.
+
+=======================================================================
+
+ History of Modifications
+ ------------------------
+  When     Who      What you did
+  -------- -------- ---------------------------------------------------
+  20070528 KTOMIAK  Original code.
+
+=======================================================================
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+  Parse Arg all_my_arguments
+  Numeric Digits 12
+
+rexx_Main_HEX2OBJ:
+  return_code = rexx_Initialize()
+  If (return_code = 0) then,
+    Do
+      return_code = rexx_Process()
+      return_code = rexx_Termination()
+    End
+  Return 0
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we open any files and initialize any
+ constants we might need.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Initialize:
+  PARSE VERSION,
+    version_rexx_name,
+    version_rexx_version,
+    version_rexx_date
+  PARSE SOURCE,
+    source_host_env,
+    source_call_type,
+    source_uc_exec_name,
+    source_hostdd,
+    source_hostdsn,
+    source_nf_exec_name,
+    source_initial_cmd_env,
+    source_asid_name,
+    source_char8_user_token,
+    source_hostother
+  job_specs = rexx_jobspecs()
+  sysvar_sysuid = SYSVAR("SYSUID")
+  sysvar_sysenv = SYSVAR("SYSENV")
+  say ""
+  say Copies("=",55)
+  say left("=" job_specs,53) "="
+  say left("=" source_uc_exec_name,
+    "executing under" source_host_env,
+    "as a" source_call_type,53) "="
+  say left("=  on" date() "at" time()".",53) "="
+  say Copies("=",55)
+  say ""
+  return_code = 0
+
+  If (source_host_env >< "TSO") Then,
+    Do
+      Say "Wrong host environment" source_host_env
+      return_code = 16
+    End
+
+  Parse var all_my_arguments dd_ot .
+  if (datatype(dd_ot) = "NUM") then,
+    do
+      dd_ot = "OBJOT"
+    end
+  if (dd_ot = "") then,
+    do
+      dd_ot = "OBJOT"
+    end
+
+  text_out.0 = 0
+
+  text_in.0 = 0
+  call add_rexx_code
+  say "Read" text_in.0 "records."
+
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we do our processing.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Process:
+  if (text_in.0 = 0) then,
+    do
+      say source_uc_exec_name "is missing the data."
+      return_code = 4
+      return 4
+    end
+  do text_ix = 1 to text_in.0 by 2
+    line_1 = ""
+    text_1 = text_in.text_ix
+    next_ix = text_ix + 1
+    text_2 = text_in.next_ix
+    do char_ix = 1 to length(text_1)
+      char_1 = substr(text_1,char_ix,1)
+      char_2 = substr(text_2,char_ix,1)
+      line_1 = line_1||char_1||char_2
+    end
+    text_out.0 = out_text(x2c(line_1))
+  end
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we close files and finish up.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Termination:
+  "EXECIO * DISKW" dd_ot "(FINIS STEM TEXT_OUT.)"
+  write_rc = RC
+  if (write_rc >< 0) then,
+    Do
+      say "Encountered problems writing //DD:"dd_ot"."
+      say "RC("write_rc") >< 0"
+      return_code = write_rc
+    end
+  say "Wrote" text_out.0 "records."
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Place any of your subroutines and procedures below this.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_jobspecs:
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO CVT FROM PSA                                */
+  /*---------------------------------------------------------------*/
+  PTR2PSA = 0
+  CVTPTR = STORAGE(D2X(PTR2PSA + 16),4)
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO SMCA, THEN GET SMF SYSTEM ID                */
+  /*---------------------------------------------------------------*/
+  CVTSMCA = STORAGE(D2X(C2D(CVTPTR)+197),3)
+  SMFID = STORAGE(D2X(C2D(CVTSMCA)+16),4)
+  /*---------------------------------------------------------------*/
+  /* GET JOBNAME, STEP, AND PROCEDURE                              */
+  /*---------------------------------------------------------------*/
+  PSATOLD  = STORAGE(21C,4)                    /* POINTER TO TCB   */
+  PTRTIOT  = STORAGE(D2X(C2D(PSATOLD)+12),4)   /* POINTER TO TIOT  */
+  JOBNAME  = STORAGE(D2X(C2D(PTRTIOT)),8)
+  STEPNAME = STORAGE(D2X(C2D(PTRTIOT)+8),8)
+  PROCNAME = STORAGE(D2X(C2D(PTRTIOT)+16),8)
+  Tcbjscbb = Storage(D2x(C2d(Psatold)+181),3)              /* jscb */
+  jscbssib = STORAGE(D2X(C2D(tcbjscbb)+316),4)      /* Ptr to SSIB */
+  ssibjbid = STORAGE(D2X(C2D(jscbssib)+12),8)    /* job identifier */
+  Return JOBNAME SSIBJBID STEPNAME PROCNAME
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Adds text to a stem variable
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+in_text:
+  parse arg text_line
+  text_next = text_in.0 + 1
+  text_in.text_next = text_line
+  return text_next
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Adds text to a stem variable
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+out_text:
+  parse arg text_line
+  text_next = text_out.0 + 1
+  text_out.text_next = text_line
+  return text_next
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Adds the rexx code to convert the member back.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+add_rexx_code:
+  sigl_record = sigl + 25
+  rexx_code = "YES"
+  process_data = "NO"
+  DO WHILE rexx_code = "YES"
+    SIGL_RECORD=SIGL_RECORD+1
+    MY_DATA=SOURCELINE(SIGL_RECORD)
+    IF (MY_DATA="ENDDATA*/") THEN,
+      DO
+        rexx_code="NO"
+        LEAVE
+      END
+    IF (MY_DATA="/*BEGINDATA") THEN,
+      DO
+        PROCESS_DATA="YES"
+        ITERATE
+      END
+    IF (PROCESS_DATA="YES") THEN,
+      DO
+        text_in.0 = in_text(my_data)
+      END
+  END
+  return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+__DATA__
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/*BEGINDATA
+4DCDCDD44DCCD6DCDE54444444444444444444444444444444444444444444444444444444444444
+03571940D9569B9553DB000000000000000000000000000000000000000000000000000000000000
+55CCDC000002000DC737D20C000460234EC87C304AE2964116CF61880183010CF7CD000980158C10
+BB7943010003002000E8289C02C0333002A852A65BECB9BD8920B0C6DD15F09207006C3927659200
+4169BE0455400AC8F3640E1CFF500900CDCB2DB0E69BF455C83997052715103702B3A689AD4D4087
+0EE343FA8C363010C00FB0328802103064D2E223AE3C2A62901A013FDA090632ECC1FE4AEAE64101
+405D2C00AF7BE0081DAE8F314A01B5E1013A5D49061DA5EE8377322050BE6BFB2056470B2F324E99
+03A3066E44010D38A6A925709D311F0A705D535408A84D649CD26683775642020DBF2AF822769761
+4B05602A4964206150CC37509EE39DD1F08A04D5C601B1C19B44515E1D8A350D86B1210D3A40D600
+003737D513F0008A74A8638D52E833B7061EEC9C150A55A7592FA5F0A06B326B260BBE000D260337
+45735CFC3FF8A2055CCCC3066E41660132CA8DE792E1B14011100A960307D0606B0C30A080FB06AB
+02A8DE69D71868392AAB04C00ACC0D609E535CF448B29F06125087760002A00154051601B1F12E34
+4E08714428118A6B1B400FC2EACE0C284CB839C4A1D4BC0E87020471EE3153286714019CA1B01C4B
+002C32426E026CA801F0BD3CE3602D0835AFB41928D70062120416B0EAE2356835FA0D18EF06A41B
+4AFA49928D7108A1B0805CB01036030BD06B6C9F5C60800F78771A0240412D770952B74705E164DA
+08C1A4A1D03808709A043B30809D0002A027F0410B8108F208F4D705242ED07C08328DA80FE980B0
+4FB04D21F68CEC568010A38F7499384CB0881C851D006B0A6842ED0E008550773C307CC2DC6EA2B0
+0181C4201E3E502810203D7FE4D48835AF406247083D3AF6B4412D750C75C8F5C612D5A858FC3A98
+48A416178AD23380060C580D24388C96C932679B4CB6E7E6F951F4A14B9C02DD5043BA0460234EC8
+09C08B3D6C60458ED2338106045B82887007ED292BDBBEAD70EB3FD73F4536A9168152C0333002A8
+414F044F9FE78CD36AABF0A11F4D1144444444444444444444444444444444444444444444444444
+030AECF8700D72A471B02F7EE9AE6600000000000000000000000000000000000000000000000000
+ENDDATA*/
+
