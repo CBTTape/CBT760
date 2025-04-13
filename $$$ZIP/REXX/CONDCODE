@@ -1,0 +1,450 @@
+rexx_CONDCODE: /* We still need rexx in comment if read from SYSPROC */
+  rexxpgm_version = "01.15"
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+  Dataset: REXX(CONDCODE)
+  Author:  "Kenneth Tomiak"<CBT_Ken@KTomiak.biz>
+  Syntax:  CONDCODE {}
+  Purpose: Retrieve Condition Codes for each prior step.
+           Follow MVS control blocks to the STEP CONTROL TABLE,
+           then decipher status bytes to display what occurred
+           for each of the prior steps.
+
+=======================================================================
+
+  History of Modifications
+  ------------------------
+  When     VV MM WHO and what you did
+  -------- ----- ------------------------------------------------------
+  20070801 01.15 Kenneth E Tomiak <KenTomiak@KTomiak.org>
+                 Formatted in standard FILE760 format.
+
+  20070320 01.14 Kenneth E Tomiak <KenTomiak@KTomiak.org>
+                 >>>>> FORMAT CHANGES <<<<<
+                 Replaced call to ptr in swareq procedure
+
+  20040422 01.13 Lionel B. Dyck <lionel.b.dyck@kp.org>
+                 Correction for high condition code testing/report.
+
+  20030620 01.12 Kenneth E. Tomiak <CBT_Ken@KTomiak.biz>
+                 >>>>> FORMAT CHANGES <<<<<
+                 lengthened static 0's on Harry's "U" abend corrections
+                 and converted not equal compares to ><.
+                 Coded "S" indent in a different manner. Removed logic
+                 inclusion of sctxabcc = '00' until I see it ever
+                 occurs when sctabcnd = '04'. I did find assembler
+                 invoked abends were not being handled properly so I
+                 had to do some logic changes, too.
+
+  20030419 01.11 Harry van Burik <h.vanburik@pinkroccade.com>
+                 >>>>> FORMAT CHANGES <<<<<
+                 Several minor corrections to formatting
+                 Indent step level "S" abend.
+                 Increase length of User abend to four digits.
+                 Added a check of sctxabcc=00 under sctabcnd=04.
+
+  20030326 01.10 Kenneth E. Tomiak <CBT_Ken@KTomiak.biz>
+                 >>>>> FORMAT CHANGES <<<<<
+                 Fixed compare of high_cond when using sctsexec and
+                 removed "R" if no abend occurred.
+
+  20030324 01.09 Lionel B. Dyck <lionel.b.dyck@kp.org>
+                 >>>>> FORMAT CHANGES <<<<<
+                 Split the JOB= line into two lines.
+                 Set last_abend and high_cond to 0.
+
+  20030318 01.08 Kenneth E. Tomiak <CBT_Ken@KTomiak.biz>
+                 >>>>> FORMAT CHANGES <<<<<
+                 Format Jctacode, show lastabend and highest condcode,
+                 include SSIB jobid, and completed changes to swareq.
+
+  20030317 01.07 Kenneth E. Tomiak <CBT_Ken@KTomiak.biz>
+                 Correct sctsexec from 9,1 to 8,2,
+                 replaced Foreground check with first step check.
+
+  20030317 01.06 Lionel B. Dyck <lionel.b.dyck@kp.org>
+                 Add test for Foreground environment.
+
+  20030316 01.05 Lionel B. Dyck <lionel.b.dyck@kp.org>
+                 >>>>> FORMAT CHANGES <<<<<
+                 Nop other message for sctabcnd if not 04.
+
+  20030314 01.04 Lionel B. Dyck <lionel.b.dyck@kp.org>
+                 >>>>> FORMAT CHANGES <<<<<
+                 Minor cleanup (comments and spacing),
+                 Changed wording of the generated messages,
+                 Changed for 4 bytes for Jctacode.
+
+  20030314 01.03 Kenneth E. Tomiak <CBT_Ken@KTomiak.biz>
+                 Added check for steps bypassed due to a RESTART= and
+                 spruced up the comments, far more than any code I
+                 usually write. Hopefully this will make it easy to
+                 understand and maintain.
+
+  20030313 01.02 Kenneth E. Tomiak <CBT_Ken@KTomiak.biz>
+                 Inserted SWAREQ routine from code written by:
+                 Gilbert Saint-flour <gsf@pobox.com>
+
+  20030313 01.01 Kenneth E. Tomiak <CBT_Ken@KTomiak.biz>
+                 Revamped code received from:
+                   Lionel B. Dyck <Lionel.B.Dyck@KPM.org>
+
+  ???????? 01.00 Barry Gilder <gilderb@anz.com>
+                 Original code.
+
+-----------------------------------------------------------------------
+
+ Important Guidelines:
+ This code was written as an information gathering sub-routine
+ intended to be called and its results used as the invoker saw
+ fit. It was intended to be a report generator. With that thought
+ in mind, carefully consider whether your change affects how a
+ parsing program will interpret the output. If a flaw in the
+ original format is found, it will have to be corrected, and then
+ any parsing invokers will have to verify they still work. Please
+ make note of such activity so that the callers are forewarned.
+ Use the line below to show you made format changes.
+           >>>>> FORMAT CHANGES <<<<<
+
+ Disclaimers:
+ I have no special knowledge of the inner workings of the
+ operating system. I attempted to return one value back to
+ indicate the same value you would have received if you used
+ NOTIFY= on the jobcard. I was working on using the highest
+ numeric COND CODE, unless there was a SYSTEM abend, unless
+ there was a USER abend. It then became desirable to show the
+ outcome of all of the steps, just as most IEFACTRT exits show
+ in your JESMSGLG. At that point I included LASTABEND= to show
+ what the jct indicates and HIGHCOND= to show what may be
+ considered the most severe error of the job using the COND CODE,
+ SYSTEM, USER sequence described above.
+
+ The original code was developed and tested using the DATA AREAS
+ manuals and MACLIB entries from OS/390 2.10 and z/OS 1.2. My
+ testing includes steps that are designed to fail. Not every
+ system abend, user abend, nor return code value; but at least
+ two of each.
+
+ I support my code using a best-effort philosophy. As long as I
+ have access to an image where I can test, I will maintain it as
+ best as I can. If you find a flaw, please do let me know.
+
+ The code released by Kenneth E. Tomiak does not alter anything.
+ It follows control blocks that are outside of the IBM defined
+ 'Programming Interface'. BUYER BEWARE! Your decision to execute
+ this code means you accept responsibility for the consequences.
+ What could go wrong? If control blocks are changed or used in
+ some way I did not anticipate you may find this loops wildly;
+ tries to access storage it should not; or other yet to be
+ conceived problems. BUYER BEWARE! Always test this in a sandbox
+ MVS image if you have concerns.
+
+ In no event will the author be liable to the user of this code
+ for any damages. Including, but not limited to, any lost
+ profits, lost savings or other incidental, consequential or
+ special damages arising out of the operation of or inability to
+ operate this code, even if the user has been advised of the
+ possibility of such damages.
+
+ With that stated, enjoy all this has to offer.
+
+-----------------------------------------------------------------------
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+Rexx_condcode:
+
+  Parse Upper Arg Other_Junk         /* No parameters are used       */
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+   MAIN procedure which invokes sub-functions.
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+  Numeric Digits 12
+  Call Init_condcode
+  Call Main_condcode
+  Call Term_condcode
+  Exit Final_Rc
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+   Initialize variables used by the code.
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+   Follow the control blocks to the Step Control Table.
+
+   Psa                                 Prefix Save Area
+   Psa@540                             Pointer of PSATOLD
+   Psa@540=>tcb                        Task Control Block
+   Psa@540=>tcb+181                    Pointer of TCBJSCBB
+   Psa@540=>tcb+181=>jscb              JOBSTEP Control BLock
+   Psa@540=>tcb+181=>jscb+261          Pointer to Job Control Table
+   Psa@540=>tcb+181=>jscb+261=>jct     Job Control Table
+   Psa@540=>tcb+181=>jscb+261=>jct+329 Pointer to Step Control Table
+   Psa@540=>tcb+181=>jscb+261=>jct+329=>sct       Step Control Table
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+Init_condcode:
+  PARSE VERSION,
+    version_rexx_name,
+    version_rexx_version,
+    version_rexx_date
+  PARSE SOURCE,
+    source_host_env,
+    source_call_type,
+    source_uc_exec_name,
+    source_hostdd,
+    source_hostdsn,
+    source_nf_exec_name,
+    source_initial_cmd_env,
+    source_asid_name,
+    source_char8_user_token,
+    source_hostother
+  Address_Environment = Address()
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  job_specs = rexx_jobspecs()
+  say ""
+  say Copies("=",55)
+  say left("=" source_uc_exec_name rexxpgm_version,53) "="
+  say left("=" "executing under" source_host_env,53) "="
+  say left("=" "as a" source_call_type,53) "="
+  say left("=  on" date() "at" time()".",53) "="
+  say Copies("=",55)
+  say ""
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+  return_code = 0
+  sysvar_sysuid=SYSVAR("SYSUID")
+  Psatold  = Storage(D2x(540),4)
+  Tcbjscbb = Storage(D2x(C2d(Psatold)+181),3)
+  Jscbjct  = Swareq(Storage(D2x(C2d(Tcbjscbb)+261),3))
+  Currsct  = Swareq(Storage(D2x(C2d(Tcbjscbb)+329),3))
+  Jscbstep = C2d(Storage(D2x(C2d(tcbjscbb)+228),1)) /* Step number   */
+  jscbssib = STORAGE(D2X(C2D(tcbjscbb)+316),4)    /* Pointer to SSIB */
+  ssibjbid = STORAGE(D2X(C2D(jscbssib)+12),8)     /* job identifier  */
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+   Save A Few Fields From The Jct.
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+  Jctjstat =     Storage(D2x(Jscbjct +  5),1)       /* Job Status    */
+  Jctjname =     Storage(D2x(Jscbjct +  8),8)       /* Job Name      */
+  Jctjfail = C2x(Storage(D2x(Jscbjct + 52),1))      /* Job Failure   */
+  Jctacode =     Storage(D2x(Jscbjct +168),4)       /* Job Abend     */
+
+  Job_Stat = c2x(jctjstat)
+  If (Bitand('20'x,jctjstat) = '20'x) Then,
+    Do
+      Job_Stat = job_stat "Cancelled By Condition Codes"
+    End
+  If (Bitand('08'x,jctjstat) = '08'x) Then,
+    Do
+      Job_Stat = job_stat "JCT ABend"
+    End
+  If (Bitand('04'x,jctjstat) = '04'x) Then,
+    Do
+      Job_Stat = job_stat "Job Failed"
+    End
+  If (Bitand('02'x,jctjstat) = '02'x) Then,
+    Do
+      Job_Stat = job_stat "Catalog Job"
+    End
+
+  select
+    when (Left(C2x(Jctacode),2) = '40') |,
+         (Left(C2x(Jctacode),2) = '80') |,
+         (Left(C2x(Jctacode),2) = 'C0') Then,
+      Do
+        Last_Abend = "U"right("0000"c2d(Right(Jctacode,2)),4)
+      End
+    when (C2x(jctjstat) >< '00') Then,
+      Do
+        Last_Abend = "S"substr(C2x(Jctacode),3,3)
+      End
+    otherwise,
+      Do
+        Last_Abend = 0
+      End
+  End
+
+  High_Cond = "R000"
+
+  Final_Rc = 0
+  Return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+   The meat and potatoes of the code.
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+   Loop through every SCT.
+     Determine the status of the step.
+   Jct+32=>1st Sct
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+Main_condcode:
+  Thissct  = Swareq(Storage(D2x(Jscbjct+32),3)) /* status code table */
+  Do until ((Thissct = '10'x) | (Thissct = Currsct))
+    Sctsstat = C2x(Storage(D2x(thissct +4),1)) /* internal step stat */
+    Sctsexec = C2d(Storage(D2x(thissct + 8),2))  /* step status code */
+    Sctsclpc = Strip(Storage(D2x(thissct + 44),8)) /* step proc name */
+    Sctsname = Strip(Storage(D2x(thissct + 52),8))      /* Step name */
+    Sctssysc = c2x(Storage(D2x(thissct + 62),2)) /* Step SYStem Code */
+    Sctxbttr = Swareq(Storage(D2x(thissct + 68),3))   /* ptr to scte */
+    Sctpgmnm = Storage(D2x(thissct +108),8)          /* Program name */
+    Sctabcnd = C2x(Storage(D2x(thissct +160),1))       /* Abend code */
+    Sctstend = Storage(D2x(thissct +172),1) /* Start End status flag */
+    Sctxabcc = Storage(D2x(Sctxbttr +112),4)    /* abend or condcode */
+
+/*-------------------------------------------------------------------*/
+/* Determine final status of step.                                   */
+/*-------------------------------------------------------------------*/
+    Select
+      When (Jscbstep = 1) then,
+        Do
+          cond_code = "Active"
+          Queue left(procstep,30) left(SCTpgmnm,9) Cond_Code
+          Leave
+        End
+      When (Sctsstat = '01') Then,
+        Do
+          Cond_Code = "FLUSH - STEP WAS NOT EXECUTED"
+        End
+      When (Bitand('10'x,Sctstend) = '10'x) Then,
+        Do
+          Cond_Code = "FLUSH -",
+            "STEP WAS NOT RUN BECAUSE OF CONDITION CODES," ,
+            "STEP WAS NOT EXECUTED."
+        End
+      When (Sctabcnd = '04') Then,
+        Do
+          Sctxabcc = Storage(D2x(C2d(Sctxbttr)+112),4)
+          Select
+            When (Left(C2x(Sctxabcc),2) = '40') |,
+                 (Left(C2x(Sctxabcc),2) = '80') |,
+                 (Left(C2x(Sctxabcc),2) = 'C0') Then,
+              Do
+                Cond_Code = "U"right("0000"c2d(Right(Sctxabcc,3)),4)
+                If (Cond_code > High_cond) then,
+                  High_Cond = Cond_code
+              End
+            When (Left(C2x(Sctxabcc),2) = '00') |,
+                 (Left(C2x(Sctxabcc),2) = '04') |,
+                 (Left(C2x(Sctxabcc),2) = '84') Then,
+              Do
+                Cond_Code = "S"substr(C2x(Sctxabcc),3,3)
+                If (Cond_code > High_cond) then,
+                  High_Cond = Cond_code
+              End
+            Otherwise
+              nop
+          End
+        End
+      When (Bitand('C0'x,Sctstend) = 'C0'x) Then,
+        Do
+          Cond_Code = Right("     "sctsexec,5)
+          sctsexec = right(sctsexec+100000,4)
+          If ("R"sctsexec > High_cond) then,
+            High_Cond = "R"sctsexec
+        End
+      When (Bitand('40'x,Sctstend) = '40'x) Then,
+        Do
+          Cond_Code = "BYPASSED DUE TO RESTART - STEP WAS NOT EXECUTED"
+        End
+      Otherwise,
+        Cond_Code = "Help me!",
+          sctsstat'-'sctsexec'-'sctssysc'-'sctabcnd'-'c2x(sctstend)
+    End
+    If (Sctsclpc >< " ") Then,      /* procstep.stepname combination */
+      Procstep = Left(Sctsclpc"."Sctsname,17)
+    Else,
+      Procstep = Left(Sctsname,17)
+    If (left(cond_code,1) = "S") then,
+      Do
+        Queue left(procstep,30) left(SCTpgmnm,9) " "||Cond_Code
+      End
+    Else,
+      Do
+        Queue left(procstep,30) left(SCTpgmnm,9) Cond_Code
+      End
+
+/*-------------------------------------------------------------------*/
+/* sct+20=>nextsct or '00000010'x.                                   */
+/*-------------------------------------------------------------------*/
+    Thissct = Swareq(Storage(D2x(thissct+20),3))
+  End
+  Return
+
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+/* Post processing cleanup, if necessary. None required this time.   */
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+Term_condcode:
+  High_Cond = Strip(Strip(High_Cond,"L"," "),"L","R")
+  Say "JOB="jctjname"("ssibjbid") JCTACODE="c2x(Jctacode),
+    "FAIL="jctjfail "STAT="Job_Stat
+  Say left(" ",22) "LASTABEND="Last_Abend,
+    "HIGHESTCOND="High_cond
+  Say left("Step.ProcStep",30) left("Program",9) " Code"
+  Do while Queued() > 0
+    parse pull stepline
+    say stepline
+  end
+  Return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+  Place any of your subroutines and procedures below this.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_jobspecs:
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO CVT FROM PSA                                */
+  /*---------------------------------------------------------------*/
+  PTR2PSA = 0
+  CVTPTR = STORAGE(D2X(PTR2PSA + 16),4)
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO SMCA, THEN GET SMF SYSTEM ID                */
+  /*---------------------------------------------------------------*/
+  CVTSMCA = STORAGE(D2X(C2D(CVTPTR)+197),3)
+  SMFID = STORAGE(D2X(C2D(CVTSMCA)+16),4)
+  /*---------------------------------------------------------------*/
+  /* GET JOBNAME, STEP, AND PROCEDURE                              */
+  /*---------------------------------------------------------------*/
+  PSATOLD  = STORAGE(21C,4)                    /* POINTER TO TCB   */
+  PTRTIOT  = STORAGE(D2X(C2D(PSATOLD)+12),4)   /* POINTER TO TIOT  */
+  JOBNAME  = STORAGE(D2X(C2D(PTRTIOT)),8)
+  STEPNAME = STORAGE(D2X(C2D(PTRTIOT)+8),8)
+  PROCNAME = STORAGE(D2X(C2D(PTRTIOT)+16),8)
+  Tcbjscbb = Storage(D2x(C2d(Psatold)+181),3)                /* jscb */
+  jscbssib = STORAGE(D2X(C2D(tcbjscbb)+316),4)        /* Ptr to SSIB */
+  ssibjbid = STORAGE(D2X(C2D(jscbssib)+12),8)      /* job identifier */
+  Return JOBNAME SSIBJBID STEPNAME PROCNAME
+
+/*===================================================================*/
+/* Other called routines                                             */
+/*===================================================================*/
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+   SWAREQ - AUTHOR   = Gilbert Saint-flour <gsf@pobox.com>
+     Ken says - If argument is below (not sure what that means),
+                add 16. Otherwise, access the QMPL and add QMATs.
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+SwaReq:  Procedure
+  If (Right(C2x(Arg(1)),1) >< 'F') Then,  /* Swa=Below ?             */
+    Do
+      Result = C2d(Arg(1))+16          /* Yes, Return Arg(1)+16      */
+      Return Result
+    End
+  sva = c2d(Arg(1))                            /* Convert to decimal */
+  tcb = c2d(storage(d2x(540),4))                 /* Return a pointer */
+  jscb = c2d(storage(d2x((tcb+180)),4))          /* Return a pointer */
+  qmpl = c2d(storage(d2x((jscb+244)),4))         /* Return a pointer */
+  qmat = c2d(storage(d2x((qmpl+24)),4))          /* Return a pointer */
+  Do While sva > 65536
+    qmat = c2d(storage(d2x((qmat+12)),4))        /* Return a pointer */
+    sva = sva - 65536                          /* 010006F -> 000006F */
+  End
+  Return c2d(storage(d2x(qmat+sva+1),4))+16      /* Return a pointer */
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+__DATA__
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */

@@ -1,0 +1,281 @@
+>< ADD NAME=PROGM    0101-07003-07016-2349-00044-00044-00000-KTOMIAK
+
+Yes, it still works but more people create a mess than fix one.
+Which is probably why you are looking to use this. Stop digging
+yourself into a deeper hole and find a better way.
+
+
+IEHPROGM is a system utility that is used to modify system control data
+and to maintain data sets at an organizational level. IEHPROGM should
+only be used by those programmers who are locally authorized to do so.
+
+IEHPROGM does not support dynamic UCBs while processing data sets that
+are password-protected.
+
+You can use IEHPROGM to perform the following tasks:
+
+x) Scratch (delete) a data set or a member of a partitioned data set.
+x) Rename a data set or a member of a partitioned data set.
+x) Maintain data set passwords.
+
+   A SECURITY PACKAGE IS A BETTER WAY TO PROTECT ACCESS THAN PASSWORDS.
+
+
+You must have RACF authority in order to use IEHPROGM. For information
+on RACF requirements for the Storage Management Subsystem, see z/OS
+DFSMSdfp Storage Administration Reference.
+
+
+IDCAMS is recommended for use with SMS managed data sets. For
+information on IDCAMS, see z/OS DFSMS Access Method Services.
+
+
+You can write an assembler program to perform any of the IEHPROGM
+functions. See z/OS DFSMSdfp Advanced Services and z/OS DFSMS: Using
+Data Sets.
+
+
+PROGM$01  Scratch Temporary System Data Sets
+PROGM$02  Scratch and Uncatalog Two Data Sets
+PROGM$03  Rename a Multi-Volume Data Set Catalog
+PROGM$04  Uncatalog Three Data Sets
+PROGM$05  Rename a Data Set and Define New Passwords
+PROGM$06  List and Replace Password Information
+PROGM$07  Rename a Partitioned Data Set Member
+
+>< ADD NAME=PROGM$01 0100-07003-07003-2113-00026-00026-00000-SC26UTL
+
+IDCAMS is recommended for use with SMS managed data sets. For
+information on IDCAMS, see z/OS DFSMS Access Method Services.
+
+Example 1: Scratch Temporary System Data Sets
+
+In this example, all temporary system data sets are scratched from the
+volume table of contents.
+
+//SCRVTOC JOB ...
+//STEP1   EXEC PGM=IEHPROGM
+//SYSPRINT DD  SYSOUT=*
+//DD2      DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//SYSIN    DD  *
+         SCRATCH VTOC,VOL=disk=222222,SYS
+/*
+
+The control statements are discussed below:
+
+x) The DD2 statement defines a volume. Because the system residence
+   volume is not referred to, a DD statement is needed to define it.
+
+x) The SCRATCH statement, with SYS specified, indicates that all
+   temporary system data sets whose expiration dates have expired are
+   scratched from the specified volume.
+
+>< ADD NAME=PROGM$02 0100-07003-07003-2113-00034-00034-00000-SC26UTL
+
+IDCAMS is recommended for use with SMS managed data sets. For
+information on IDCAMS, see z/OS DFSMS Access Method Services.
+
+Example 2: Scratch and Uncatalog Two Data Sets
+
+In this example, two data sets are scratched: SET1 and A.B.C.D.E are
+scratched from volume 222222. Both data sets are uncataloged.
+
+//SCRDSETS JOB ...
+//STEP1   EXEC PGM=IEHPROGM
+//SYSPRINT DD  SYSOUT=*
+//DD1 DD  DISP=(OLD),UNIT=disk,VOL=SER=111111
+//DD2 DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//SYSIN DD  *
+         SCRATCH DSNAME=SET1,VOL=disk=222222
+         UNCATLG DSNAME=SET1
+         SCRATCH DSNAME=A.B.C.D.E,VOL=disk=222222
+         UNCATLG DSNAME=A.B.C.D.E
+/*
+
+The utility control statements are discussed below:
+
+x) The first SCRATCH statement specifies that SET1, which resides on
+   volume 222222, is scratched.
+
+x) The first UNCATLG statement specifies that SET1 is uncataloged.
+
+x) The second SCRATCH statement specifies that A.B.C.D.E, which resides
+   on volume 222222, is scratched.
+
+x) The second UNCATLG statement specifies that A.B.C.D.E is
+   uncataloged.
+
+>< ADD NAME=PROGM$03 0100-07003-07003-2113-00032-00032-00000-SC26UTL
+
+IDCAMS is recommended for use with SMS managed data sets. For
+information on IDCAMS, see z/OS DFSMS Access Method Services.
+
+Example 3: Rename a Multi-Volume Data Set Catalog
+
+In this example, the name of a data set is changed on two mountable
+volumes. The old data set name is removed and the data set is cataloged
+under its new data set name.
+
+//RENAMEDS JOB ...
+//STEP1   EXEC PGM=IEHPROGM
+//SYSPRINT DD  SYSOUT=*
+//DD1      DD  VOL=SER=111111,DISP=(OLD),UNIT=disk
+//DD2      DD  DISP=(OLD),UNIT=(disk,,DEFER),
+//             VOL=(PRIVATE,SER=(222222,333333))
+//SYSIN    DD  *
+         RENAME  DSNAME=A.B.C,NEWNAME=NEWSET,VOL=disk=(222222,333333)
+         UNCATLG DSNAME=A.B.C
+         CATLG   DSNAME=NEWSET,VOL=disk=(222222,333333)
+/*
+
+The control statements are discussed below:
+
+x) RENAME specifies that data set A.B.C, which resides on volumes
+   222222 and 333333, is to be renamed NEWSET.
+
+x) UNCATLG specifies that data set A.B.C is uncataloged.
+
+x) CATLG specifies that NEWSET, which resides on volumes 222222 and
+   333333, is cataloged.
+
+>< ADD NAME=PROGM$04 0100-07003-07003-2113-00024-00024-00000-SC26UTL
+
+IDCAMS is recommended for use with SMS managed data sets. For
+information on IDCAMS, see z/OS DFSMS Access Method Services.
+
+Example 4: Uncatalog Three Data Sets
+
+In this example, three data sets, A.B.C.D.E.F.SET1, A.B.C.G.H.SET2, and
+A.B.I.J.K.SET3, are uncataloged.
+
+//DLTSTRUC JOB ...
+//STEP1   EXEC PGM=IEHPROGM
+//SYSPRINT DD  SYSOUT=*
+//DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=111111
+//SYSIN    DD  *
+         UNCATLG DSNAME=A.B.C.D.E.F.SET1
+         UNCATLG DSNAME=A.B.C.G.H.SET2
+         UNCATLG DSNAME=A.B.I.J.K.SET3
+/*
+
+The control statements are discussed below:
+
+x) The UNCATLG statements specify that data sets A.B.C.D.E.F.SET1,
+   A.B.C.G.H.SET2, and A.B.I.J.K.SET3 are uncataloged.
+
+>< ADD NAME=PROGM$05 0100-07003-07003-2113-00047-00047-00000-SC26UTL
+
+IDCAMS is recommended for use with SMS managed data sets. For
+information on IDCAMS, see z/OS DFSMS Access Method Services.
+
+A SECURITY PACKAGE IS A BETTER WAY TO PROTECT ACCESS THAN PASSWORDS.
+
+Example 5: Rename a Data Set and Define New Passwords
+
+In this example, a data set is renamed. The data set passwords assigned
+to the old data set name are deleted. Then two passwords are assigned
+to the new data set name. If the data set is not cataloged, a message
+is issued indicating that the LOCATE macro instruction ended
+unsuccessfully.
+
+//ADDPASS JOB ...
+//STEP1   EXEC PGM=IEHPROGM,PARM='NOPRINT'
+//SYSPRINT DD  SYSOUT=*
+//DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//SYSIN    DD  *
+         RENAME  DSNAME=OLD,VOL=disk=222222,NEWNAME=NEW
+         DELETEP DSNAME=OLD,PASWORD1=KEY
+         ADD     DSNAME=NEW,PASWORD2=KEY,TYPE=1,                       X
+               DATA='SECONDARY IS READ'
+         ADD     DSNAME=NEW,PASWORD2=READ,CPASWORD=KEY,TYPE=2,         X
+               DATA='ASSIGNED TO J. DOE'
+/*
+
+The utility control statements are discussed below:
+
+x) RENAME specifies that the data set called OLD is renamed NEW. The
+   operator is required to supply a password to rename the old data set.
+
+x) DELETEP specifies that the entry for the password KEY is deleted.
+   Because KEY is a control password in this example, all the password
+   entries for the data set name are deleted. The VOL parameter is not
+   needed because the protection status of the data set as set in the
+   DSCB is not to be changed; read/write protection is presently set in
+   the DSCB, and read/write protection is desired when the passwords are
+   reassigned under the new data set name.
+
+x) The ADD statements specify that entries are added for passwords KEY
+   and READ. KEY becomes the control password and allows both read and
+   write access to the data set. READ becomes a secondary password and
+   allows only read access to the data set. The VOL parameter is not
+   needed, because the protection status of the data set is still set in
+   the DSCB.
+
+>< ADD NAME=PROGM$06 0100-07003-07003-2113-00040-00040-00000-SC26UTL
+
+IDCAMS is recommended for use with SMS managed data sets. For
+information on IDCAMS, see z/OS DFSMS Access Method Services.
+
+A SECURITY PACKAGE IS A BETTER WAY TO PROTECT ACCESS THAN PASSWORDS.
+
+Example 6: List and Replace Password Information
+
+In this example, information from a password entry is listed. Then the
+protection mode of the password, the protection status of the data set,
+and the user data are changed.
+
+//REPLPASS JOB ...
+//STEP1   EXEC PGM=IEHPROGM,PARM='NOPRINT'
+//SYSPRINT DD  SYSOUT=*
+//DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=111111
+//DD2      DD  DISP=(OLD),UNIT=(disk,,DEFER)
+//             VOL=(PRIVATE,SER=(222222,333333))
+//SYSIN    DD  *
+         LIST    DSNAME=A.B.C,PASWORD1=ABLE
+         REPLACE DSNAME=A.B.C,PASWORD1=ABLE,PASWORD2=ABLE,TYPE=3,      X
+               VOL=disk=(222222,333333),                               X
+               DATA='NO SECONDARIES; ASSIGNED TO DEPT 31'
+/*
+
+The utility control statements are discussed below:
+
+x) LIST specifies that the access counter, protection mode, and user
+   data from the entry for password ABLE are listed. Listing the entry
+   permits the content of the access counter to be recorded before the
+   counter is reset to zero by the REPLACE statement.
+
+x) REPLACE specifies that the protection mode of password ABLE is to be
+   changed to allow both read and write access and that the protection
+   status of the data set is changed to write-only protection. The VOL
+   parameter is required because the protection status of the data set
+   is changed and the data set, in this example, is not cataloged.
+   Because this is a control password, the CPASWORD parameter is not
+   required.
+
+>< ADD NAME=PROGM$07 0100-07003-07003-2113-00026-00026-00000-SC26UTL
+
+IDCAMS is recommended for use with SMS managed data sets. For
+information on IDCAMS, see z/OS DFSMS Access Method Services.
+
+Example 7: Rename a Partitioned Data Set Member
+
+In this example, a member of a partitioned data set is renamed.
+
+//REN JOB ...
+//STEP1   EXEC PGM=IEHPROGM
+//SYSPRINT DD  SYSOUT=*
+//DD1      DD  DISP=(OLD),UNIT=disk,VOL=SER=222222
+//SYSIN    DD  *
+         RENAME VOL=disk=222222,DSNAME=DATASET,NEWNAME=BC,MEMBER=ABC
+/*
+
+The control statements are discussed below:
+
+x) DD1 DD defines a permanently mounted volume.
+
+x) SYSIN DD defines the input data set, which follows in the input
+   stream.
+
+x) RENAME specifies that member ABC in the partitioned data set
+   DATASET, which resides on a disk volume, is renamed BC.
+

@@ -1,0 +1,67 @@
+rexx_bublsort: /* rexx */
+  bublsort_version = "01.00"
+  stem.0 = 0
+  some_var = "Tomiak, Kenneth"
+  call stem_it
+  some_var = "Else, Somebody"
+  call stem_it
+  some_var = "Body, Any"
+  call stem_it
+  /* show results                                               */
+  say ""
+  say "Original stem. order"
+  do sx = 1 to stem.0
+    say stem.sx
+  end
+  call stem_sort_asc
+  /* show results                                               */
+  say ""
+  say "Sorted stem. ascending order"
+  do sx = 1 to stem.0
+    say stem.sx
+  end
+  call stem_sort_desc
+  /* show results                                               */
+  say ""
+  say "Sorted stem. descending order"
+  do sx = 1 to stem.0
+    say stem.sx
+  end
+  return
+
+stem_it:
+  parse value     stem.0+1  some_var  ,
+         with  1  x         stem.x    ,
+               1  stem.0 .
+  return
+
+stem_sort_asc: Procedure Expose stem.
+  count_of_elements = stem.0
+  /* loop through the array (count_of_elements - 1) ** 2 times */
+  do i = 1 to  (count_of_elements - 1)
+    do j = 1 to (count_of_elements - 1)
+      j_plus1 = j + 1
+  /* if an element is greater than the next one higher then swap them */
+      if stem.j > stem.j_plus1 then call swap_pair
+    end j
+  end i
+  return
+
+  /* reverse the order of the two elements */
+swap_pair:
+  temp = stem.j
+  stem.j = stem.j_plus1
+  stem.j_plus1 = temp
+  return
+
+stem_sort_desc: Procedure Expose stem.
+  count_of_elements = stem.0
+  /* loop through the array (count_of_elements - 1) ** 2 times */
+  do i = 1 to  (count_of_elements - 1)
+    do j = 1 to (count_of_elements - 1)
+      j_plus1 = j + 1
+  /* if an element is greater than the next one higher then swap them */
+      if stem.j < stem.j_plus1 then call swap_pair
+    end j
+  end i
+  return

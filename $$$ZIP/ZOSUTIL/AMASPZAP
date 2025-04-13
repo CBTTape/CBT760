@@ -1,0 +1,76 @@
+>< ADD NAME=ZAP      0103-07062-07062-2209-00004-00010-00000-KTOMIAK
+
+ZAP$01 ABSDUMPT DUMP TRACKS OF A PDS
+ZAP$02 VER A FORMAT4 ENTRY
+ZAP$03 ADD IMS TO 'TERMINATION RECOVERY MANAGER LIST'
+ZAP$04 ABSDUMPT DUMP A PDS MEMBER
+
+                                                                        00060001
+    EVEN A SIMPLE 'VER' ASSUMES AN UPDATE WILL FOLLOW:                  00060001
+    004 AMA117D REPLY Y OR N TO UPDATE VTOC  SHTSO4 A03D  KTOMIAKH      00060001
+    R 4,N         <==== TO BE SAFE                                      00060001
+>< ADD NAME=ZAP$01   0102-07062-07062-2052-00010-00012-00000-KTOMIAK
+                                                                        00010000
+//*                                                                     00060001
+/*JOBPARM LINES=9999     <=== The bigger the dataset the more lines     00060001
+//*                                                                     00060001
+//ZAP$01  EXEC PGM=AMASPZAP
+//SYSPRINT DD  SYSOUT=*
+//SYSLIB   DD  DISP=SHR,DSN=some.dataset.name
+//SYSIN    DD  *
+ ABSDUMPT ALL
+/*
+//
+
+>< ADD NAME=ZAP$02   0101-07062-07062-2051-00012-00017-00000-KTOMIAK
+//*                                                                     00060001
+//* EVEN A SIMPLE 'VER' ASSUMES AN UPDATE WILL FOLLOW:                  00060001
+//* 004 AMA117D REPLY Y OR N TO UPDATE VTOC  SHTSO4 A03D  KTOMIAKH      00060001
+//* R 4,N         <==== TO BE SAFE                                      00060001
+//*                                                                     00060001
+//ZAP$02  EXEC PGM=AMASPZAP
+//SYSPRINT DD  SYSOUT=*
+//SYSLIB   DD  DISP=SHR,DSN=FORMAT4.DSCB,
+//             UNIT=SYSALLDA,vol=SER=SHTSO4,
+//             DCB=KEYLEN=44
+//SYSIN    DD  *
+*                 CCCCHHHHRR
+         CCHHR    0000000101
+         VER      0000 04040404
+         ABSDUMPT ALL
+/*
+//
+>< ADD NAME=ZAP$03   0101-07062-07062-2109-00000-00022-00000-KTOMIAK
+
+  YOU MAY HAVE TO DUMPT THE MODULE AND SEE WHERE THE ENXT
+  FREE ENTRY IS.
+
+//*                                                                     00060001
+//ZAP$03  EXEC PGM=AMASPZAP
+//SYSPRINT DD  SYSOUT=*
+//SYSLIB   DD  DISP=SHR,DSN=SYS1.LPALIB
+//*
+//*  OFFSET X'0000' MAY NOT BE AVAILABLE IN YOUR SYSTEM.
+//*
+//*  REFER TO THE MVS INTERFACE SECTION IN THE IMS INSTALLATION
+//*  GUIDE FOR ADDITIONAL INFORMATION.
+//*
+//SYSIN    DD *
+  NAME IGC0001C IEAVTRML
+  VER 0000 000000000000000000000000
+  VER 0000 C4C6E2D4D9C3D3F000000000
+*          D F S M R C L 0
+/*
+//
+
+>< ADD NAME=ZAP$04   0100-07062-07062-2107-00010-00010-00000-KTOMIAK
+
+//*
+//ZAP$04  EXEC PGM=AMASPZAP,REGION=1024K,TIME=30
+//SYSPRINT DD  SYSOUT=*
+//SYSLIB   DD  DISP=SHR,DSN=PDS.DATASET.NAME     <== CHANGE THIS
+//SYSIN    DD  *
+ ABSDUMPT MBRNAME
+/*
+//*
+

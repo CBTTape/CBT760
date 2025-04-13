@@ -1,0 +1,12 @@
+
+/*SIGNON
+
+Used to connect a remote session with JES2.
+
+/*SIGNON {REMOTEnnn} [password1] [new-password] [password2]
+         {RMTnnnn }
+         {RMnnnn }
+         {Rnnnn }
+         {NxxRnnnn }
+         {dest-name}
+

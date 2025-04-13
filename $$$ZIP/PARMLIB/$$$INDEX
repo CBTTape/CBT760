@@ -1,0 +1,9 @@
+
+This dataset (sub-directory) contains some sample PARMLIB entries
+to help get you started doing some more advanced activities.
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------
+$$$INDEX This member
+CUNUNI00 Load single code page conversion routine for UNICODE on DEMAND
+

@@ -1,0 +1,478 @@
+>< ADD NAME=PTPCH    0101-07003-07016-2350-00013-00013-00000-KTOMIAK
+
+PTPCH$01  Print Partitioned Data Set
+PTPCH$02  Punch Sequential Data Sets
+PTPCH$03  Duplicate a Card Deck
+PTPCH$04  Print Sequential Data Set According to Default Format
+PTPCH$05  Print Sequential Data Set According to User Specifications
+PTPCH$06  Print Three Record Groups
+PTPCH$07  Print a Pre-Formatted Data Set
+PTPCH$08  Print Directory of a Partitioned Data Set
+PTPCH$09  Print Selected Records of a Partitioned Data Set
+PTPCH$10  Convert to Hexadecimal and Print Partitioned Data
+PTPCH$11  Print Member Containing DBCS Data
+
+>< ADD NAME=PTPCH$01 0101-07003-07003-2113-00020-00020-00000-SC26UTL
+
+Example 1: Print Partitioned Data Set
+
+In this example, a member of partitioned data set is printed according
+to user specifications.
+
+//PHSEQNO JOB ...
+//STEP1   EXEC PGM=IEBPTPCH
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=SHR,DSN=YOUR.PDS.DATASET
+//SYSUT2   DD  SYSOUT=B
+//SYSIN    DD  *
+         PRINT TYPORG=PO,MAXNAME=1,MAXFLDS=1
+         MEMBER NAME=UTILUPD8
+         RECORD FIELD=(80)
+/*
+
+If the member card entry is not used, the entire data cell will be
+printed.
+
+>< ADD NAME=PTPCH$02 0100-07003-07003-2113-00047-00047-00000-SC26UTL
+
+Example 2: Punch Sequential Data Sets
+
+In this example, a sequential data set is punched according to user
+specifications.
+
+//PHSEQNO JOB ...
+//STEP1   EXEC PGM=IEBPTPCH
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(SHR,KEEP),DSN=MASTER.SEQSET
+//SYSUT2   DD  SYSOUT=B
+//SYSIN    DD  *
+         PUNCH MAXFLDS=1,CDSEQ=0,CDINCR=20
+         RECORD FIELD=(72)
+         LABELS DATA=YES
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set, MASTER.SEQSET, which resides
+   on a disk or tape volume. The data set contains 80-byte, fixed
+   blocked records.
+
+x) SYSUT2 DD defines the system output class (punch is assumed). That
+   portion of each record from the input data set defined by the FIELD
+   parameter is represented by one punched card.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) PUNCH begins the punch operation, indicates that one FIELD parameter
+   is included in a subsequent RECORD statement (MAXFLDS=1), and
+   assigns a sequence number for the first punched card (00000000) and
+   an increment value for successive sequence numbers (20). Sequence
+   numbers are placed in columns 73 through 80 of the output records.
+
+x) RECORD indicates that positions 1 through 72 of the input records
+   are to be punched. Bytes 73 through 80 of the input records are
+   replaced by the new sequence numbers in the output card deck.
+
+x) LABELS specifies that user header labels and user trailer labels are
+   punched.
+
+   Labels cannot be edited; they are always moved to the first 80 bytes
+   of the output buffer. No sequence numbers are present on the cards
+   containing user header and user trailer records.
+
+>< ADD NAME=PTPCH$03 0100-07003-07003-2113-00028-00028-00000-SC26UTL
+
+Example 3: Duplicate a Card Deck
+
+In this example, a card deck containing valid punch card code or BCD is
+duplicated.
+
+//PUNCH JOB ...
+//STEP1   EXEC PGM=IEBPTPCH
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  DISP=(OLD),DSN=PDSLIB(PNCHSTMT)
+//SYSUT2   DD  SYSOUT=B
+//SYSUT1   DD  DATA
+
+(input card data set including // cards)
+
+/*
+
+The control statements are discussed below:
+
+x) SYSIN DD defines the control data set PDSLIB which contains the
+   member PNCHSTMT. (The data set is cataloged.) The record format must
+   be FB and the logical record length must be 80.
+
+x) SYSUT2 DD defines the system output class (punch is assumed).
+
+x) SYSUT1 DD defines the input card data set, which follows in the
+   input stream.
+
+>< ADD NAME=PTPCH$04 0100-07003-07003-2113-00035-00035-00000-SC26UTL
+
+Example 4: Print Sequential Data Set According to Default Format
+
+In this example, a sequential data set is printed according to the
+default format. The printed output is converted to hexadecimal.
+
+//PRINT JOB ...
+//STEP1   EXEC PGM=IEBPTPCH
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=INSET,
+//             UNIT=tape,LABEL=(,NL),
+//             DCB=(RECFM=U,BLKSIZE=2000)
+//SYSUT2   DD  SYSOUT=*
+//SYSIN    DD  *
+         PRINT TOTCONV=XE
+         TITLE ITEM=('PRINT SEQ DATA SET WITH CONV TO HEX',10)
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set on a tape volume. The data set
+   contains undefined records; no record is larger than 2,000 bytes.
+
+x) SYSUT2 DD defines the output data set. The data set is written to
+   the system output device (printer assumed).
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) PRINT begins the print operation and specifies conversion from
+   alphanumeric to hexadecimal representation.
+
+x) TITLE specifies a title to be placed beginning in column 10 of the
+   printed output. The title is not converted to hexadecimal.
+
+>< ADD NAME=PTPCH$05 0100-07003-07003-2113-00044-00044-00000-SC26UTL
+
+Example 5: Print Sequential Data Set According to User Specifications
+
+In this example, a sequential data set is printed according to user
+specifications.
+
+//PTNONSTD JOB ...
+//STEP1   EXEC PGM=IEBPTPCH
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=SEQSET
+//SYSUT2   DD  SYSOUT=*
+//SYSIN    DD  *
+         PRINT MAXFLDS=1
+         EXITS INHDR=HDRIN,INTLR=TRLIN
+         RECORD FIELD=(80)
+         LABELS DATA=YES
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set, SEQSET, which is the second
+   data set on a tape volume.
+
+x) SYSUT2 DD defines the output data set on the system output device
+   (printer assumed). Each printed line contains 80 contiguous
+   characters (one record) of information.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) PRINT begins the print operation and indicates that one FIELD
+   parameter is included in a subsequent RECORD statement (MAXFLDS=1).
+
+x) EXITS indicates that exits will be taken to user header label and
+   trailer label processing routines when these labels are encountered
+   on the SYSUT1 data set.
+
+x) RECORD indicates that each input record is processed in its entirety
+   (80 bytes). Each input record is printed in columns 1 through 80 on
+   the printer.
+
+x) LABELS specifies that user header and trailer labels are printed
+   according to the return code issued by the user exits.
+
+>< ADD NAME=PTPCH$06 0100-07003-07003-2113-00081-00081-00000-SC26UTL
+
+Example 6: Print Three Record Groups
+
+In this example, three record groups are printed. A user routine is
+provided to manipulate output records before they are printed.
+
+//PRINT JOB ...
+//STEP1   EXEC PGM=IEBPTPCH
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=SEQDS
+//SYSUT2   DD  SYSOUT=*
+//SYSIN    DD  *
+         PRINT MAXFLDS=9,MAXGPS=9,MAXLITS=23,STOPAFT=32767
+         TITLE ITEM=('TIMECONV-DEPT D06'),                             X
+               ITEM=('JAN10-17',80)
+         EXITS OUTREC=NEWTIME,INHDR=HDRS,INTLR=TLRS
+         RECORD IDENT=(6,'498414',1),                                  X
+               FIELD=(8,1,,10),FIELD=(30,9,XE,20)
+         RECORD IDENT=(2,'**',39),                                     X
+               FIELD=(8,1,,10),FIELD=(30,9,XE,20)
+         RECORD IDENT=(6,'498414',1),                                  X
+               FIELD=(8,1,,10),FIELD=(30,9,XE,20)
+         LABELS CONV=XE,DATA=ALL
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set, called SEQDS. The data set
+   resides on a disk volume.
+
+x) SYSUT2 DD defines the output data set on the system output device
+   (printer assumed).
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The PRINT statement:
+
+   1. Initializes the print operation.
+   2. Indicates that not more than nine FIELD parameters are included
+      in subsequent RECORD statements (MAXFLDS=9).
+   3. Indicates that not more than nine IDENT parameters are included
+      in subsequent RECORD statements (MAXGPS=9).
+   4. Indicates that not more than 23 literal characters are included
+      in subsequent IDENT parameters (MAXLITS=23).
+   5. Indicates that processing is ended after 32767 records are
+      processed or after the third record group is processed, whichever
+      comes first. Because MAXLINE is omitted, 60 lines are printed on
+      each page.
+
+x) TITLE specifies two titles, to be printed on one line. The titles
+   are not converted to hexadecimal.
+
+x) EXITS specifies the name of a user routine (NEWTIME), which is used
+   to manipulate output records before they are printed.
+
+x) The first RECORD statement defines the first record group to be
+   processed and indicates where information from the input records is
+   placed in the output records. Positions 1 through 8 of the input
+   records appear in positions 10 through 17 of the printed output, and
+   positions 9 through 38 are printed in hexadecimal representation and
+   placed in positions 20 through 79.
+
+x) The second RECORD statement defines the second group to be
+   processed. The parameter in the IDENT operand specifies that an
+   input record last record edited according to the FIELD operand in
+   this RECORD statement. The FIELD operand specifies that positions 1
+   through 8 of the input records are placed in positions 10 through 17
+   of the printed output, and positions 9 through 38 are printed in
+   hexadecimal representation and appear in positions 20 through 79.
+
+x) The third and last RECORD statement is equal to the first RECORD
+   statement. An input record that meets the parameter in the IDENT
+   operand ends processing, unless the STOPAFT parameter in the PRINT
+   statement has not already done so.
+
+x) LABELS specifies that all user header or trailer labels are to be
+   printed regardless of any return code, except 16, issued by the
+   user's exit routine. It also indicates that the labels are converted
+   from alphanumeric to hexadecimal representation (CONV=XE).
+
+>< ADD NAME=PTPCH$07 0100-07003-07003-2113-00033-00033-00000-SC26UTL
+
+Example 7: Print a Pre-Formatted Data Set
+
+In this example, the input is a SYSOUT (sequential) data set, which was
+previously written as the second data set of a standard label tape. It
+is printed in SYSOUT format.
+
+//PTSYSOUT JOB ...
+//STEP1   EXEC PGM=IEBPTPCH
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=LISTING
+//SYSUT2   DD  SYSOUT=*
+//SYSIN    DD  *
+         PRINT PREFORM=A
+/*
+
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set, which was previously written
+   as the second data set of a standard label tape. The data set has
+   been assigned the name LISTING.
+
+x) SYSUT2 DD defines the output data set on the system output device
+   (printer assumed).
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The PRINT statement begins the print operation and indicates that an
+   ASA control character is provided as the first character of each
+   record to be printed (PREFORM=A).
+
+>< ADD NAME=PTPCH$08 0100-07003-07003-2113-00051-00051-00000-SC26UTL
+
+Example 8: Print Directory of a Partitioned Data Set
+
+In this example, the directory of a partitioned data set is printed
+according to the default format. The printed output is converted to
+hexadecimal.
+
+//PRINTDIR JOB ...
+//STEP1   EXEC PGM=IEBPTPCH
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=MAIN.PDS,
+//             DCB=(RECFM=U,BLKSIZE=256)
+//SYSUT2   DD  SYSOUT=*
+//SYSIN    DD  *
+         PRINT TYPORG=PS,TOTCONV=XE
+         TITLE ITEM=('PRINT PARTITIONED DIRECTORY OF PDS',10)
+         TITLE ITEM=('FIRST TWO BYTES SHOW NUM OF USED BYTES',10)
+         LABELS DATA=NO
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set (the partitioned directory),
+   which resides on a disk volume. The DCB keywords describe the
+   directory, not the member contents.
+
+x) SYSUT2 DD defines the output data set on the system output device
+   (printer assumed).
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) PRINT begins the print operation, indicates that the partitioned
+   directory is organized sequentially, and specifies conversion from
+   alphanumeric to hexadecimal representation.
+
+x) The first TITLE statement specifies a title, and the second TITLE
+   statement specifies a subtitle. Neither title is converted to
+   hexadecimal.
+
+x) LABELS specifies that no user labels are printed.
+
+   Note: Not all of the bytes in a directory block need to contain data
+   pertaining to the partitioned data set. Unused bytes are sometimes
+   used by the operating system as temporary work areas. With
+   conversion to hexadecimal representation, the first four characters
+   of printed output indicate how many bytes of the 256-byte block
+   pertain to the partitioned data set. Any unused bytes occur in the
+   latter portion of the directory block. They are not interspersed
+   with the used bytes.
+
+>< ADD NAME=PTPCH$09 0100-07003-07003-2113-00036-00036-00000-SC26UTL
+
+Example 9: Print Selected Records of a Partitioned Data Set
+
+In this example, a partitioned data set (ten records from each member)
+is printed according to the default format. The printed output is
+converted to hexadecimal.
+
+//PRINTPDS JOB ...
+//STEP1   EXEC PGM=IEBPTPCH
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(SHR),DSN=WAYNE.TEST.DATA
+//SYSUT2   DD  SYSOUT=*
+//SYSIN    DD  *
+         PRINT TOTCONV=XE,TYPORG=PO,STOPAFT=10
+         TITLE ITEM=('PRINT PDS -10 RECS EACH MEM',20)
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set, called WAYNE.TEST.DATA, on a
+   disk volume.
+
+x) SYSUT2 DD defines the output data set on the system output device
+   (printer assumed).
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) PRINT begins the print operation, specifies conversion from
+   alphanumeric to hexadecimal representation, indicates that the input
+   data set is partitioned, and specifies that 10 records from each
+   member are to be printed.
+
+x) TITLE specifies a title to be placed beginning in column 20 of the
+   printed output. The title is not converted to hexadecimal.
+
+>< ADD NAME=PTPCH$10 0100-07003-07003-2113-00040-00040-00000-SC26UTL
+
+Example 10: Convert to Hexadecimal and Print Partitioned Data
+
+In this example, two partitioned members are printed according to the
+default format. The printed output is converted to hexadecimal.
+
+//PRNTMEMS JOB ...
+//STEP1   EXEC PGM=IEBPTPCH
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(SHR),DSN=BROWN.MAIN.LIB
+//SYSUT2   DD  SYSOUT=*
+//SYSIN    DD  *
+         PRINT TYPORG=PO,TOTCONV=XE,MAXNAME=2
+         TITLE ITEM=('PRINT TWO MEMBS WITH CONV TO HEX',10)
+         MEMBER NAME=MEMBER1
+         MEMBER NAME=MEMBER2
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set, called BROWN.MAIN.LIB, on a
+   disk volume.
+
+x) SYSUT2 DD defines the output data set on the system output device
+   (printer assumed).
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) PRINT begins the print operation, indicates that the input data set
+   is partitioned, specifies conversion from alphanumeric to
+   hexadecimal representation, and indicates that two MEMBER statements
+   appear in the control data set (MAXNAME=2).
+
+x) TITLE specifies a title to be placed beginning in column 10 of the
+   printed output. The title is not converted to hexadecimal.
+
+x) MEMBER specifies the member names of the members to be printed
+   (MEMBER1 and MEMBER2).
+
+>< ADD NAME=PTPCH$11 0100-07003-07003-2113-00038-00038-00000-SC26UTL
+
+Example 11: Print Member Containing DBCS Data
+
+In this example, a member of a partitioned data set that contains DBCS
+data is printed after the DBCS data is checked to ensure that all DBCS
+characters are printable.
+
+//DBCS JOB ...
+//STEP1   EXEC PGM=IEBPTPCH
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=PDS
+//SYSUT2   DD  SYSOUT=*
+//SYSIN    DD  *
+         PRINT TYPORG=PO,DBCS=YES,MAXFLDS=1,MAXNAME=1
+         MEMBER NAME=MEM1
+         RECORD FIELD=(,,CV)
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set, PDS, on a disk volume.
+
+x) SYSUT2 DD defines the system printer as the output data set.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) PRINT begins the print operation, indicates that the input data set
+   is partitioned, and indicates that double-byte character set data
+   will be printed. The statement also indicates that one MEMBER
+   statement appears in the control data set, and that one FIELD
+   parameter appears on a subsequent RECORD statement.
+
+x) MEMBER specifies the member, MEM1, that is to be printed.
+
+x) RECORD specifies that the DBCS data is to be checked to ensure that
+   it is printable.
+

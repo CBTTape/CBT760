@@ -1,0 +1,404 @@
+>< ADD NAME=GENER    0101-07003-07016-2328-00011-00011-00000-KTOMIAK
+
+GENER$01 Print a Sequential Data Set
+GENER$02 Create a Partitioned Data Set from Sequential Input
+GENER$03 Convert Sequential Input into Partitioned Members
+GENER$03 Convert Sequential Input into Partitioned Members
+GENER$04 In-stream Input, Sequential Data Set to Tape Volume
+GENER$05 Produce Blocked Copy on Tape from Unblocked Disk File
+GENER$06 Edit and Copy a Sequential Input Data Set with Labels
+GENER$07 Edit and Copy a Sequential USS File to a Sequential Data
+GENER$08 Edit Double-Byte Character Set Data
+
+>< ADD NAME=GENER$01 0100-07003-07003-2113-00025-00025-00000-SC26UTL
+
+Example 1: Print a Sequential Data Set
+
+In this example, a sequential data set is printed. The printed output
+is left-aligned, with one 80-byte record appearing on each line of
+printed output.
+
+//PRINT JOB ...
+//STEP1   EXEC PGM=IEBGENER
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  DUMMY
+//SYSUT1   DD  DISP=(SHR),DSN=D80.DATA
+//SYSUT2   DD  SYSOUT=*
+
+The job control statements are discussed below:
+
+x) SYSIN DD defines a dummy data set. Since no editing is performed, no
+   utility control statements are required.
+
+x) SYSUT1 DD defines the input sequential data set.
+
+x) SYSUT2 DD indicates that the output is to be written on the system
+   output device (printer). IEBGENER copies LRECL and RECFM from the
+   SYSUT1 data set and the system determines a BLKSIZE.
+
+>< ADD NAME=GENER$02 0100-07003-07003-2113-00055-00055-00000-SC26UTL
+
+Example 2: Create a Partitioned Data Set from Sequential Input
+
+In this example, a partitioned data set (consisting of three members)
+is created from sequential input.
+
+//TAPEDISK JOB ...
+//STEP1   EXEC PGM=IEBGENER
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=INSET
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=NEWSET,
+//             UNIT=disk,
+//             SPACE=(TRK,(10,5,5)),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  *
+         GENERATE MAXNAME=3,MAXGPS=2
+         MEMBER   NAME=MEMBER1
+         GROUP1   RECORD IDENT=(8,'FIRSTMEM',1)
+         MEMBER   NAME=MEMBER2
+         GROUP2   RECORD IDENT=(8,'SECNDMEM',1)
+         MEMBER   NAME=MEMBER3
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set (INSET). The data set is the
+   first data set on a tape volume.
+
+x) SYSUT2 DD defines the output partitioned data set (NEWSET). The data
+   set is to be placed on a disk volume. Ten tracks of primary space,
+   five tracks of secondary space, and five blocks (256 bytes each) of
+   directory space are blocked to reduce the space required by the data
+   set.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream. The utility control statements are used to create members
+   from sequential input data; the statements do not specify any
+   editing.
+
+x) GENERATE indicates that three member names are included in
+   subsequent MEMBER statements and that the IDENT parameter appears
+   twice in subsequent RECORD statements.
+
+x) The first MEMBER statement assigns a member name (MEMBER1) to the
+   first member.
+
+x) The first RECORD statement (GROUP1) identifies the last record to be
+   placed in the first member. The name of this record (FIRSTMEM)
+   appears in the first eight positions of the input record.
+
+x) The remaining MEMBER and RECORD statements define the second and
+   third members. Note that, as there is no RECORD statement associated
+   with the third MEMBER statement, the remainder of the input file
+   will be loaded as the third member.
+
+>< ADD NAME=GENER$03 0100-07003-07003-2113-00057-00057-00000-SC26UTL
+
+Example 3: Convert Sequential Input into Partitioned Members
+
+In this example, sequential input is converted into two partitioned
+members. The newly created members are merged into an existing
+partitioned data set. User labels on the input data set are passed to
+the user exit routine.
+
+//DISKTODK JOB ...
+//STEP1   EXEC PGM=IEBGENER
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=INSET
+//SYSUT2   DD  DISP=(MOD,KEEP),DSN=EXISTSET,
+//             UNIT=disk,
+//             VOL=SER=111113
+GENERATE GENERATE MAXNAME=3,MAXGPS=1
+         EXITS INHDR=ROUT1,INTLR=ROUT2
+         MEMBER NAME=(MEMX,ALIASX)
+         GROUP1 RECORD IDENT=(8,'FIRSTMEM',1)
+         MEMBER NAME=MEMY
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input data set (INSET). The input data set,
+   which resides on a disk volume, has standard user labels.
+
+x) SYSUT2 DD defines the output partitioned data set (EXISTSET). The
+   members created during this job step are merged into the partitioned
+   data set.
+
+x) The SYSIN DD statement is omitted. Because the GENERATE line does
+   not begin with //, the system assumes it is preceded by a //SYSIN DD
+   * line. SYSIN DD defines the control data set, which follows in the
+   input stream. The utility control statements are used to create
+   members from sequential input data; the statements do not specify
+   any editing.A /* at the end of any DD * data set is unnecessary
+   because a JCL satement or end of the job stream marks the end of the
+   input stream data set.
+
+x) GENERATE indicates that a maximum of three names and aliases are
+   included in subsequent MEMBER statements and that one IDENT
+   parameter appears in a subsequent RECORD statement.
+
+x) EXITS defines the user routines that are to process user labels.
+
+x) The first MEMBER statement assigns a member name (MEMX) and an alias
+   (ALIASX) to the first member.
+
+x) The RECORD statement identifies the last record to be placed in the
+   first member. The name of this record (FIRSTMEM) appears in the
+   first eight positions of the input record.
+
+x) The second MEMBER statement assigns a member name (MEMY) to the
+   second member. The remainder of the input data set is included in
+   this member.
+
+>< ADD NAME=GENER$04 0100-07003-07003-2113-00031-00031-00000-SC26UTL
+
+Example 4: In-stream Input, Sequential Data Set to Tape Volume
+
+In this example, an in-stream input, sequential data set is copied to a
+tape volume.
+
+//CDTOTAPEJOB ...
+//STEP1   EXEC PGM=IEBGENER
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  DUMMY
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=OUTSET,
+//             UNIT=tape,LABEL=(,SL),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSUT1 DD  *
+
+(in-stream data)
+
+/*
+
+The job control statements are discussed below:
+
+x) SYSIN DD defines a dummy data set. No editing is performed;
+   therefore, no utility control statements are needed.
+
+x) SYSUT2 DD defines the output data set, OUTSET. The data set is
+   written to a tape volume with IBM standard labels. The data set is
+   to reside as the first (or only) data set on the volume.
+
+x) SYSUT1 DD defines the in-stream data which is actually a JES SYSIN
+   data set. The data set contains no statements.
+
+>< ADD NAME=GENER$05 0100-07003-07003-2113-00041-00041-00000-SC26UTL
+
+Example 5: Produce Blocked Copy on Tape from Unblocked Disk File
+
+In this example, a blocked copy on tape is made from an unblocked
+sequential disk file. Because the disk data set has a relatively small
+block size, the number of buffers explicitly requested is larger than
+the default of five. This improves performance by permitting more
+overlap of reading the SYSUT1 data set with writing the SYSUT2 data
+set.
+
+//COPYJOB JOB
+//STEP1   EXEC PGM=IEBGENER,REGION=318K
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  DUMMY
+//SYSUT1   DD  DISP=(OLD),DSN=INPUT,
+//             DCB=(BUFNO=20)
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=OUTPUT,
+//             UNIT=tape,
+//             DCB=(RECFM=FB,BLKSIZE=32000,LRECL=2000)
+
+The job control statements are discussed below:
+
+x) The EXEC statement names the IEBGENER program and specifies the
+   virtual storage region size required. (Calculation of region size is
+   described in Table 15 on page 79.)
+
+x) The SYSIN DD statement is a dummy, since no editing is to be
+   performed.
+
+x) The SYSUT1 DD statement identifies an input disk file. Normally, the
+   DCB information should not be specified in the DD statement for an
+   existing disk file because the information exists in the data set
+   label in the VTOC; it is specified in this example to illustrate the
+   use of the BUFNO sub-parameter. The DCB information specifies
+   BUFNO=20 to allow up to twenty blocks to be read with each rotation
+   of the disk, assuming the disk track will hold that many blocks.
+
+x) The SYSUT2 DD statement identifies the output tape data set and
+   specifies a block size of 32,000 bytes. The default of five buffers
+   should be enough to keep pace with the input.
+
+>< ADD NAME=GENER$06 0100-07003-07003-2113-00060-00060-00000-SC26UTL
+
+Example 6: Edit and Copy a Sequential Input Data Set with Labels
+
+In this example, a sequential input data set is edited and copied.
+
+//TAPETAPE JOB ...
+//STEP1   EXEC PGM=IEBGENER
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=OLDSET
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=NEWSET,
+//             UNIT=tape,LABEL=(,SL),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  *
+         GENERATE MAXFLDS=3,MAXLITS=11
+         RECORD FIELD=(10,'**********',,1),
+         FIELD=(5,1,HE,11),FIELD=(1,'=',,16)
+         RECORD LABELS=2
+
+(first header label record)
+(second header label record)
+
+         RECORD LABELS=2
+
+(first trailer label record)
+(second trailer label record)
+
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the sequential input data set (OLDSET). The data
+   set was originally written as the third data set on a tape volume.
+
+x) SYSUT2 DD defines the sequential output data set (NEWSET). The data
+  set is written as the first data set on a tape volume. The output
+  records are blocked to reduce the space required by the data set and
+  to reduce the access time required when the data set is subsequently
+  referred to. The BLKSIZE parameter is omitted so that the system will
+  calculate an optimal value that is less than or equal to 32,760 bytes
+  unless the system programmer sets the default differently.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) GENERATE indicates that a maximum of three FIELD parameters is
+   included in subsequent RECORD statements and that a maximum of 11
+   literal characters are included in subsequent FIELD parameters.
+
+x) The first RECORD statement controls the editing, as follows:
+   asterisks are placed in positions 1 through 10; positions 1 through
+   5 of the input record are converted from H-set BCDIC to EBCDIC mode
+   and moved to positions 11 through 15; and an equal sign is placed in
+   position 16.
+
+x) The second RECORD statement indicates that the next two records from
+   SYSIN should be written out as user header labels on SYSUT2.
+
+x) The third RECORD statement indicates that the next two records from
+   SYSIN should be written as user trailer labels on SYSUT2.
+
+>< ADD NAME=GENER$07 0100-07003-07003-2113-00049-00049-00000-SC26UTL
+
+Example 7: Edit and Copy a Sequential USS File to a Sequential Data
+Set
+
+In this example,a USS (POSIX) file is edited and copied. The logical
+record length of the output data set is less than that of the input
+data set.
+
+//DISKDISK JOB ...
+//STEP1   EXEC PGM=IEBGENER
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  PATH='/dist3/stor44/sales.mon',
+//             FILEDATA=TEXT,
+//             PATHOPTS=ORDONLY,
+//             LRECL=100,BLKSIZE=1000,RECFM=FB
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=NEWSET,
+//             UNIT=disk,
+//             SPACE=(TRK,(20,10)),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN DD  *
+         GENERATE MAXFLDS=4,MAXGPS=1
+         EXITS IOERROR=ERRORRT
+         GRP1 RECORD IDENT=(8,'FIRSTGRP',1),FIELD=(21,80,,60),         X
+               FIELD=(59,1,,1)
+         GRP2 RECORD FIELD=(11,90,,70),FIELD=(69,1,,1)
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines the input file. Its name is
+   /dist3/stor44/sales.mon. It contains text in 100-byte records. The
+   record delimiter is not stated here. The file might be on a
+   non-System/390 system that is available via NFS, Network File
+   System.
+
+x) SYSUT2 DD defines the output data set (NEWSET). Twenty tracks of
+   primary storage space and ten tracks of secondary storage space are
+   allocated for the data set on a disk volume. The logical record
+   length of the output records is 80 bytes, and the output is blocked.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) GENERATE indicates that a maximum of four FIELD parameters are
+   included in subsequent RECORD statements and that one IDENT
+   parameter appears in a subsequent RECORD statement.
+
+x) EXITS identifies the user routine that handles input/output errors.
+
+>< ADD NAME=GENER$08 0100-07003-07003-2113-00066-00066-00000-SC26UTL
+
+Example 8: Edit Double-Byte Character Set Data
+
+In this example, an edited data set containing double-byte character
+set data is created. Shift-out/shift-in characters (< and >) are
+inserted to enclose the DBCS strings.
+
+//DBLBYTEJOB ...
+//STEP1   EXEC PGM=IEBGENER
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD),DSN=INPUT,
+//SYSUT2   DD  DISP=(NEW,CATLG),DSN=OUTPUT,
+//             UNIT=disk,
+//             SPACE=(TRK,(1,1)),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSIN    DD  *
+         GENERATE MAXFLDS=4,MAXLITS=9,DBCS=YES
+         RECORD   FIELD=(20,1,,1),FIELD=(16,33,VC,21),                 X
+               FIELD=(30,50,VC,39),FIELD=(9,'*********',,72)
+/*
+
+The control statements are discussed below.
+
+x) SYSUT1 DD defines the input data set, INPUT, which resides on a disk
+   volume.
+
+x) SYSUT2 DD defines the output data set, OUTPUT, which will reside on
+   a disk volume.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) GENERATE indicates that a maximum of four FIELD parameters and nine
+   literal characters will appear on subsequent RECORD statements, and
+   that the input data set contains DBCS data.
+
+x) RECORD specifies how input records will be edited before being
+   placed in the output data set. The first FIELD parameter indicates
+   that the first 20 positions (bytes) of the input records are to be
+   placed in the first 20 positions of the output records.
+
+x) The second FIELD parameter indicates that data in positions 33
+   through 48 are to be checked to ensure that they are valid DBCS
+   data, and that shift-out/shift-in characters are to be inserted
+   around this field. For DBCS data to be valid, each byte of the
+   2-byte characters must have a hexadecimal value between X'41' and
+   X'FE', or the 2-byte character must be a DBCS space (X'4040'). Once
+   the checking and inserting are completed, this field is to be copied
+   to the output records beginning at position 21.
+
+x) The third FIELD parameter operates on the 30-byte field beginning at
+   position 50 in the input records. This field is checked for valid
+   DBCS data, and shift-out/shift-in characters are inserted around the
+   field. The resulting field is copied to the output records beginning
+   at position 39.
+
+Notice that in specifying the output locations in the FIELD parameter,
+you have to account for the additional positions that the SO/SI
+characters will use. For instance, the eight-character (16-byte) DBCS
+string beginning at position 21 does not end at position 36, but at 38.
+The SO/SI characters are single-byte characters, so the pair will take
+up two positions.
+
+The final FIELD parameter clears out the final positions of the output
+records with asterisks.
+

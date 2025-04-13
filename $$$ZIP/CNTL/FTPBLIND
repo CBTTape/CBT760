@@ -1,0 +1,54 @@
+//jobname! JOB (),'JCL: BLIND EYED FTP',
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(FTPBLIND)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO RUN FTP, BLINDLY. SUB-COMMANDS ARE
+//*          STACKED AND IF IT FAILS, WELL IT FAILS BIG TIME.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* Invoke FTP with verbose, issue RC, and timeout of 5 minutes.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//STEP001 EXEC PGM=FTP,REGION=2M,
+//             PARM='-v 127.0.0.1 (EXIT TIMEOUT 300'
+//OUTPUT   DD  SYSOUT=*,RECFM=VB,LRECL=160
+//INPUT    DD  *
+userid  ;
+password ;
+pwd ;            print working directory
+dir ;            show what is at this level
+quit ;
+;
+;  comments can be used by starting with a semi-colon in column 1,
+;  or after any command when preceeded by a space.
+;
+;  Following this convention, you can use NUM ON as long as every
+;  data line uses a semi-colon. Otherwise, the numbers in columns
+;  73-80 are part of the command.
+;
+/*
+//*
+//

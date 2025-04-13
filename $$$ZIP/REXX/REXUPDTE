@@ -1,0 +1,486 @@
+rexx_REXUPDTE: /* We still need rexx in comment if read from SYSPROC */
+  rexxpgm_version = "01.01"
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+ Dataset:  REXX(REXUPDTE)
+ Author:   "Kenneth Tomiak"<CBT_Ken@KTomiak.org>
+ Syntax:   REXUPDTE {}
+ Overview: Read an IEBUPDTE stream and update a PDS.
+           Look for ISPF statistics in either of these formats:
+
+./ ADD NAME=INITISYS 0101-06333-06333-1235-00358-00359-00000-SOMEUID
+./N3 ADD NAME=BIORYTHM 33 2002/08/15 08:34
+./N0020 ADD NAME=ALCSEQ       0 2000/11/01 13:39 01.00 OTHERID
+
+=======================================================================
+
+ History of Modifications
+ ------------------------
+  When     Who      What you did
+  -------- -------- ---------------------------------------------------
+  20070729 KTomiak  01.01 Standardizing Rexx_Initialize routine
+  20070621 KTomiak  01.00 Original code.
+
+=======================================================================
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+  Parse Arg all_my_arguments
+  Numeric Digits 12
+
+rexx_Main_REXUPDTE:
+  return_code = rexx_Initialize()
+  If (return_code = 0) then,
+    Do
+      return_code = rexx_Process()
+    End
+  return_code = rexx_Termination()
+  Return 0
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we open any files and initialize any
+ constants we might need.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Initialize:
+  PARSE VERSION,
+    version_rexx_name,
+    version_rexx_version,
+    version_rexx_date
+  PARSE SOURCE,
+    source_host_env,
+    source_call_type,
+    source_uc_exec_name,
+    source_hostdd,
+    source_hostdsn,
+    source_nf_exec_name,
+    source_initial_cmd_env,
+    source_asid_name,
+    source_char8_user_token,
+    source_hostother
+  Address_Environment = Address()
+  job_specs = rexx_jobspecs()
+  say ""
+  say Copies("=",55)
+  say left("=" source_uc_exec_name rexxpgm_version,53) "="
+  say left("=" "executing under" source_host_env,53) "="
+  say left("=" "as a" source_call_type,53) "="
+  say left("=  on" date() "at" time()".",53) "="
+  say Copies("=",55)
+  say ""
+  return_code = 16
+
+  sysvar_sysuid = SYSVAR("SYSUID")
+  sysvar_sysenv = SYSVAR("SYSENV")
+  If (source_host_env >< "TSO") Then,        /* ARE WE UNDER TSO?    */
+    Do                                       /* NOT UNDER TSO        */
+      Say "Wrong host environment" source_host_env
+      Return return_code
+    End
+
+  allcblk = ddbycblk()
+  call parse_allcblk
+
+  If (SYSVAR("SYSISPF") >< "ACTIVE") Then,   /* IS ISPF ACTIVE?      */
+    Do                                       /* ISPF IS NOT ACTIVE   */
+      Say "Check that the ISPF required DD statements are",
+        "allocated."
+      Return return_code
+    End
+  Address ISPEXEC 'CONTROL ERRORS RETURN'
+  return_code = RC
+  If (return_code >< 0) Then,
+    Do
+      Say "ISPF environment is not established."
+      Return return_code
+    End
+
+  SYSIN = "SYSIN"
+  read_rc = read_any_ddname("SYSIN")
+  if (read_rc >< 0) then,
+    do
+      say "Read error on" SYSIN", RC("read_rc")"
+      Return return_code
+    end
+  if (SYSIN_record.0 = 0) then,
+    do
+      say "Nothing to do!"
+      Return return_code
+    end
+  Else,
+    Do
+      found_dsns = dd_dsname.found_dd.0
+      Say "SYSIN allocated to:"
+      Do ox = 1 to dd_dsname.found_dd.0
+        say "  DSN:"dd_dsname.found_dd.ox
+      End
+    End
+
+  my_ddname = "SYSUT2"
+  found_dd = tiotddnm.my_ddname
+  If (found_dd = "") Then,
+    Do
+      Say "Missing DD("my_ddname"), can not continue."
+      return_code = 16
+      return return_code
+    End
+  Else,
+    Do
+      Say "SYSUT2 allocated to:"
+      found_dsns = dd_dsname.found_dd.0
+      Do ox = 1 to dd_dsname.found_dd.0
+        say "  DSN:"dd_dsname.found_dd.ox
+      End
+    End
+  Address IspExec,
+    "Lminit DATAID(DATAID2) DDNAME("my_ddname")",
+    "ENQ(SHR)",
+    "ORG(dsorg)"
+  return_code = RC
+  If (return_code >< 0) Then,
+    Do
+      Say "LMINIT failed for" my_ddname", RC("return_code")."
+      Return return_code
+    End
+  If (dsorg >< "PO") Then,
+    Do
+      Say my_ddname "must be DSORG(PO), DSORG("dsorg") is no good."
+      Return return_code
+    End
+
+  return_code = 0
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we do our processing.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Process:
+  endup_found = 0
+  member_open = 0
+  do dx = 1 to SYSIN_record.0
+    Select
+      When (left(SYSIN_record.dx,2) = "./") Then,
+        Do
+          Call parse_control_card
+        End
+      Otherwise
+        outrec = Left(SYSIN_record.dx,lrecl)
+        Address IspExec,
+          "Lmput DATAID("DATAID2") MODE(INVAR)",
+          "DATALOC(outrec) DATALEN("lrecl")"
+        return_code = RC
+        If (return_code >< 0) Then,
+          Do
+            Say "LMPUT failed for" member_name", RC("return_code")."
+            Say "Bailing out at record("dx")."
+            dx = SYSIN_record.0
+          End
+    End
+  End
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we close files and finish up.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Termination:
+  If (member_open = 1) Then,
+    Do
+      Call close_member
+    End
+  If (endup_found = 0) Then,
+    Do
+      Say "Poorly coded IEBUPDTE stream, ./ ENDUP is missing."
+    End
+  Address IspExec,
+    "Lmclose DATAID("DATAID2")"
+  say ""
+  say Copies("=",55)
+  say left("= DONE.",53) "="
+  say Copies("=",55)
+  say ""
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Place any of your subroutines and procedures below this.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_jobspecs:
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO CVT FROM PSA                                */
+  /*---------------------------------------------------------------*/
+  PTR2PSA = 0
+  CVTPTR = STORAGE(D2X(PTR2PSA + 16),4)
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO SMCA, THEN GET SMF SYSTEM ID                */
+  /*---------------------------------------------------------------*/
+  CVTSMCA = STORAGE(D2X(C2D(CVTPTR)+197),3)
+  SMFID = STORAGE(D2X(C2D(CVTSMCA)+16),4)
+  /*---------------------------------------------------------------*/
+  /* GET JOBNAME, STEP, AND PROCEDURE                              */
+  /*---------------------------------------------------------------*/
+  PSATOLD  = STORAGE(21C,4)                    /* POINTER TO TCB   */
+  PTRTIOT  = STORAGE(D2X(C2D(PSATOLD)+12),4)   /* POINTER TO TIOT  */
+  JOBNAME  = STORAGE(D2X(C2D(PTRTIOT)),8)
+  STEPNAME = STORAGE(D2X(C2D(PTRTIOT)+8),8)
+  PROCNAME = STORAGE(D2X(C2D(PTRTIOT)+16),8)
+  Tcbjscbb = Storage(D2x(C2d(Psatold)+181),3)              /* jscb */
+  jscbssib = STORAGE(D2X(C2D(tcbjscbb)+316),4)      /* Ptr to SSIB */
+  ssibjbid = STORAGE(D2X(C2D(jscbssib)+12),8)    /* job identifier */
+  Return JOBNAME SSIBJBID STEPNAME PROCNAME
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Make sure the DD is allocated, then read everything
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+read_any_ddname:
+  parse UPPER arg my_ddname
+  found_dd = tiotddnm.my_ddname
+  if (found_dd = "") then,
+    do
+      Say "Missing DD("my_ddname"), can not continue."
+      return_code = 16
+      return return_code
+    end
+  else,
+    do
+      found_dsns = dd_dsname.found_dd.0
+    end
+  trap_msg = OutTrap("io_msgs.")
+  quietly = Msg("OFF")
+  Address MVS "EXECIO",
+    "* DISKR" my_ddname "0 (FINIS STEM" my_ddname"_record.)"
+  read_rc = rc
+  trap_msg = OutTrap("OFF")
+  noisily = Msg("ON")
+  if (read_rc >< 0) then,
+    do
+      return read_rc
+    end
+  return 0
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ parse the stream of ddname information
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/* #dds;dd#;ddname;#dsn;dsn#;dsname;...                              */
+parse_allcblk:
+  allofit = allcblk
+  tiotddnm. = ""
+  tiotddnm.0 = 0
+  parse var allofit nbr_dds ";" allofit
+  do dd_x = 1 to nbr_dds
+    parse var allofit dd_nbr ";" dd_name ";" nbr_dsns ";" allofit
+    tiotddnm.dd_name = dd_x
+    dd_dsname.dd_x. = ""
+    do ds_x = 1 to nbr_dsns
+      parse var allofit ds_nbr ";" ds_name ";" allofit
+      dd_dsname.dd_x.ds_x = ds_name
+    end
+    dd_dsname.dd_x.0 = ds_x - 1
+  end
+  tiotddnm.0 = dd_x - 1
+  return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Parse the control card and any ISPF statistics.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+parse_control_card:
+  If (member_open = 1) Then,
+    Do
+      Call close_member
+    End
+  Parse Var SYSIN_record.dx,
+    dot_slash " ",
+    verb      " ",
+    operands  " ",
+    stats
+  ispf_stats = 0
+  Select
+    When (verb = "ENDUP") Then,
+      Do
+        Call close_member
+        endup_found = 1
+      End
+    When (verb = "ALIAS") Then,
+      Do
+        Say "No support for ALIAS entries at this time."
+      End
+    When (verb = "CHANGE") Then,
+      Do
+        Say "No support for CHANGE control cards, use IEBUPDTE."
+      End
+    Otherwise
+      Call parse_operands
+      Call parse_stats
+      Call open_member
+  End
+  Return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Parse operands to get just the member name.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+parse_operands:
+  Parse Var operands,
+    . "NAME=" member_name "," .
+  member_name = space(member_name)
+  Return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Parse stats and figure out if there are any, and if so, which.
+./ ADD NAME=INITISYS 0101-06333-06333-1235-00358-00359-00000-SOMEUID
+./N3 ADD NAME=BIORYTHM 33 2002/08/15 08:34
+./N0020 ADD NAME=ALCSEQ       0 2000/11/01 13:39 01.00 OTHERID
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+parse_stats:
+  stats = Space(stats)
+  If (Length(stats) < 8) Then,
+    Do
+      Say "No statistics" member_name
+      Return
+    End
+  Select
+    When (Pos("-",stats) > 0) Then,
+      Do
+        ispf_stats = 1
+        Parse Var stats,
+          vv_mm,
+          cre_jdate,
+          mod_jdate,
+          mod_time,
+          initl,
+          curl,
+          modl,
+          z4muser,
+          .
+        Parse Var vv_mm zlvers +2 zlmod +2 .
+        Parse Var modtime mbr_hr +2 mbr_mn +2 .
+        zm4time = mbr_hr":"mbr_mn
+      End
+    When (Pos("/",stats) > 0) Then,
+      Do
+        ispf_stats = 2
+        Parse Var stats,
+          initl,
+          z4mdate,
+          z4mtime,
+          vv_dot_mm,
+          z4muser,
+          .
+        Parse Var vv_dot_mm zlvers +2 . +1 zlmod .
+        If (DataType(zlvers) >< "NUM") Then,
+          Do
+            zlvers = "01"
+            zlmod  = "00"
+            z4muser = Left(source_uc_exec_name,7)
+          End
+        If (DataType(zlmod) >< "NUM") Then,
+          Do
+            zlmod  = "00"
+          End
+        If (z4muser = "") Then,
+          Do
+            z4muser = Left(source_uc_exec_name,7)
+          End
+        z4cdate = z4mdate
+        curl = initl
+        modl = 0
+        initl = 1
+      End
+    Otherwise
+      Say "Unknown format, ignoring ("Length(stats)")=",
+        "="stats"=."
+  END
+  Return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Open the member.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+open_member:
+  Address IspExec,
+    "Lmopen DATAID("DATAID2") OPTION(OUTPUT)",
+    "RECFM(recfm) LRECL(lrecl)"
+  return_code = RC
+  If (return_code >< 0) Then,
+    Do
+      Say "LMOPEN failed for" my_ddname", RC("return_code")."
+      Return return_code
+    End
+  member_open = 1
+  Return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Close the member and update the ISPF statistics.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+close_member:
+  Address IspExec,
+    "LMMADD DATAID("DATAID2") MEMBER("member_name")"
+  member_open = 0
+  Address IspExec,
+    "Lmclose DATAID("DATAID2")"
+  return_code = RC
+  If (return_code >< 0) Then,
+    Do
+      Say "LMCLOSE failed for" my_ddname", RC("return_code")."
+      Return return_code
+    End
+  If (ispf_stats > 0) Then,
+    Do
+      Call update_ispf_stats
+    End
+  Return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Set the statistics per the control card.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+update_ispf_stats:
+  Address IspExec,
+    "LMMSTATS DATAID("DATAID2") MEMBER("member_name")",
+    "VERSION("zlvers")",
+    "MODLEVEL("zlmod")",
+    "INITSIZE("initl")",
+    "CURSIZE("curl")",
+    "MODRECS("modl")",
+    "CREATED4("z4cdate")",
+    "MODDATE4("Z4MDATE")",
+    "MODTIME("Z4MTIME")",
+    "USER("z4muser")",
+    ""
+  return_code = RC
+  If (return_code >< 0) Then,
+    Do
+      Say "Could not set statistics, RC("return_code")."
+      Say "MEMBER("member_name")",
+        "VERSION("zlvers") MODLEVEL("zlmod")",
+        "INITSIZE("initl") CURSIZE("curl") MODRECS("modl")",
+        "CREATED4("z4cdate")",
+        "MODDATE4("Z4MDATE") MODTIME("Z4MTIME")",
+        "USER("z4muser")"
+    End
+  ispf_stats = 0
+  Return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+__DATA__
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */

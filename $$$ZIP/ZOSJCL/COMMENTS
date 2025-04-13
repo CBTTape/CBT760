@@ -1,0 +1,14 @@
+
+//*comment
+
+//*On a JES3 system you need to avoid starting with a JES3 keyword.
+
+//*While the manual says you can go out to column 80, do not use
+//*column 72 to continue your comment. Instead just code more
+//*comment cards.
+
+//LABEL EXEC PGM=IEFBR14       Which is different from                 C
+//                             continuing comments from another JCL    C
+//                             statement. But really, there is no
+//*                            good reason not to just use //*.
+

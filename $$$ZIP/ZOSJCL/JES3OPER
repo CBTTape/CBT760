@@ -1,0 +1,9 @@
+
+Specifies accounting information transmittd with the job.
+
+//*OPERATOR
+
+Like the JES2 /*MESSAGE control card, a way to issue a message to
+the operator console where it is likely to go unnoticed. Pick up
+the telephone and give them a call.
+

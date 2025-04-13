@@ -1,0 +1,9 @@
+
+This dataset (sub-directory) contains any data that might
+be used by the routines in the other files.
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------
+$$$INDEX This member
+URLCHECK A list of urls that will be checked since the last run.
+

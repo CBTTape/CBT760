@@ -1,0 +1,318 @@
+>< ADD NAME=COMPR    0100-07016-07016-2156-00010-00010-00000-KTOMIAK
+
+COMPR$01  Compare Data Sets that Reside on Tape
+COMPR$02  Compare Sequential Data Sets that Reside on Tape
+COMPR$03  Compare Sequential Data Sets Written at Different Densities
+COMPR$04  Compare Sequential Data Sets-Input Stream and Tape Input
+COMPR$05  Copy and Compare Sequential Data Set in Two Job Steps
+COMPR$06  Compare Two Partitioned Data Sets
+COMPR$07  Copy and Compare Partitioned Data Set in Two Job Steps
+COMPR$08  Compare Two PDSEs
+
+>< ADD NAME=COMPR$01 0100-07003-07003-2113-00032-00032-00000-SC26UTL
+
+Example 1: Compare Data Sets that Reside on Tape
+
+In this example, two sequential data sets that reside on 9-track tape
+volumes are compared.
+
+//TAPETAPE JOB ...
+//        EXEC PGM=IEBCOMPR
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD,KEEP),DSN=SET1,
+//             UNIT=tape,LABEL=(,NL),
+//             VOL=SER=001234,
+//             DCB=(RECFM=FB,BLKSIZE=2000,LRECL=80)
+//SYSUT2   DD  DISP=(OLD,KEEP),DSN=SET2,
+//             UNIT=tape,LABEL=(,NL),
+//             VOL=SER=001235,
+//             DCB=(RECFM=FB,BLKSIZE=1040,LRECL=80)
+//SYSIN    DD  DUMMY
+/*
+
+The job control statements are discussed below:
+
+x) SYSUT1 DD defines an input data set (SET1), which resides on an
+   unlabeled 9-track tape volume.
+
+x) SYSUT2 DD defines an input data set (SET2), which resides on an
+   unlabeled 9-track tape volume.
+
+x) SYSIN DD defines a dummy data set. Because no user routines are used
+   and the input data sets have a sequential organization, utility
+   control statements are not necessary.
+
+>< ADD NAME=COMPR$02 0100-07003-07003-2113-00043-00043-00000-SC26UTL
+
+Example 2: Compare Sequential Data Sets that Reside on Tape
+
+In this example, two sequential data sets that reside on 7-track tape
+volumes are compared.
+
+//TAPETAPE JOB ...
+//        EXEC PGM=IEBCOMPR
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD,KEEP),DSN=SET1,
+//             UNIT=tape,LABEL=(2,SUL),
+//             VOL=SER=001234,
+//             DCB=(DEN=2,RECFM=FB,BLKSIZE=2000,LRECL=80,TRTCH=C)
+//SYSUT2   DD  DISP=(OLD,KEEP),DSN=SET2,LABEL=(,SUL),
+//             UNIT=tape,LABEL=(,SUL),
+//             VOL=SER=001235,
+//             DCB=(DEN=2,RECFM=FB,BLKSIZE=2000,LRECL=80,TRTCH=C)
+//SYSIN    DD  *
+         COMPARE TYPORG=PS
+         LABELS  DATA=ONLY
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines an input data set, SET1, which resides on a
+   labeled, 7-track tape volume. The blocked data set was originally
+   written at a density of 800 bits per inch (DEN=2) with the data
+   converter on (TRTCH=C).
+
+x) SYSUT2 DD defines an input data set, SET2, which is the first or
+   only data set on a labeled, 7-track tape volume. The blocked data
+   set was originally written at a density of 800 bits per inch (DEN=2)
+   with the data converter on (TRTCH=C).
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) COMPARE TYPORG=PS specifies that the input data sets are
+   sequentially organized.
+
+x) LABELS DATA=ONLY specifies that user header labels are to be treated
+   as data and compared. All other labels on the tape are ignored.
+
+>< ADD NAME=COMPR$03 0100-07003-07003-2113-00046-00046-00000-SC26UTL
+
+Example 3: Compare Sequential Data Sets Written at Different Densities
+
+In this example, two sequential data sets that were written at
+different densities on different tape units are compared.
+
+//TAPETAPE JOB ...
+//        EXEC PGM=IEBCOMPR
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD,KEEP),DSN=SET1,
+//             UNIT=tape,LABEL=(2,SUL),
+//             VOL=SER=001234,
+//             DCB=(DEN=2,RECFM=FB,BLKSIZE=320,LRECL=80,TRTCH=C)
+//SYSUT2   DD  DISP=(OLD,KEEP),DSN=SET2,LABEL=(,SUL),
+//             UNIT=tape,LABEL=(,SUL),
+//             VOL=SER=001235,
+//             DCB=(DEN=2,RECFM=FB,BLKSIZE=640,LRECL=80,TRTCH=C)
+//SYSIN    DD  *
+         COMPARE TYPORG=PS
+         EXITS   INHDR=HDRS,INTLR=TLRS
+         LABELS  DATA=NO
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines an input data set, SET1, which is the first or
+   only data set on a labeled, 7-track tape volume. The blocked data
+   set was originally written at a density of 556 bits per inch (DEN=1)
+   with the data converter on (TRTCH=C).
+
+x) SYSUT2 DD defines an input data set, SET2, which is the first or
+   only blocked data set on a labeled tape volume. In this example,
+   assume SYSUT2 is on a 9-track tape drive.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) COMPARE TYPORG=PS specifies that the input data sets are
+   sequentially organized.
+
+x) EXITS identifies the names of routines to be used to process user
+   input header labels and trailer labels.
+
+x) LABELS DATA=NO specifies that the user input header and trailer
+   labels for each data set are not to be compared.
+
+>< ADD NAME=COMPR$04 0100-07003-07003-2113-00031-00031-00000-SC26UTL
+
+Example 4: Compare Sequential Data Sets-Input Stream and Tape Input
+
+In this example, two sequential data sets (input stream and tape) are
+compared.
+
+//CARDTAPEJOB ...
+//        EXEC PGM=IEBCOMPR
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  DUMMY
+//SYSUT2   DD  DISP=(OLD,KEEP),
+//             UNIT=tape,LABEL=(,NL),
+//             VOL=SER=001234,
+//             DCB=(RECFM=FB,BLKSIZE=2000,LRECL=80)
+//SYSUT1   DD  DATA
+
+(input data set)
+
+/*
+
+The control statements are discussed below:
+
+x) SYSIN DD defines a dummy control data set. Because no user routines
+   are provided and the input data sets are sequential, utility control
+   statements are not necessary.
+
+x) SYSUT2 DD defines an input data set, which resides on an unlabeled,
+   tape volume.
+
+x) SYSUT1 DD defines a system input stream data set.
+
+>< ADD NAME=COMPR$05 0100-07003-07003-2113-00038-00038-00000-SC26UTL
+
+Example 5: Copy and Compare Sequential Data Set in Two Job Steps
+
+In this example, a sequential disk or tape data set is copied and
+compared in two job steps.
+
+//TAPETAPE JOB ...
+//STEPA   EXEC PGM=IEBGENER
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD,PASS),DSN=WAREHOUS.COPYSET1
+//SYSUT2   DD  DISP=(,PASS),DSN=WAREHOUS.COPYSET2,
+//             UNIT=tape,LABEL=(,SL),
+//             DCB=(RECFM=FB,LRECL=80,BLKSIZE=640)
+//SYSIN    DD  DUMMY
+//*
+//STEPB   EXEC PGM=IEBCOMPR
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD,KEEP),DSN=*.STEPA.SYSUT1
+//SYSUT2   DD  DISP=(OLD,KEEP),DSN=*.STEPA.SYSUT2
+//SYSIN    DD  DUMMY
+
+The first job step copies the data set and passes the original and
+copied data sets to the second job step. The second job step compares
+the two data sets.
+
+The control statements for the IEBCOMPR job step are discussed below:
+
+x) SYSUT1 DD defines an input data set passed from the preceding job
+   step (COPYSET1). The data set resides on a labeled tape volume.
+
+x) SYSUT2 DD defines an input data set passed from the preceding job
+   step (COPYSET2). The data set, which was created in the preceding
+   job step, resides on a labeled tape volume.
+
+x) SYSIN DD defines a dummy control data set. Because the input is
+   sequential and no user exits are provided, no utility control
+   statements are required.
+
+>< ADD NAME=COMPR$06 0100-07003-07003-2113-00028-00028-00000-SC26UTL
+
+Example 6: Compare Two Partitioned Data Sets
+
+In this example, two partitioned data sets are compared.
+
+//DISKDISK JOB ...
+//STEP1   EXEC PGM=IEBCOMPR
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(SHR),DSN=PDSSET1
+//SYSUT2   DD  DISP=(SHR),DSN=PDSSET2
+//SYSIN    DD  *
+         COMPARE TYPORG=PO
+/*
+
+The control statements are discussed below:
+
+x) SYSUT1 DD defines an input partitioned data set, PDSSET1. The
+   blocked data set resides on a disk volume.
+
+x) SYSUT2 DD defines an input partitioned data set, PDSSET2. The
+   blocked data set resides on a disk volume.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) COMPARE TYPORG=PO indicates that the input data sets are
+   partitioned.
+
+>< ADD NAME=COMPR$07 0100-07003-07003-2113-00053-00053-00000-SC26UTL
+
+Example 7: Copy and Compare Partitioned Data Set in Two Job Steps
+
+In this example, a partitioned data set is copied and compared in two
+job steps.
+
+//DISKDISK JOB ...
+//STEPA   EXEC PGM=IEBCOPY
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(SHR),DSN=MAINDB.LOG.OLDSET
+//SYSUT2   DD  DISP=(NEW,PASS),DSN=MAINDB.LOG.NEWMEMS,
+//             UNIT=disk,
+//             SPACE=(TRK,(5,5,5)),
+//             DCB=(DSPRG=PO,RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSUT3   DD  UNIT=disk,SPACE=(TRK,(1))
+//SYSUT4   DD  UNIT=disk,SPACE=(TRK,(1))
+//SYSIN    DD  *
+         COPY OUTDD=SYSUT2,INDD=SYSUT1
+         SELECT MEMBER=(A,B,D,E,F)
+/*
+//STEPB   EXEC PGM=IEBCOMPR
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(OLD,KEEP),DSN=MAINDB.LOG.OLDSET
+//SYSUT2   DD  DISP=(OLD,KEEP),DSN=MAINDB.LOG.NEWMEMS
+//SYSIN    DD  *
+         COMPARE TYPORG=PO
+         EXITS   ERROR=SEEERROR
+/*
+
+The first job step copies the data set and passes the original and
+copied data sets to the second job step. The second job step compares
+the two data sets.
+
+The control statements for the IEBCOMPR job step are discussed below:
+
+x) SYSUT1 DD defines a blocked input data set (MAINDB.LOG.OLDSET) that
+   is passed from the preceding job step. The data set resides on a
+   disk or tape volume.
+
+x) SYSUT2 DD defines a blocked input data set (MAINDB.LOG.NEWMEMS) that
+  is passed from the preceding job step. The data set resides on a disk
+  volume.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) COMPARE TYPORG=PO specifies partitioned organization.
+
+x) EXITS specifies that a user error routine, SEEERROR, is to be used.
+
+Because the input data set names are not identical, the data sets can
+be retrieved by their data set names.
+
+>< ADD NAME=COMPR$08 0100-07003-07003-2113-00028-00028-00000-SC26UTL
+
+Example 8: Compare Two PDSEs
+
+In this example, two PDSEs are compared.
+
+//DISKDISK JOB ...
+//        EXEC PGM=IEBCOMPR
+//SYSPRINT DD  SYSOUT=*
+//SYSUT1   DD  DISP=(SHR),DSN=PDSE1
+//SYSUT2   DD  DISP=(SHR),DSN=PDSE2
+//SYSIN    DD  *
+         COMPARE TYPORG=PO
+/*
+
+PDSEs no longer must be SMS managed. Because these PDSEs are cataloged,
+you need not specify the UNIT or VOLUME parameters.
+
+The control statements are discussed below:
+
+x) SYSUT1 DD and SYSUT2 DD define input PDSEs, PDSE1, and PDSE2.
+   Because no DCB values are specified, the DCB values that were
+   specified in creating the data sets will be used.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) COMPARE TYPORG=PO indicates that the input data sets are PDSEs.
+

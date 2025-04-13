@@ -1,0 +1,194 @@
+rexx_JOBCARD:  /* We still need rexx in comment if read from SYSPROC */
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+ Dataset:  REXX(JOBCARD)
+ Author:   "Kenneth Tomiak"<CBT_Ken@KTomiak.biz>
+ Syntax:   JOBCARD {arguments ...}
+ Overview: INSERT A STANDARD JOBCARD.
+
+=======================================================================
+
+ History of Modifications
+ ------------------------
+  When     Who      What you did
+  -------- -------- ---------------------------------------------------
+  20070729 KTomiak  01.01 Standardizing Rexx_Initialize routine
+  20070610 KTOMIAK  01.00 Original code.
+
+=======================================================================
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+  ADDRESS ISREDIT 'MACRO PROCESS'
+  rexxpgm_version = "01.01"
+  Parse Arg all_my_arguments
+  Numeric Digits 12
+
+rexx_Main_JOBCARD:
+  return_code = rexx_Initialize()
+  If (return_code = 0) then,
+    Do
+      return_code = rexx_Process()
+      return_code = rexx_Termination()
+    End
+  Return 0
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we open any files and initialize any
+ constants we might need.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Initialize:
+  PARSE VERSION,
+    version_rexx_name,
+    version_rexx_version,
+    version_rexx_date
+  PARSE SOURCE,
+    source_host_env,
+    source_call_type,
+    source_uc_exec_name,
+    source_hostdd,
+    source_hostdsn,
+    source_nf_exec_name,
+    source_initial_cmd_env,
+    source_asid_name,
+    source_char8_user_token,
+    source_hostother
+  Address_Environment = Address()
+  job_specs = rexx_jobspecs()
+  sysvar_sysuid = SYSVAR("SYSUID")
+  sysvar_sysenv = SYSVAR("SYSENV")
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  say ""
+  say Copies("=",55)
+  say left("=" source_uc_exec_name rexxpgm_version,53) "="
+  say left("=" "executing under" source_host_env,53) "="
+  say left("=" "as a" source_call_type,53) "="
+  say left("=  on" date() "at" time()".",53) "="
+  say Copies("=",55)
+  say ""
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+  return_code = 0
+
+  If (source_host_env >< "TSO") Then,
+    Do
+      Say "Wrong host environment" source_host_env
+      return_code = 16
+    End
+  ADDRESS ISPEXEC 'CONTROL ERRORS RETURN'
+  ADDRESS ISREDIT '(DSN) = DATASET'
+  ADDRESS ISREDIT '(MBR) = MEMBER'
+  call start_of_data
+  line_f = sx + 3
+  call end_of_data
+  line_x = sx - 4
+  l_ctr = 0
+
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we do our processing.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Process:
+  do sx = line_f to line_x
+    IN = LEFT(SOURCELINE(SX),72)
+    call insertline
+  end
+  r = right(mbr,1)
+  sys_sysuid = SYSVAR("SYSUID")
+  pgmr = right(dsn"("mbr")",20)
+  ADDRESS ISREDIT "C '//SYSUID' '//"sys_sysuid"!' first"
+  ADDRESS ISREDIT "C 'DSN(' '"dsn"(' first"
+  ADDRESS ISREDIT "C '(DSN)' '("dsn")' first"
+  ADDRESS ISREDIT "C 'PGMR' '"pgmr"' first"
+  ADDRESS ISREDIT "C 'MBR' '"mbr"' first"
+  ADDRESS ISREDIT "C '/#/' '//*' 1 ALL"
+  ADDRESS ISREDIT "C '/#J' '/*J' 1 ALL"
+  ADDRESS ISREDIT "C '!' '"r"' FIRST"
+  ADDRESS ISREDIT "UP MAX"
+  ADDRESS ISREDIT "REN"
+  ADDRESS ISREDIT "RES"
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we close files and finish up.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Termination:
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Place any of your subroutines and procedures below this.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_jobspecs:
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO CVT FROM PSA                                */
+  /*---------------------------------------------------------------*/
+  PTR2PSA = 0
+  CVTPTR = STORAGE(D2X(PTR2PSA + 16),4)
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO SMCA, THEN GET SMF SYSTEM ID                */
+  /*---------------------------------------------------------------*/
+  CVTSMCA = STORAGE(D2X(C2D(CVTPTR)+197),3)
+  SMFID = STORAGE(D2X(C2D(CVTSMCA)+16),4)
+  /*---------------------------------------------------------------*/
+  /* GET JOBNAME, STEP, AND PROCEDURE                              */
+  /*---------------------------------------------------------------*/
+  PSATOLD  = STORAGE(21C,4)                    /* POINTER TO TCB   */
+  PTRTIOT  = STORAGE(D2X(C2D(PSATOLD)+12),4)   /* POINTER TO TIOT  */
+  JOBNAME  = STORAGE(D2X(C2D(PTRTIOT)),8)
+  STEPNAME = STORAGE(D2X(C2D(PTRTIOT)+8),8)
+  PROCNAME = STORAGE(D2X(C2D(PTRTIOT)+16),8)
+  Tcbjscbb = Storage(D2x(C2d(Psatold)+181),3)              /* jscb */
+  jscbssib = STORAGE(D2X(C2D(tcbjscbb)+316),4)      /* Ptr to SSIB */
+  ssibjbid = STORAGE(D2X(C2D(jscbssib)+12),8)    /* job identifier */
+  Return JOBNAME SSIBJBID STEPNAME PROCNAME
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ describe your routines here
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/*                                                    */
+
+whichlineami:
+  sx = sigl
+  return
+/*                                                    */
+insertline:
+  Address IsrEdit "LINE_AFTER" l_ctr "= (IN)"
+  l_ctr = l_ctr + 1
+  return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+__DATA__
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+start_of_data:
+  call whichlineami
+  return
+/*
+//SYSUID  JOB (999,CSI,KTOMIAK,60,9999,0,,1,,60),
+//             'KENNETH E TOMIAK',
+//             CLASS=A,MSGCLASS=X,TIME=1440,
+//             REGION=32M,NOTIFY=&SYSUID
+/#/
+/#JOBPARM SYSAFF=*
+/#JOBPARM LINES=9999
+/#/
+/#/MYPROCS JCLLIB ORDER=(DSN)
+/#/
+/#/ LIB:    DSN=dsn(mbr)
+/#/ AUTHOR: KENNETH E TOMIAK <CBT_Ken@KTomiak.biz>
+/#/ GUIDE:  THIS JOB WILL ......
+/#/
+*/
+end_of_data:
+  call whichlineami
+  return

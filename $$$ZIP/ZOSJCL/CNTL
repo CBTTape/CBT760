@@ -1,0 +1,22 @@
+
+//prefix.label   CNTL *               comments
+
+Used in conjunction with the ENDCNTL statement for PSF.
+
+prefix is optional and follows the same rules as label.
+  It does not mean the same as a DD statement override.
+
+label consists of 1 to 8 alphanumeric or national characters.
+  label is usually coded as a printer-id, e.g. //PRT2 CNTL
+  The first character must be alphabetic or a national character.
+  Alphabetic = A through Z.
+  Numeric = 0 through 9.
+  National characters in the USA are @,#,$.
+
+The asterisk is required if you code comments.
+
+
+The CNTL statement terminates with the ENDCNTL statement. Things
+in between look like JCL but are special control cards used by
+the PSF subsystem.
+

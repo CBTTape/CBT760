@@ -1,0 +1,33 @@
+
+show_source_information:
+  rexxpgm_version = "01.00"
+  Parse SOURCE,
+    source_host_env,
+    source_call_type,
+    source_uc_exec_name,
+    source_hostdd,
+    source_hostdsn,
+    source_nf_exec_name,
+    source_initial_cmd_env,
+    source_asid_name,
+    source_char8_user_token,
+    source_hostother
+  say left("= Host    :" source_host_env,53) "="
+  say left("= Calltype:" source_call_type,53) "="
+  say left("= ExecName:" source_uc_exec_name,53) "="
+  say left("= HostDD  :" source_hostdd,53) "="
+  say left("= HostDSN :" source_hostdsn,53) "="
+  say left("= nfExec  :" source_nf_exec_name,53) "="
+  say left("= CMD Env :" source_initial_cmd_env,53) "="
+  say left("= ASIDname:" source_asid_name,53) "="
+  say left("= UsrToken:" source_char8_user_token,53) "="
+  say left("= HostOthr:" source_hostother,53) "="
+  say ""
+  say Copies("=",55)
+  say left("=" source_uc_exec_name rexxpgm_version,53) "="
+  say left("=" "executing under" source_host_env,53) "="
+  say left("=" "as a" source_call_type,53) "="
+  say left("=  on" date() "at" time()".",53) "="
+  say Copies("=",55)
+  say ""
+  return

@@ -1,0 +1,59 @@
+//jobname! JOB (),'CONDCODE REPORT',
+//             RESTART=STEP001,           <= REQUIRED FOR TESTING
+//             CLASS=a,
+//             MSGCLASS=x,MSGLEVEL=(1,1),
+//             REGION=18M,TIME=1230,
+//             NOTIFY=&SYSUID
+//*
+//*            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+//*            COPIES,LOG,LINECOUNTPERPAGE)
+//*
+/*JOBPARM SYSAFF=*            <=Which JES2 MAS Member to run on
+/*JOBPARM LINES=9999
+//*
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Let JES2 dynamically allocate this dataset to search for PROCs.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//MYPROCS  JCLLIB ORDER=(&SYSUID..PROCLIB)
+//*
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//* Emulating SYSTEM SYMBOLS.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//SYSSMBLS INCLUDE MEMBER=IEASYM00
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* ===================================================================
+//* SOURCE:  DSN=&SYSUID..CNTL(OBJ2HEX)
+//* AUTHOR:  "Kenneth E. Tomiak"<CBT_Ken@KTomiak.BIZ>
+//* PURPOSE: THIS JOB IS USED TO INVOKE TSO AND RUN A REXX PROGRAM
+//*          THAT READS AN INPUT AND OUTPUTS TWO LINES FOR EACH RECORD
+//*          IN A REXX PROGRAM THAT WOULD CONVERT BACK TO ITS ORIGINAL
+//*          EBCDIC FORMAT.
+//* ===================================================================
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//*
+//* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//* INVOKE THE PROCEDURE TO RUN TSO.
+//* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//TSOREXX EXEC PROC=TSOPROC                                             00100000
+//SYSEXEC  DD  DISP=SHR,DSN=&SYSUID..REXX                               00120000
+//* CODE   DD  DISP=SHR,DSN=&SYSUID..REXX(OBJ2HEX)                      00130000
+//* CODE   DD  DISP=SHR,DSN=&SYSUID..REXX(HEX2OBJ)                      00140000
+//SYSTSPRT DD  SYSOUT=*                                                 00150000
+//SYSTSIN  DD  *                                                        00160000
+%OBJ2HEX                                                                00170004
+%OBJ2HEX TXTIN                                                          00180007
+%OBJ2HEX OBJIN TXTOT                                                    00190007
+%PDSLOAD%                                                               00200003
+%UK04497 OBJOT                                                          00210006
+%UK04497 DSPOT                                                          00211007
+/*                                                                      00220000
+//OBJIN    DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD                     00230000
+//TXTIN    DD  DISP=SHR,DSN=&SYSUID..OBJLIB(PDSLOAD)                    00231007
+//HEXOT    DD  DISP=OLD,DSN=&SYSUID..REXX(PDSLOAD@)                     00240007
+//TXTOT    DD  DISP=OLD,DSN=&SYSUID..CNTL(UK04497#)                     00241007
+//OBJOT    DD  DISP=OLD,DSN=&SYSUID..CNTL(UK04497@)                     00250002
+//DSPOT    DD  DISP=OLD,DSN=&SYSUID..CNTL(UK04497$)                     00251007
+//*                                                                     00260000
+//                                                                      00270000

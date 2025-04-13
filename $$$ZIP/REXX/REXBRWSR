@@ -1,0 +1,653 @@
+rexx_REXBRWSR: /* We still need rexx in comment if read from SYSPROC */
+  rexxxpgm_version = "01.02"
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+=======================================================================
+
+  Dataset: REXX(REXBRWSR)
+  Author:  KTomiak
+  Contact: "Kenneth Tomiak"<CBT_Ken@KTomiak.biz>
+  Syntax:  REXBRWSR {UniformResourceLocator}
+           url needs to be complete.
+     *------------------------------------------------------*
+     * URL:                                                 *
+     *   http://www.sitename.com                            *
+     *   http://www.sitename.com/doclib/filename.doc        *
+     *------------------------------------------------------*
+  Purpose: Fetch the web page and view it.
+
+  History of Modifications
+  ------------------------
+  When     Who      What you did
+  -------- -------- ---------------------------------------------------
+  20070731 KTomiak  01.02 Standardized for FILE 760. Sort of.
+  200????? KTomiak  01.01 Converted to just write to disk, no panel.
+  2003???? KTomiak  01.00 Original code.
+
+=======================================================================
+
+   OWNERSHIP:
+   ==========
+   This program is the property of Kenneth E Tomiak.
+   It may be freely used without the consent of Kenneth E Tomiak.
+   It may not be modified in any form.
+   No payment for distribution shall be received by anyone.
+
+   Copyright (c) 02007 - Kenneth E Tomiak : All rights reserved.
+
+=======================================================================
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+URLCheck:
+  Parse Arg URLLine
+  signal on halt
+  signal on syntax
+
+  call standard_global_disclaimer
+
+  help_rc = check_for_help()
+  If (help_rc > 0) Then Return help_rc
+
+  Call Program_Initiation
+  Call Initialize_TCPIP_Services
+
+  Call CheckURLs URLLine
+
+  Call Terminate_TCPIP_Services
+  if (rcvdata >< "") then,
+    Call Lineout 'HTMLOUT', rcvdata
+  "EXECIO 0 DISKW HTMLOUT (FINIS"
+  "FREE FILE(HTMLOUT)"
+  Address ISPEXEC 'CONTROL ERRORS RETURN'
+  Address ISPEXEC 'View dataset(REXBROWS.HTMLOUT)'
+  "Delete REXBROWS.HTMLOUT"
+  Exit
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Procedure: Program initiation                        */
+  /* Purpose:   Initialize variables.                     */
+  /* Arguments: None                                      */
+  /* Returns:   Nothing                                   */
+  /*                                                      */
+  /*------------------------------------------------------*/
+Program_Initiation:
+  call WHERE_AM_I_STORED
+  Say "Input comes from ddname="URLLine
+  htmlfile = "HTMLOUT"
+  nomsg = Outtrap('msgstat.')
+  "FREE FILE(HTMLOUT)"
+  "Delete REXBROWS.HTMLOUT"
+  msgss = Outtrap(nomsg)
+  "ALLOC FILE(HTMLOUT) DATASET(REXBROWS.HTMLOUT)",
+    "SPACE(10, 10) TRACKS RECFM(F B) BLKSIZE(0) LRECL(1024)",
+    "UNIT(SYSALLDA) NEW CATALOG"
+  Say "Output goes to ddname="HTMLFile "RC="rc
+
+  CRLF = x2c('0D25')
+  LF = x2c('25')
+  rcvdata = ""
+  Return
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Procedure: Establish_A_Socket                        */
+  /* Purpose:   Get the TCP/IP socket primed.             */
+  /* Arguments: None                                      */
+  /* Returns:   rc                                        */
+  /*                                                      */
+  /*------------------------------------------------------*/
+Initialize_TCPIP_Services:
+
+ /*----------------------------------------------------------------*/
+ /* Initialize the Socket                                          */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('Initialize', 'URLCHECK', 2)
+  parse var so_txt s_rc s_subtask s_maxdesc s_servicename
+  socket_rc = s_rc
+  if s_rc = 0 then,
+    Do
+      initialized = 1
+      Say s_servicename":"s_subtask "initialized" s_maxdesc "sockets"
+    End
+  else,
+    call error 'E', 40, 'Unable to initialize SOCKET URLCheck' s_rc
+  Return
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Procedure: Establish_A_Socket                        */
+  /* Purpose:   Get the TCP/IP socket primed.             */
+  /* Arguments: None                                      */
+  /* Returns:   rc                                        */
+  /*                                                      */
+  /*------------------------------------------------------*/
+Establish_A_Socket:
+ /*----------------------------------------------------------------*/
+ /* Establish a socket                                             */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('Socket', 'AF_INET', 'STREAM', 'TCP')
+  parse var so_txt s_rc s_results
+  if s_rc <> 0 then,
+    do
+      call error 'E', 60, 'SOCKET(SOCKET) rc='s_rc
+    end
+  else,
+    Do
+      say "Socket(STREAM)="so_txt
+      s_d = s_results
+      say 'socket descriptor='s_d
+      socket_rc = 0
+    End
+
+ /*----------------------------------------------------------------*/
+ /* Turn  on               EBCDIC-Ascii conversion                 */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('SetSockOpt',s_d,'SOL_SOCKET','SO_ASCII','On')
+  parse var so_txt s_rc s_results
+  if s_rc = 0 then,
+    Do
+      Say "'Socket' So_ASCII" so_txt
+    End
+  else,
+    call error 'W', 70, 'Unable to set SOCKET So_ASCii' s_rc
+  Return
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Procedure: CheckURLs                                 */
+  /* Purpose:   Check the modification dates of all URLs  */
+  /*            listed in the specified file. If the date */
+  /*            has changed, update the list file with    */
+  /*            the new date.                             */
+  /* Arguments: URLFile - file containing URL list        */
+  /* Returns:   nothing                                   */
+  /*                                                      */
+  /*------------------------------------------------------*/
+CheckURLs:
+  Parse Arg URLline
+
+  If socket_rc <> 0 then exit socket_rc
+    /* read line with URL and last modification date    */
+    say 'inline='urlline'='
+
+       /* retrieve file   for specified URL             */
+       Header = GetHeader(URLLine)
+
+  Return
+
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Procedure: LineOut                                   */
+  /* Purpose:   Output the line using EXECIO.             */
+  /* Arguments: ddname                                    */
+  /*            TextString                                */
+  /* Returns:   rc                                        */
+  /*                                                      */
+  /*------------------------------------------------------*/
+LineOut:
+  outddname = arg(1)
+  TextString = arg(2)
+  push TextString
+  "EXECIO 1 DISKW" outddname
+  Return
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Function:  Connect                                   */
+  /* Purpose:   Create a socket and connect it to server. */
+  /* Arguments: Server - server name, may contain port no.*/
+  /* Returns:   Socket number if successful, -1 otherwise */
+  /*                                                      */
+  /*------------------------------------------------------*/
+Connect:
+  Parse Arg Server
+
+  /* if the servername has a port address specified     */
+  /* then use this one, otherwise use the default http  */
+  /* port 80                                            */
+  Parse Var Server Server ':' Port
+  If Port = '' Then
+    Port = 80
+
+  if this_is_real  = 1 then,
+    do
+  /* resolve server name alias to dotted IP address     */
+  so_txt = Socket('Gethostbyname', server)
+  parse var so_txt s_rc s_results
+  if s_rc <> 0 then,
+    do
+      call error 'I', 80, 'GetHostByName for',
+        server 'failed' s_rc
+     Return -1
+    end
+    end
+
+ /*----------------------------------------------------------------*/
+ /* Connect the socket                                             */
+ /*----------------------------------------------------------------*/
+  so_txt = Socket('Connect', s_d, 'AF_INET' port server)
+  parse var so_txt s_rc s_results
+  if s_rc <> 0 then,
+    do
+      call error 'W', 120, 'SOCKET(CONNECT) rc='s_rc
+    end
+  else,
+    Do
+      say "Connected to" server s_results
+    End
+  Return 0
+
+ /*----------------------------------------------------------------*/
+ /* Hear what the server has to say                                */
+ /*----------------------------------------------------------------*/
+Peek_at_socket:
+  so_txt = Socket('Recv', s_d, 1024, 'PEEK')
+  parse var so_txt s_rc s_type s_port s_ip s_results
+  parse var so_txt s_rc s_data_len s_data_text
+  if s_rc <> 0 then,
+    do
+      call error 'W', 250, 'SOCKET(Peek) rc='s_rc
+    end
+  Return so_txt
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Procedure: Close_Socket                              */
+  /* Purpose:   Close the socket                          */
+  /* Arguments: Socket - active socket number             */
+  /* Returns:   nothing                                   */
+  /*                                                      */
+  /*------------------------------------------------------*/
+Close_socket:
+  so_txt = Socket('Close', s_d)
+  parse var so_txt s_rc s_results
+  if s_rc <> 0 then,
+    do
+      call error 'W', 234, 'Close rc='s_rc
+    end
+  Return
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Function:  GetHeader                                 */
+  /* Purpose:   Request the header for the specified URL  */
+  /*            from the network.                         */
+  /* Arguments: URL - fully specified document locator    */
+  /* Returns:   Full header of specified document or      */
+  /*            empty string if failed (also if no header */
+  /*            exists).                                  */
+  /*                                                      */
+  /*------------------------------------------------------*/
+GetHeader:
+  Parse Arg URL
+
+  /* Isolate server name and document name, document    */
+  /* name is always preceded with a slash               */
+  Parse Var URL 'http://' Server '/' Document
+  Document = '/' || Document
+
+  socket_rc = -1
+  Call Establish_A_Socket
+  Socket = Connect(Server)
+  If Socket = -1 Then
+    Return ''
+
+  Command = 'GET' Document 'HTTP/1.0'
+  sendrc = SendCommand(Socket, Command)
+  Command = ''
+  sendrc = SendCommand(Socket, Command)
+  Header  = read_from_socket()
+  Call Close_Socket
+  Return Header
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Function:  SendCommand                               */
+  /* Purpose:   Send a command via the specified socket   */
+  /*            and return the full response to caller.   */
+  /* Arguments: Socket - active socket number             */
+  /*            Command - command string                  */
+  /* Returns:   Response from server or empty string if   */
+  /*            failed.                                   */
+  /*                                                      */
+  /*------------------------------------------------------*/
+SendCommand:
+  Parse Arg Socket, Command
+
+  /* append two pairs of CRLF to end the command string */
+  Command = Command || crlf
+  say 'cmd='command'=cmd'
+
+  so_txt = Socket('Write', s_d,Command)
+  parse var so_txt s_rc s_results
+  if s_rc <> 0 then,
+    do
+      call error 'E', 230, 'SOCKET(WRITE) rc='s_rc
+    end
+  else,
+    Do
+      s_data_len = s_results
+      if s_data_len < 1 then say "Writing nothing?" s_data_len
+    End
+  return so_txt
+
+  /*------------------------------------------------------*/
+  /*                                                      */
+  /* Function:  Read_From_Socket                          */
+  /* Purpose:   Retrieve the results of a command or      */
+  /*            socket call.                              */
+  /* Arguments: Socket - active socket number             */
+  /* Returns:   Response from server or empty string if   */
+  /*            failed.                                   */
+  /*                                                      */
+  /*------------------------------------------------------*/
+read_from_socket:
+  Response = ''
+  Do Forever
+    so_txt = peek_at_socket()
+    if s_rc <> 0 then,
+      do
+        say 'I tried to peek but had a problem:'s_rc
+        say '::'so_txt'::'
+        Leave
+      end
+    if s_data_len = 0 then,
+      do
+        say "I peeked and found nothing more to read."
+        Leave
+      end
+    BytesRcvd = Socket('Recvfrom', s_d, s_data_len)
+    parse var bytesrcvd s_rc s_type s_port s_ipaddr s_real_len txtdata
+    If s_rc <  0 Then
+      do
+        say  s_rc '<= 0 so i am leaving read_from_socket' rcvdata
+        Leave
+      end
+    if s_rc <> 0 then,
+      do
+        call error 'I', 242, 'SOCKET(RecvFrom) rc='s_rc
+      end
+    rcvdata = rcvdata||txtdata
+    lf25 = pos(lf,rcvdata)
+    do while lf25 > 0
+      parse var rcvdata thisdata +(lf25) rcvdata
+      Call Lineout 'HTMLOUT', thisdata
+      lf25 = pos(lf,rcvdata)
+    end
+  End
+  Return Response
+
+  /*------------------------------------------------------*/
+  /* Find out who I am and then show it.                  */
+  /*------------------------------------------------------*/
+WHERE_AM_I_STORED:
+  myexitrc = 0
+  PARSE VERSION,
+    version_rexx_name,
+    version_rexx_version,
+    version_rexx_date
+  PARSE SOURCE,
+    source_host_env,
+    source_call_type,
+    source_uc_exec_name,
+    source_hostdd,
+    source_hostdsn,
+    source_nf_exec_name,
+    source_initial_cmd_env,
+    source_asid_name,
+    source_char8_user_token,
+    source_hostother
+  Address_Environment = Address()
+  job_specs = rexx_jobspecs()
+  say ""
+  say Copies("=",55)
+  say left("=" source_uc_exec_name rexxpgm_version,53) "="
+  say left("=" "executing under" source_host_env,53) "="
+  say left("=" "as a" source_call_type,53) "="
+  say left("=  on" date() "at" time()".",53) "="
+  say Copies("=",55)
+  say ""
+  return_code = 0
+  sysvar_sysuid=SYSVAR("SYSUID")
+  RETURN
+
+
+  /*------------------------------------------------------*/
+  /* Syntax error routine                                 */
+  /*------------------------------------------------------*/
+syntax:
+  xrc = rc
+  say "xrc="xrc
+  sigl_record = sigl
+  MY_DATA=SOURCELINE(SIGL_RECORD)
+  say sigl_record my_data
+  call error 'E', rc, '==> REXX Error No.' xrc '@ line',
+    sigl_record
+  return
+
+  /*------------------------------------------------------*/
+  /* Halt   error routine                                 */
+  /*------------------------------------------------------*/
+halt:
+  call error 'E', 220, '==> REXX Interrupted'
+  return
+
+  /*------------------------------------------------------*/
+  /* Common error routine                                 */
+  /*------------------------------------------------------*/
+error:
+  type = arg(1)
+  retc = arg(2)
+  text = arg(3)
+  ecretc = right(retc,3,'0')
+  ectype = translate(type)
+  ecfull = 'URLCheck' || ecretc || ectype
+  say '===> 'type":" ecfull text
+  if type <> 'E' then return
+  if (initialized = 0) then,
+    do
+      so_txt = Socket('SocketSetStatus')
+      parse var so_txt s_rc s_severreason
+      if (s_rc <> 'Connected') then,
+        say 'The status of the socket set is' s_rc s_severreason
+    end
+  else,
+    do
+      so_txt = Socket('SocketSetStatus')
+      parse var so_txt s_rc s_severreason
+      if (s_rc <> 'Connected') then,
+        say 'The status of the socket set is' s_rc s_severreason
+    end
+  so_txt = Socket('Terminate')
+  exit retc
+
+Terminate_TCPIP_Services:
+  /*-------------------------------------------------------*/
+  /* Terminate the socket and exit                         */
+  /*-------------------------------------------------------*/
+  so_txt = Socket('Terminate')
+  Return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Warn them they ought to do due-diligence and know what they run.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+standard_global_disclaimer:
+  Say ""
+  Say "STANDARD GLOBAL DISCLAIMER"
+  Say "=========================="
+  Say "The author explicitly disavows any claim whatsoever about"
+  Say "the correctness or functionality of this program, and"
+  Say "disclaims liability for anything and everything bad that"
+  Say "might happen in connection with, before, during, or after"
+  Say "using it. I have tried to make it work right, and I am"
+  Say "personally pretty confident that it does, but everybody"
+  Say "makes mistakes, so if you use it, you do so at your own"
+  Say "risk."
+  Say ""
+  Return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Either a question mark or some switch form of HELP, gets syntax.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+check_for_help:
+  Push all_my_arguments
+  Pull all_uc_arguments
+  If (all_my_arguments= "") Then,
+    Do
+      Call show_simple_syntax
+      Call show_some_history
+      Return 4
+    End
+  If (Pos("?",all_my_arguments) > 0) Then,
+    Do
+      Call show_simple_syntax
+      Return 4
+    End
+  If (Pos("/HELP",all_uc_arguments) > 0) Then,
+    Do
+      Call show_simple_syntax
+      Return 4
+    End
+  If (Pos("-HELP",all_uc_arguments) > 0) Then,
+    Do
+      Call show_simple_syntax
+      Return 4
+    End
+  Return 0
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+  Place any of your subroutines and procedures below this.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_jobspecs:
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO CVT FROM PSA                                */
+  /*---------------------------------------------------------------*/
+  PTR2PSA = 0
+  CVTPTR = STORAGE(D2X(PTR2PSA + 16),4)
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO SMCA, THEN GET SMF SYSTEM ID                */
+  /*---------------------------------------------------------------*/
+  CVTSMCA = STORAGE(D2X(C2D(CVTPTR)+197),3)
+  SMFID = STORAGE(D2X(C2D(CVTSMCA)+16),4)
+  /*---------------------------------------------------------------*/
+  /* GET JOBNAME, STEP, AND PROCEDURE                              */
+  /*---------------------------------------------------------------*/
+  PSATOLD  = STORAGE(21C,4)                    /* POINTER TO TCB   */
+  PTRTIOT  = STORAGE(D2X(C2D(PSATOLD)+12),4)   /* POINTER TO TIOT  */
+  JOBNAME  = STORAGE(D2X(C2D(PTRTIOT)),8)
+  STEPNAME = STORAGE(D2X(C2D(PTRTIOT)+8),8)
+  PROCNAME = STORAGE(D2X(C2D(PTRTIOT)+16),8)
+  Tcbjscbb = Storage(D2x(C2d(Psatold)+181),3)                /* jscb */
+  jscbssib = STORAGE(D2X(C2D(tcbjscbb)+316),4)        /* Ptr to SSIB */
+  ssibjbid = STORAGE(D2X(C2D(jscbssib)+12),8)      /* job identifier */
+  Return JOBNAME SSIBJBID STEPNAME PROCNAME
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Either a question mark or some switch form of HELP, gets syntax.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+show_simple_syntax:
+  Say ""
+  Say "You want to know how to use" source_uc_exec_name"?"
+  Say "So would I."
+  Say ""
+  back_wards = Reverse(source_uc_exec_name)
+  Parse Var back_wards ucname "\" path_drive
+  ucname = Reverse(ucname)
+  Parse Var ucname ucname "." extension
+  dashname = Left(ucname""Copies("-",12),12)
+  Say "Syntax:"
+  Say ">>--"dashname"+url+-----------------+----<<"
+  Say ""
+  Say "              url needs to be a complete url, including"
+  Say "              http:// the hostname / directories / filename"
+  Say ""
+  Say "Note: Some web servers are case sensitive."
+  Say ""
+  Return
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ No parameters were passed.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+show_some_history:
+  Say Copies("-",79)
+  Say "History:"
+  Say "I first ported URLCHECK from the PC to z/OS, then I started"
+  Say "expanding it to receive the entire web page. At one point I"
+  Say "had a panel with an input field field for a url and plans"
+  Say "to have a cursor sensitive pfkey to let you click a url on"
+  Say "any web page."
+  Say ""
+  Say "Some day I will get back to that project. Until then,"
+  Say "this code will retrieve an entire web page to a z/OS"
+  Say "dataset and let you view it. Which would let you use ISPF"
+  Say "cut & paste if the page is suited for the mainframe."
+  Say ""
+  Say "I produce web pages where 'MVS' code is suitable for that."
+  Say ""
+  Say '"Kenneth Tomiak"<CBT_Ken@KTomiak.biz>'
+  Say ""
+  Say Copies("-",79)
+  Say ""
+  Return
+
+    /*------------------------------------------------------
+
+     The HEAD command can be sent in two formats: the simple request or
+the full request. The full request format of the HEAD command is defined
+as follows:
+
+    HEAD documentname HTTP/1.0<CRLF>
+    request header<CRLF>
+
+For our purpose we don't need to pass additional options in the request
+header field so we can leave this field blank. However we may not omit
+the closing CRLF character pair terminating the request header field
+otherwise the server would not accept it as a valid command. The full
+request sent to a server will return a full response in the format:
+
+    HTTP/1.0 statuscode reasonphrase<CRLF>
+    response body<CRLF>
+
+The HTTP specification lists several information fields for the
+response body that can appear in any order. Currently we are only
+interested in the Last-Modified field and ignore all other fields.
+
+     The following line shows a sample HEAD command sent to a server
+with the appropriate response:
+
+    HEAD / HTTP/1.0<CRLF><CRLF>
+
+Response from server:
+
+    HTTP/1.0 200 OK<CRLF>
+    Server: GoServe/2.45<CRLF>
+    Date: Thu, 18 Jul 1996 15:40:47 GMT<CRLF>
+    Content-Type: text/html<CRLF>
+    Content-Length: 1081<CRLF>
+    Content-Transfer-Encoding: binary<CRLF>
+    Last-Modified: Thu, 19 Oct 1995 16:27:52 GMT<CRLF>
+
+Since we are only interested in the date when the document has been
+last modified we have to search the response for this keyword. During
+development of this sample I discovered that most web servers use the
+exact string as shown above to identify this field, some other servers
+however don't. To be able to find  the date in responses from all
+servers we can simply uppercase the whole string before searching the
+last-modified field.
+
+     This is already everything we need to know for our program.
+
+      ------------------------------------------------------*/

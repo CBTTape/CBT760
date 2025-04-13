@@ -1,0 +1,563 @@
+rexx_REXFTPAP: /* We still need rexx in comment if read from SYSPROC */
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+ Dataset:  KTOMIAK.REXX(REXFTPAP)
+ Author:   KTomiak
+ Contact:  "Kenneth Tomiak"<KenTomiak@KTomiak.org>
+ Syntax:   REXFTPAP {ftp_site}
+ Overview: Use the CS REXX api to effectively do an FTP.
+
+=======================================================================
+
+ History of Modifications
+ ------------------------
+  When     Who      What you did
+  -------- -------- ---------------------------------------------------
+  20070506 KTOMIAK  Original code.
+
+=======================================================================
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+  Parse Arg all_my_arguments
+  Numeric Digits 12
+
+rexx_Main_REXFTPAP:
+/*---------------------------------------------------------------------
+
+Create an FTP Control Area Interface stem variable
+Initialize the API and open a connection to an FTP server
+Login with your userid     (what about NETRC?)
+Specify your password      (what about NETRC?)
+Do
+  things you want to do
+  (this will list all MVS datasets for the user,
+   select a PDS and cd into it,
+   get a member into a sequential dataset,
+   cd up,
+   list the MVS datasets)
+End
+Quit to end your session
+Terminate this instance of the FTP Client API
+
+---------------------------------------------------------------------*/
+
+  my_rc = init_my_parms()
+  if (my_rc = 0) then my_rc = my_main_loop()
+  if (ftp_api_initialized = 1) then my_rc = my_cleanup()
+  return my_rc
+
+init_my_parms:
+  PARSE VERSION,
+    version_rexx_name,
+    version_rexx_version,
+    version_rexx_date
+  PARSE SOURCE,
+    source_host_env,
+    source_call_type,
+    source_uc_exec_name,
+    source_hostdd,
+    source_hostdsn,
+    source_nf_exec_name,
+    source_initial_cmd_env,
+    source_asid_name,
+    source_char8_user_token,
+    source_hostother
+  Address_Environment = Address()
+  job_specs = rexx_jobspecs()
+  say ""
+  say Copies("=",55)
+  say left("=" source_uc_exec_name rexxpgm_version,53) "="
+  say left("=" "executing under" source_host_env,53) "="
+  say left("=" "as a" source_call_type,53) "="
+  say left("=  on" date() "at" time()".",53) "="
+  say Copies("=",55)
+  say ""
+  return_code = 0
+  sysvar_sysuid=SYSVAR("SYSUID")
+
+/*-------------------------------------------------------------------*/
+/* Setup the constants for the FTPAPI invocations                    */
+/*-------------------------------------------------------------------*/
+  TRACEID      = "123"
+  USER_COMMAND = "user" sys_sysuid
+  PASS_COMMAND = "pass atshare"
+  PASS_ACCT    = "acct SYSPROG"
+  DIR_COMMAND  = "dir *"
+  TMP_COMMAND  = "dir /tmp/*"
+  OPENSTRING   = "-w 300 ftp.ktomiak.biz 21"
+  OPENSTRING   = "127.0.0.1 21 -w 300"
+  ENVVAR.      = ""
+  ENVVAR.0     = 9
+  ENVVAR.1     = "_CEE_DMPTARG=/tmp"
+  ENVVAR.2     = "_BPX_JOBNAME=MYJOB"
+
+  msg_rc = MSG("OFF")
+  "delete fcai.trace"
+  "Alloc file(FTPRXTRC) dataset(fcai.trace) new catalog",
+    "unit(sysallda)",
+    "track space(10 10)",
+    "dsorg(ps) recfm(f b) blksize(0) lrecl(80)"
+  alloc_rc = rc
+  msg_rc = MSG("ON")
+  if (alloc_rc >< 0) then,
+    "Alloc file(FTPRXTRC) dataset(fcai.trace) old reuse"
+
+/*-------------------------------------------------------------------*/
+/* Initialize the FCAI stem.                                         */
+/*-------------------------------------------------------------------*/
+  ftp_rc = FtpApi('fcai.', 'create', TRACEID)
+  if (ftp_rc < 0) then,
+    do
+      Say 'Unable to create the FCAI'
+      return ftp_rc
+    end
+
+/*-------------------------------------------------------------------*/
+/* Turn on tracing of the Client API tracing.  This is a different   */
+/* trace from the REXX FTP Client API trace and is always written    */
+/* to SYSOUT.                                                        */
+/*-------------------------------------------------------------------*/
+  if (traceid >< "") then,
+    do
+      ftp_rc = FtpApi('fcai.', 'set_trace', 'ON')
+      if (ftp_rc < 0) then,
+        do
+          call ftp_error 'fcai.'
+          return ftp_rc
+        end
+      end
+  ftp_api_initialized = 1
+  pds_mbr = ""
+
+  return 0
+
+my_cleanup:
+/*-------------------------------------------------------------------*/
+/* Enter the QUIT subcommand and  terminate the connection.          */
+/* It's better to enter the QUIT subcommand before entering the      */
+/*    FTPAPI('term') command.   In this way, any error traces can be */
+/*    displayed.                                                     */
+/*-------------------------------------------------------------------*/
+  ftp_rc = FtpApi('fcai.', 'scmd', 'QUIT', 'W')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+    end
+/*-------------------------------------------------------------------*/
+/* Enter the TERM request to close this instance of the FTP client   */
+/* API.                                                              */
+/*-------------------------------------------------------------------*/
+  ftp_rc = FtpApi('fcai.', 'term')
+  if (ftp_rc < 0) then,
+    do
+      Say "Unexpected error on FTPAPI('term')"
+      return ftp_rc
+    end
+  ftp_api_initialized = 0
+  msg_rc = MSG("OFF")
+  "Free file(FTPRXTRC)"
+  msg_rc = MSG("ON")
+  return 0
+
+my_main_loop:
+/*-------------------------------------------------------------------*/
+/* Initialize the FTP client environment and open a connection       */
+/* to the FTP server using the OPENSTRING.  Two environment          */
+/* variables are also provided to the FTP Client API to be used      */
+/* when intitializing its environment.                               */
+/*-------------------------------------------------------------------*/
+  ftp_rc = FTPAPI('fcai.', 'init', OPENSTRING, ENVVAR.1, ,
+    ENVVAR.2, ENVVAR.3, ENVVAR.4, ENVVAR.5, ,
+    ENVVAR.6, ENVVAR.7, ENVVAR.8, ENVVAR.9)
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+      return ftp_rc
+    end
+  login_req = fcai.FCAI_ReplyCode
+  call ftp_error 'fcai.'
+  ftp_rc = FtpApi('fcai.', 'getl_copy', 'lines.', 'A')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+      return ftp_rc
+    end
+  say 'INIT output is:'
+  do i = 1 to lines.0
+    say lines.i
+  end
+
+/*-------------------------------------------------------------------*/
+/* Sign on                                                           */
+/* Enter the userid.                                                 */
+/*-------------------------------------------------------------------*/
+  if (login_req = 220) then,
+    do
+      say "We need to login"
+      ftp_rc = FtpApi('fcai.', 'scmd', USER_COMMAND, 'W')
+      if (ftp_rc < 0) then,
+        do
+          call ftp_error 'fcai.'
+          return ftp_rc
+        end
+    end
+  else,
+    do
+      say "User does not need to login."
+    end
+
+/*-------------------------------------------------------------------*/
+/* If the FTP server prompts for a password, provide one.  In some   */
+/* instances, an FTP server may not prompt for a password (e.g.,     */
+/* when an anonymous user logs on to some FTP servers).              */
+/*-------------------------------------------------------------------*/
+  if (fcai.FCAI_Result =  FCAI_RESULT_PROMPTPASS) then,
+    do
+      say "We need to use a password."
+      ftp_rc = FtpApi('fcai.', 'scmd', PASS_COMMAND, 'W')
+      if (ftp_rc < 0) then,
+        do
+          call ftp_error 'fcai.'
+          return ftp_rc
+        end
+    end
+  else,
+    do
+      say "Password is not required."
+    end
+
+/*-------------------------------------------------------------------*/
+/* If the FTP server prompts for an acct,    provide one.  In some   */
+/* instances, an FTP server may not prompt for an acct. Few do.      */
+/*-------------------------------------------------------------------*/
+  if (fcai.FCAI_Result =  FCAI_RESULT_PROMPTACCT) then,
+    do
+      say "We need to use an acct."
+      ftp_rc = FtpApi('fcai.', 'scmd', PASS_ACCT, 'W')
+      if (ftp_rc < 0) then,
+        do
+          call ftp_error 'fcai.'
+          return ftp_rc
+        end
+    end
+  else,
+    do
+      say "An account is not required."
+    end
+
+/*-------------------------------------------------------------------*/
+/* STATUS                                                            */
+/*-------------------------------------------------------------------*/
+  ftp_rc = FtpApi('fcai.', 'scmd', "STATUS", 'W')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+      return ftp_rc
+    end
+/*-------------------------------------------------------------------*/
+/* Fetch the lines returned by the STATUS command.                   */
+/*-------------------------------------------------------------------*/
+  ftp_rc = FtpApi('fcai.', 'getl_copy', 'lines.', 'A')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+      return ftp_rc
+    end
+  say 'STATUS output is:'
+  do i = 1 to lines.0
+    say lines.i
+  end
+
+/*-------------------------------------------------------------------*/
+/* List directory entries                                            */
+/* Enter a subcommand DIR_COMMAND to retrieve a listing of all files */
+/*    in the directory.  The REXX program requests the FTP client    */
+/*    API wait for the subcommand to complete before returning.      */
+/*-------------------------------------------------------------------*/
+  ftp_rc = FtpApi('fcai.', 'scmd', DIR_COMMAND, 'W')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+      return ftp_rc
+    end
+/*-------------------------------------------------------------------*/
+/* Fetch the lines returned by the DIR subcommand.                   */
+/*-------------------------------------------------------------------*/
+  ftp_rc = FtpApi('fcai.', 'getl_copy', 'lines.', 'L')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+      return ftp_rc
+    end
+
+/*-------------------------------------------------------------------*/
+/* Display the results of the output.  lines.0 contains the total    */
+/* number of lines returned, while lines.1...lines.n contains the    */
+/* output for each individual line.                                  */
+/*-------------------------------------------------------------------*/
+  say 'Directory output is:'
+  do i = 1 to lines.0
+     parse var lines.i,
+       dir_vol,
+       dir_unit,
+       dir_refdt,
+       dir_ext,
+       dir_used,
+       dir_recfm,
+       dir_lrecl,
+       dir_blksize,
+       dir_dsorg,
+       dir_dsnllqs,
+       .
+/*
+     say,
+       dir_vol,
+       dir_unit,
+       dir_refdt,
+       dir_ext,
+       dir_used,
+       dir_recfm,
+       dir_lrecl,
+       dir_blksize,
+       dir_dsorg,
+       dir_dsnllqs
+*/
+     if ((dir_recfm = "FB") &,
+         (dir_lrecl = "80") &,
+         (dir_dsorg = "PO")) then,
+       pds_dsn = dir_dsnllqs
+  end
+  say pds_dsn
+
+/*
+
+ Volume Unit    Referred Ext Used Recfm Lrecl BlkSz Dsorg Dsname
+ SHTSO2 3390   2007/02/25  1    1  FB     150  1500  PS  BRODCAST
+ SHTSO1 3390   2007/02/25  1    8  FB      80 32720  PO  CLIST
+ SHTSO4 3390   2007/02/25  1   10  U    13680 13680  PS  ISR9139.BACKUP
+
+*/
+  say "CD to KEN"
+  ftp_rc = FtpApi('fcai.', 'scmd', 'cd KEN', 'W')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+    end
+  say "CD to .."
+  ftp_rc = FtpApi('fcai.', 'scmd', 'cd ..', 'W')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+    end
+  say "CD to" pds_dsn
+  ftp_rc = FtpApi('fcai.', 'scmd', 'cd' pds_dsn, 'W')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+      return ftp_rc
+    end
+
+  ftp_rc = FtpApi('fcai.', 'scmd', 'DIR *', 'W')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+      return ftp_rc
+    end
+  ftp_rc = FtpApi('fcai.', 'getl_copy', 'lines.', 'L')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+      return ftp_rc
+    end
+  do i = 1 to lines.0
+    parse var lines.i,
+       =1 mbr_name +8,
+      =11 mbr_stats +5,
+      =17 mbr_credt +10,
+      =28 mbr_chgdt +10,
+      =44 mbr_size +6,
+      =50 mbr_init +6,
+      =55 mbr_mod +6,
+      =63 mbr_user +7
+    if (mbr_name >< "") then,
+      pds_name = mbr_name
+    say pds_name
+  end
+
+  say "lcd"
+  ftp_rc = FtpApi('fcai.', 'scmd', "lcd '"sys_sysuid"'", 'W')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+      return ftp_rc
+    end
+  loc_cmd = "locsite progress=15"
+  say loc_cmd
+  ftp_rc = FtpApi('fcai.', 'scmd', loc_cmd, 'W')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+    end
+  loc_cmd = "locsite dsorg=ps recfm=fb lrecl=80 blksize=0"
+  say loc_cmd
+  ftp_rc = FtpApi('fcai.', 'scmd', loc_cmd, 'W')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+    end
+  loc_cmd = "locsite tracks primary=5 secondary=2"
+  say loc_cmd
+  ftp_rc = FtpApi('fcai.', 'scmd', loc_cmd, 'W')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+    end
+  say "get" mbr_name
+  ftp_rc = FtpApi('fcai.', 'scmd', 'get' mbr_name, 'W')
+  if (ftp_rc < 0) then,
+    do
+      call ftp_error 'fcai.'
+    end
+
+/*
+
+ Name     VV.MM   Created       Changed      Size  Init   Mod   Id
+IEBGENER  01.01 2006/12/24 2006/12/30 12:06    14    14     3 KTOMIAK
+IEBUPDTE  01.07 2006/12/20 2006/12/30 12:48    14    10     8 KTOMIAK
+IEFBR14   01.07 2006/12/20 2007/01/07 00:50    26    18    17 KTOMIAK
+UPDTE     01.01 2006/12/20 2006/12/20 23:15    13    13     0 KTOMIAK
+
+*/
+  return 0
+
+/*-------------------------------------------------------------------*/
+/* Generic error handling routine for the FTP interface.  This       */
+/* should only be called with a valid FCAI.                          */
+/*-------------------------------------------------------------------*/
+ftp_error: arg stem
+  say 'FTP Client API Display:' stem
+  say '    Result     =' value(stem'FCAI_Result')
+  say '    IE         =' value(stem'FCAI_IE')
+  say '    CEC        =' value(stem'FCAI_CEC')
+  say '    ReplyCode  =' value(stem'FCAI_ReplyCode')
+  say '    TraceStatus=' value(stem'FCAI_TraceStatus')
+  say '    ReturnCode =' value(stem'FCAI_ReturnCode')
+  say '    ReasonCode =' value(stem'FCAI_ReasonCode')
+  say '    SCMD       =' value(stem'FCAI_SCMD')
+
+  say '    Status     =' value(stem'FCAI_Status')
+  map_it = c2x(value(stem'FCAI_MAP'))
+  ftp_rc = FtpApi('fcai.', 'get_fcai_map', "fcaimap.")
+  if (ftp_rc < 0) then,
+    do
+      say "get_fcai_map failed" ftp_rc
+      return
+    end
+   do while map_it >< ""
+     parse var map_it tmp_it +40 map_it
+     say "  Map " tmp_it
+   end
+   say "   "fcaimap".FCAI_EyeCatcher =",
+      value(fcaimap."FCAI_EyeCatcher")
+   say "   "fcaimap".FCAI_Size =",
+      value(fcaimap."FCAI_Size")
+   say "   "fcaimap".FCAI_Version =",
+      value(fcaimap."FCAI_Version")
+   say "   "fcaimap".FCAI_PollWait =",
+      value(fcaimap."FCAI_PollWait")
+   say "   "fcaimap".FCAI_ReqTimer =",
+      value(fcaimap."FCAI_ReqTimer")
+   say "   "fcaimap".FCAI_TraceIt =",
+      value(fcaimap."FCAI_TraceIt")
+   say "   "fcaimap".FCAI_TraceID =",
+      value(fcaimap."FCAI_TraceID")
+   say "   "fcaimap".FCAI_TraceCAPI =",
+      value(fcaimap."FCAI_TraceCAPI")
+   say "   "fcaimap".FCAI_TraceStatus =",
+      value(fcaimap."FCAI_TraceStatus")
+   say "   "fcaimap".FCAI_TraceSClass =",
+      value(fcaimap."FCAI_TraceSClass")
+   say "   "fcaimap".FCAI_TraceName =",
+      value(fcaimap."FCAI_TraceName")
+   say "   "fcaimap".FCAI_Token =",
+      value(fcaimap."FCAI_Token")
+   say "   "fcaimap".FCAI_RequestID =",
+      value(fcaimap."FCAI_RequestID")
+   say "   "fcaimap".FCAI_Result =",
+      value(fcaimap."FCAI_Result")
+   say "   "fcaimap".FCAI_IE =",
+      value(fcaimap."FCAI_IE")
+   say "   "fcaimap".FCAI_CEC =",
+      value(fcaimap."FCAI_CEC")
+   say "   "fcaimap".FCAI_ReplyCode =",
+      value(fcaimap."FCAI_ReplyCode")
+   say "   "fcaimap".FCAI_SCMD =",
+      value(fcaimap."FCAI_SCMD")
+   say "   "fcaimap".FCAI_ReturnCode =",
+      value(fcaimap."FCAI_ReturnCode")
+   say "   "fcaimap".FCAI_ReasonCode =",
+      value(fcaimap."FCAI_ReasonCode")
+   say "   "fcaimap".FCAI_NumberLines =",
+      value(fcaimap."FCAI_NumberLines")
+   say "   "fcaimap".FCAI_LongestLine =",
+      value(fcaimap."FCAI_LongestLine")
+   say "   "fcaimap".FCAI_SizeAll =",
+      value(fcaimap."FCAI_SizeAll")
+   say "   "fcaimap".FCAI_SizeMessages =",
+      value(fcaimap."FCAI_SizeMessages")
+   say "   "fcaimap".FCAI_SizeReplies =",
+      value(fcaimap."FCAI_SizeReplies")
+   say "   "fcaimap".FCAI_SizeList =",
+      value(fcaimap."FCAI_SizeList")
+   say "   "fcaimap".FCAI_SizeTrace =",
+      value(fcaimap."FCAI_SizeTrace")
+   say "   "fcaimap".FCAI_PID =",
+      value(fcaimap."FCAI_PID")
+   return
+
+/*
+Map  C6C3C1C9010001000001F1F2F30000C1E2E8E2F0
+Map  F0F0F4F53174E200C9D5C9E30000000000DC0A00
+Map  0000000000000000000000060000004F00000122
+Map  000000960000008F000000000000000000000114
+Map  0000000000000000000000000000000000000000
+Map  0000000000000000000000000000000000000000
+Map  0000000000000000000000000000000000000000
+Map  0000000000000000000000000000000000000000
+Map  000000003174FEF03174E224B163844EB1755118
+Map  B1755118317500243174EF603163FAE300000004
+Map  B1638340317510BC3179AB783163EC9831752EED
+Map  3175036431750024B163820031752EED06000001
+Map  0000000031750410000000003163863C
+*/
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+  Place any of your subroutines and procedures below this.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_jobspecs:
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO CVT FROM PSA                                */
+  /*---------------------------------------------------------------*/
+  PTR2PSA = 0
+  CVTPTR = STORAGE(D2X(PTR2PSA + 16),4)
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO SMCA, THEN GET SMF SYSTEM ID                */
+  /*---------------------------------------------------------------*/
+  CVTSMCA = STORAGE(D2X(C2D(CVTPTR)+197),3)
+  SMFID = STORAGE(D2X(C2D(CVTSMCA)+16),4)
+  /*---------------------------------------------------------------*/
+  /* GET JOBNAME, STEP, AND PROCEDURE                              */
+  /*---------------------------------------------------------------*/
+  PSATOLD  = STORAGE(21C,4)                    /* POINTER TO TCB   */
+  PTRTIOT  = STORAGE(D2X(C2D(PSATOLD)+12),4)   /* POINTER TO TIOT  */
+  JOBNAME  = STORAGE(D2X(C2D(PTRTIOT)),8)
+  STEPNAME = STORAGE(D2X(C2D(PTRTIOT)+8),8)
+  PROCNAME = STORAGE(D2X(C2D(PTRTIOT)+16),8)
+  Tcbjscbb = Storage(D2x(C2d(Psatold)+181),3)                /* jscb */
+  jscbssib = STORAGE(D2X(C2D(tcbjscbb)+316),4)        /* Ptr to SSIB */
+  ssibjbid = STORAGE(D2X(C2D(jscbssib)+12),8)      /* job identifier */
+  Return JOBNAME SSIBJBID STEPNAME PROCNAME
+

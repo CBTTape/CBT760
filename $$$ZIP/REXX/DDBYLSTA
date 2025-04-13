@@ -1,0 +1,135 @@
+rexx_ddbylsta:   /*   REXX */
+  ddbylsta_version = "01.00"
+  arg match_dd .
+  Numeric Digits 12
+  sp8 = Copies(" ",8)
+  ds8 = Copies("-",8)
+  erc = 0
+  /*
+  parse value SYSVAR("SYSCPU") SYSVAR("SYSSRV") with b_cpu b_srv
+  */
+  grc = get_alc()    /* Run through control blocks */
+  grc = dsp_alc()
+  /*
+  parse value SYSVAR("SYSCPU") SYSVAR("SYSSRV") with e_cpu e_srv
+  SAY "AFTER  SELECT" right(sp8||e_cpu,8) right(sp8||e_srv,8)
+  SAY "BEFORE SELECT" right(sp8||b_cpu,8) right(sp8||b_srv,8)
+  SAY "             " right(ds8,8) right(ds8,8)
+  SAY "BEFORE SELECT" right(sp8||(e_cpu-b_cpu),8),
+    right(sp8||(e_srv-b_srv),8)
+  */
+  return erc
+
+dsp_alc:
+  select
+    when ((match_dd >< "") & (match_dd >< "*")) then,
+      do
+        dd# = dd_nnbr.match_dd
+        dn= dd_name.dd#
+        say "DDNAME(" dn ")"
+        nd =    dsname.dd#.0
+        do ds# = 1 to nd
+          say copies(" ",8) dsname.dd#.ds#
+        end
+        erc = nd
+      end
+    when (match_dd = "*") then,
+      do
+        say "All ddnames allocated"
+        do dd# = 1 to dd_names
+          dn= dd_name.dd#
+          say "DDNAME(" dn ")"
+          nd =    dsname.dd#.0
+          do ds# = 1 to nd
+            if ((dn = match_DD) | (match_dd = "*")) then,
+              say copies(" ",8) dsname.dd#.ds#
+          end
+        end
+        erc = dd_names
+      end
+    otherwise
+      erc = dd_names
+      do dd# = 1 to dd_names
+        dn= dd_name.dd#
+        nd =    dsname.dd#.0
+        erc = erc";"dd#";"dn";"nd
+        do ds# = 1 to nd
+          erc = erc";"ds#";"dsname.dd#.ds#
+        end
+      end
+  end
+  return erc
+
+get_alc:
+  rc = Outtrap("ln.")                 /* open trap                  */
+  "LISTALC STATUS"
+  rc = Outtrap("OFF")                 /* close trap                 */
+  dd_names = 0
+
+/*    Sample output from listalc status
+
+--DDNAME---DISP--
+SYS1.HELP
+  SYSHELP  KEEP
+SYS1.BRODCAST
+  SYSLBC   KEEP
+TERMFILE  SYSTERM
+KET2812.IDAT.ISPF.ISPPROF
+  ISPPROF  KEEP
+KET2812.ISPLLIB
+  ISPLLIB  KEEP
+SYS1.DGTLLIB
+           KEEP
+SYS1.SCBDHENU
+           KEEP
+KET2812.ISPMLIB
+  ISPMLIB  KEEP
+SYS1.ISP.SISPMENU
+           KEEP
+SYS1.ISF.SISFMLIB
+           KEEP
+SYS1.DGTMLIB
+           KEEP
+
+trace ?irs
+*/
+  do trapx = 2 to ln.0                  /* skip heading         */
+    ln.trapx = space(ln.trapx)
+    parse var ln.trapx tempname tempddnm
+    select
+      When (tempddnm >< " ") then,
+        do
+          parse var ln.trapx fullname tiotddnm
+          dd_names = dd_names + 1       /* DDName index         */
+          dd_name.dd_names = tiotddnm
+          dd_nnbr.tiotddnm = dd_names
+          dsname.dd_names.0 = 0
+          ds_temp = dsname.dd_names.0 + 1
+          dsname.dd_names.0 = ds_temp
+          dsname.dd_names.ds_temp = fullname
+        end
+      When ((left(ln.trapx,3) >< " ") &,
+            (Words(ln.trapx) = 1)) then,
+        do
+          parse var ln.trapx fullname .
+          trapx = trapx + 1
+          ln.trapx = space(ln.trapx)
+          parse var ln.trapx tempddnm " " final_disp " " .
+          if ((tempddnm >< " ") &,
+              (final_disp >< " ")) then
+            do
+              tiotddnm = tempddnm
+              dd_names = dd_names + 1   /* DDName index         */
+              dd_name.dd_names = tiotddnm
+              dd_nnbr.tiotddnm = dd_names
+              dsname.dd_names.0 = 0
+            end
+          ds_temp = dsname.dd_names.0 + 1
+          dsname.dd_names.0 = ds_temp
+          dsname.dd_names.ds_temp = fullname
+        end
+      Otherwise
+        say "*ERR*" ln.trapx
+    end
+  end                                 /* trapx                      */
+  return dd_names

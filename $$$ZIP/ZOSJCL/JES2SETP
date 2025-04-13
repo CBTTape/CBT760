@@ -1,0 +1,15 @@
+
+/*SETUP
+
+Back when there weren't so many messages going to consoles you could
+use the /*SETUP control card to let the operator know what tape
+volume serial numbers the job would need. Nowadays, too many messages
+are produced for any HUMAN to reall read them and two other
+technologies did away with this practice.
+
+1) Use of catalogued data sets means no one wants to look up what
+   VOLSESRs will be used and code them in JCL that job scheduling
+   software is submitting.
+2) Automated tape devices mount more tapes than people do, and they
+   don't read console messages.
+

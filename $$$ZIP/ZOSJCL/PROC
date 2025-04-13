@@ -1,0 +1,9 @@
+
+// PROC
+
+Used to begin a JCL Procedure. One or more SYMBOLICs may be coded
+with default values.
+
+//P4 PROC PARM5=OLD,PARM6='SYS1.LINKLIB(P40)',
+// PARM7=SYSDA,PARM8=(CYL,(10,1))
+

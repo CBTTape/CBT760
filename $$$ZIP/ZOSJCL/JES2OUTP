@@ -1,0 +1,50 @@
+
+/*OUTPUT
+
+Use to define output attributes and then refer one or more SYSOUT
+DD statements to it.
+
+The parameters are:
+{BURST} = {Y}
+{B } {N}
+{CHARS} = {xxxx }
+{X } {(xxxx[,xxxx]...)}
+{CKPTLNS} =nnnnn
+{E }
+{CKPTPGS} =nnnnn
+{P }
+{COMPACT} =nn
+{Z }
+{COPIES} = {nnn }
+{N } {(nnn[,(group-value[,group-value]...)])}
+{COPYG} = {group-value }
+{G } {(group-value[,group-value]...)}
+{DEST} = {destination } destination is:
+{D } {(destination[,destination]...)}
+{ANYLOCAL }
+{LOCAL }
+{FCB} =xxxx {name }
+{C } {Nnnnn }
+{NnnRmmmm }
+{FLASH} = {overlay-name } {NnnnRmmm }
+{O } {(overlay-name[,count])} {NnnnnRmm }
+{NONE } {nodename.userid }
+{nodename:userid }
+{FLASHC} =count {nodename/userid }
+{Q } {nodename(userid)}
+{Rnnnn }
+{FORMS} = {xxxx} {RMnnnn }
+{F } {STD } {RMTnnnn }
+{Unnnn }
+{Userid }
+{{INDEX |I} =nn}
+{{LINDEX|L} =nn}
+{LINECT} =nnn
+{K }
+{MODIFY} = {module-name }
+{Y } {(module-name[,trc])}
+{MODTRC} =trc
+{M }
+{UCS} =xxxx
+{T }
+

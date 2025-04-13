@@ -1,0 +1,40 @@
+open site_name_or_ip_address
+userid
+password
+bin
+quote site tracks primary=150 secondary=45
+quote site recfm=fb blksize=0 lrecl=80
+quote site volser=temp01
+;
+;  Author: "Kenneth Tomiak"<CBT_Ken@KTomiak.biz>
+;
+bell
+put file760.xmi
+quit
+;
+; Anything after quit should be ignored.
+;
+; This sample script will upload a binary file.
+;
+; It is the output of a TRANSMIT command, so after
+; you upload the file, you need to RECEIVE the file.
+;
+; TSO RECEIVE INDA(FILE760.XMI)
+;
+; Then press enter to accept all the defaults, or
+; specify what dataset name you want to create and
+; what volume to be used. The default dataset name
+; will use your TSO PREFIX as the high level qualifier.
+; SMS should direct the dataset allocation to the proper volume.
+;
+; Still living in the 1970's and not using your USERID as your PREFIX?
+; Override the default dsname with DATASET('your.ds.name').
+; And place on a volume with VOLUME(volser).
+;
+; And if you need to specify both:
+; DATASET(;your.ds.name') VOLUME(volser)
+;
+; Need more help for RECEIVE,
+; try TSO HELP RECEIVE while logged on to TSO.
+;
+;

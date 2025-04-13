@@ -1,0 +1,32 @@
+;
+; Now really, if you can copy this member from your system, all I will
+; give you is the hint where you can get it from your system.
+;
+; Too many ignorant people believe they should point to the
+; TCPPARMS(FTPDATA) member used by their FTP daemon. This is
+; where you get parameters for your client! They are not the same.
+;
+; Help break the bad habit and use the correct parameters.
+;
+;***********************************************************************
+;                                                                      *
+;   Name of File:             SEZAINST(FTCDATA)                        *
+;                                                                      *
+;   Descriptive Name:         FTP.DATA  (for FTP Client)               *
+;                                                                      *
+;   SMP/E Distribution Name:  EZAFTPAC                                 *
+;                                                                      *
+;   Copyright:    Licensed Materials - Property of IBM                 *
+;                                                                      *
+;                 "Restricted Materials of IBM"                        *
+;                                                                      *
+;                 5694-A01                                             *
+;                                                                      *
+;                 (C) Copyright IBM Corp. 1977, 2006                   *
+;                                                                      *
+;                 US Government Users Restricted Rights -              *
+;                 Use, duplication or disclosure restricted by         *
+;                 GSA ADP Schedule Contract with IBM Corp.             *
+;                                                                      *
+;   Status:       CSV1R8                                               *
+;***********************************************************************

@@ -1,0 +1,6 @@
+
+//*PAUSE
+
+Used to interrupt the input reader until you start it again. This
+allows remote work stations to do a system checkout.
+

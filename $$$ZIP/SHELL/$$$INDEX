@@ -1,0 +1,8 @@
+
+This dataset (sub-directory) contains z/OS UNIX shell scripts.
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------
+$$$INDEX This member
+JAVA5    Prepend JAVA5 to path and invoke the compiler
+

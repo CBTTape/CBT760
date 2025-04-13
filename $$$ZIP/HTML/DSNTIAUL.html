@@ -1,0 +1,230 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--                                                                 -->
+<!-- Version       | TimeStamp         | Description of change       -->
+<!-- ------------- | ----------------- | --------------------------- -->
+<!-- 1.0.0 KTomiak | 20070802 21:37:42 | Original version            -->
+<!--                                                                 -->
+
+<html>
+ <!---
+ Author: Kenneth E Tomiak
+ updt2htm.pl Copyright (c) 02007 by Kenneth E Tomiak
+ --->
+
+<head>
+ <title>
+ zosutil.seq - DSNTIAUL Examples
+ </title>
+
+ <!--META_START-->
+
+ <meta HTTP-EQUIV="Content-Type" content="text/html ; charset=iso8859-1">
+ <meta name="ROBOTS" content="INDEX, FOLLOW">
+ <meta name="abstract" content="Web pages for files in zosutil.seq">
+ <meta name="Keywords" content="zosutil.seq">
+ <meta name="owner" content="Author of zosutil.seq">
+ <meta name="author" content="d:\home\ktomiak\PERL\updt2htm.pl">
+ <meta name="modified" content="20070802">
+ <meta name="review" content="20071231">
+ <meta name="security" content="public">
+ <meta name="ms.locale" content="EN-US">
+ <meta name="Generator" content="Kenneth Tomiak's perl program d:\home\ktomiak\PERL\updt2htm.pl">
+
+ <!--META_END-->
+
+</head>
+<BODY BGCOLOR="#FFFFFF" LINK="#000066" ALINK="#000088">
+
+ <A NAME="pgtop"></A>
+
+ <center>
+ <h1>
+ <a href="../zosutil.seq.html">zosutil.seq</a> - DSNTIAUL Examples
+ </h1>
+ </center>
+
+<hr noshade size="4" color="#66CCCC">
+
+<pre>
+./ ADD NAME=DSNTIAUL 0666-07209-07209-1506-00001-00001-00000-DIR2UPDT
+>< ADD NAME=TIAUL    0101-07003-07017-0017-00005-00005-00000-KTOMIAK
+
+TIAUL$01  Unload one table
+TIAUL$02  Unload two tables
+TIAUL$03  Unload data from an SQL select
+
+>< ADD NAME=TIAUL$01 0100-07003-07003-2114-00024-00024-00000-KTOMIAK
+
+Example 1: Unload one table
+
+//*
+//STEP001 EXEC PGM=IKJEFT1B,PARM='',
+//             REGION=18M,TIME=1400
+//SYSTSPRT DD  SYSOUT=*
+//SYSTSIN  DD  *
+  DSN SYSTEM(DSN1)
+    RUN PROGRAM(DSNTIAUL) PLAN(DSNTIAUL) +
+      LIB('DSN1.RUNLIB.LOAD')
+    END
+/*
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+DSN8710.PROJ ;
+DSN8710.EMP
+/*
+//SYSPUNCH DD  DISP=(NEW,CATLG,DELETE),DSN=&SYSUID..LOAD.PROJ,
+//             UNIT=disk,SPACE=(TRK,(750,75),RLSE),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSREC00 DD  DISP=(NEW,CATLG,DELETE),DSN=&SYSUID..UNLOAD.PROJ,
+//             UNIT=disk,SPACE=(TRK,(750,75),RLSE)
+
+>< ADD NAME=TIAUL$02 0100-07003-07003-2114-00031-00031-00000-KTOMIAK
+
+Example 2: Unload two tables
+
+//*
+//STEP001 EXEC PGM=IKJEFT1B,PARM='',
+//             REGION=18M,TIME=1400
+//SYSTSPRT DD  SYSOUT=*
+//SYSTSIN  DD  *
+  DSN SYSTEM(DSN1)
+    RUN PROGRAM(DSNTIAUL) PLAN(DSNTIAUL) +
+      LIB('DSN1.RUNLIB.LOAD')
+    END
+/*
+/*
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *   DISP=SHR,DSN=&SYSUID..$SQL.TEXT(TIAUL001)
+DSN8710.PROJ ;
+DSN8710.EMP
+/*
+//SYSPUNCH DD  DISP=(NEW,CATLG,DELETE),DSN=&SYSUID..LOAD.PROJ,
+//             FREE=CLOSE,
+//             UNIT=disk,SPACE=(TRK,(750,75),RLSE),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSREC00 DD  DISP=(NEW,CATLG,DELETE),DSN=&SYSUID..UNLOAD.PROJ,
+//             UNIT=disk,SPACE=(TRK,(750,75),RLSE)
+//SYSPUNCH DD  DISP=(NEW,CATLG,DELETE),DSN=&SYSUID..LOAD.EMP,
+//             UNIT=disk,SPACE=(TRK,(750,75),RLSE),
+//             DCB=(RECFM=FB,BLKSIZE=0,LRECL=80)
+//SYSREC01 DD  DISP=(NEW,CATLG,DELETE),DSN=&SYSUID..UNLOAD.EMP,
+//             UNIT=disk,SPACE=(TRK,(750,75),RLSE)
+
+>< ADD NAME=TIAUL$03 0100-07003-07003-2114-00036-00036-00000-KTOMIAK
+
+Example 3: Unload data from an SQL select
+
+As long as you don't select more than 254 characters you will
+create a record with just your data. Reach 255 or more characters
+and DB2 treats it as a variable length field, inserting a two
+byte field with the data length ahead of the actual data.
+
+//*
+//STEP001 EXEC PGM=IKJEFT1B,PARM='',
+//             REGION=18M,TIME=1400
+//SYSTSPRT DD  SYSOUT=*
+//SYSTSIN  DD  *
+  DSN SYSTEM(DSN1)
+    RUN PROGRAM(DSNTIAUL) PLAN(DSNTIAUL) +
+      LIB('DSN1.RUNLIB.LOAD') PARMS('SQL')
+    END
+/*
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+  SELECT SUBSTR(
+    STRIP(CREATOR) || '.' || NAME,1,27)
+    FROM SYSIBM.SYSTABLES TB
+    WHERE TB.TYPE = 'V'
+  ;
+  SELECT CHAR('SELECT * FROM ' ||
+    CREATOR || NAME || ' ;')
+    FROM SYSIBM.SYSTABLES TB
+    WHERE TB.TYPE = 'V'
+  ;
+/*
+//SYSPUNCH DD  DUMMY
+//SYSREC00 DD  DISP=(NEW,CATLG,DELETE),
+//             DSN=&SYSUID..DSNTIAUL.SELECT.SYSTABLS,
+//             UNIT=disk,SPACE=(TRK,(750,75),RLSE)
+
+</pre>
+<hr noshade size="4" color="#66CCCC">
+<h2>DSNTIAUL</h2>
+<a href="DSNTIAUL$DSNTIAUL.html">DSNTIAUL$DSNTIAUL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<h2>Categories</h2>
+<a href="$$$INDEX.html">$$$INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ADRDSSU.html">ADRDSSU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMASPZAP.html">AMASPZAP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMBLIST.html">AMBLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BATCH.html">BATCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BMC4DB2.html">BMC4DB2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CPPUPDTE.html">CPPUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CUNMITG1.html">CUNMITG1</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DFHCSDUP.html">DFHCSDUP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DITTO.html">DITTO</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTEP2.html">DSNTEP2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAD.html">DSNTIAD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAUL.html">DSNTIAUL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="EDGINERS.html">EDGINERS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FDR.html">FDR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FTP.html">FTP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="HCD.html">HCD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ICKDSF.html">ICKDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IDCAMS.html">IDCAMS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOMPR.html">IEBCOMPR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOPY.html">IEBCOPY</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBDG.html">IEBDG</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBEDIT.html">IEBEDIT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBGENER.html">IEBGENER</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBIMAGE.html">IEBIMAGE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBPTPCH.html">IEBPTPCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBUPDTE.html">IEBUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEFBR14.html">IEFBR14</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHATLAS.html">IEHATLAS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHINITT.html">IEHINITT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHLIST.html">IEHLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHMOVE.html">IEHMOVE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHPROGM.html">IEHPROGM</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEWBLINK.html">IEWBLINK</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFASMFDP.html">IFASMFDP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFHSTATR.html">IFHSTATR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IPCS.html">IPCS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ISRSUPC.html">ISRSUPC</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IXCMIAPU.html">IXCMIAPU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="JOBCARD.html">JOBCARD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="RACF.html">RACF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SDSF.html">SDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SMPE.html">SMPE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SORT.html">SORT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SRCHFOR.html">SRCHFOR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="TRSMAIN.html">TRSMAIN</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="zosutil.seq.html">INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="../index.html">Up one level</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+
+<hr noshade size="4" color="#CCCC66">
+
+<A NAME="pgbottom"></A>
+<hr noshade size="4">
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+document.write("<b>" + location.href + "</b>")
+// -->
+</SCRIPT>
+
+<hr noshade size="4">
+<b> updt2htm.pl Copyright:</b> &copy; 02007 by Kenneth E Tomiak
+<br>
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+var d = new Date(document.lastModified)
+document.write("<b>Last modified:</b> " + d)
+// -->
+</SCRIPT>
+<hr noshade size="4">
+
+</body>
+</html>

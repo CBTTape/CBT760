@@ -1,0 +1,153 @@
+rexx_rexxuss: /* rexx */
+  on_off = syscalls("ON")
+  if (on_off > 4) then,
+    Do
+      say 'SYSCALLs(ON) failure. Please correct and resubmit.',
+        "RC("on_off")."
+      exit 16
+    End
+  $root = '/tmp'
+  address syscall 'getuid'
+  myuid=retval
+  say sysvar('SYSUID') "is uid("myuid")"
+  address syscall 'geteuid'
+  myeuid=retval
+  say sysvar('SYSUID') "is euid("myeuid")"
+  say "Try to be superuser!"
+  If (myeuid >< 0) then,             /* be 0 since invoker should    */
+    Do                               /* be part of the BPX.SUPERUSER */
+      address syscall 'seteuid 0'    /* facility class               */
+      anddidit = retval
+      say "su return value("anddidit")"
+      address syscall 'seteuid' myuid   /* back to who I am, really  */
+      anddidit = retval
+      say "ru return value("anddidit")"
+    End
+
+  address syscall 'readdir' $root 'mylist. fstats.'
+  fd=retval
+  if (fd=-1)   then,
+    do
+      say 'readdir failed, error codes' errno errnojr
+    end
+  else,
+    do
+      say "readdir retval("fd"), codes" errno errnojr
+    end
+  signal off NOVALUE
+  say "MYLIST("mylist.0") fstats("fstats.1.0")"
+  maxstrt = 1
+  maxlist = mylist.0
+  if maxlist > 4 then,
+    do
+      maxstrt = 2
+      maxlist = 4
+    end
+  do rx = maxstrt to maxlist
+    say mylist.rx
+    if (fstats.rx.0 = 32) then,
+      call print_fmt_stats
+  end
+  signal on NOVALUE
+  address syscall
+  'writefile /tmp/ktomiak_readdir.txt 777 mylist.'
+  path = '/tmp/ktomiak_readdir.txt'
+  'open  (path)',
+       O_rdonly,
+       000
+  if retval=-1 then,
+    do
+      say 'rdonly file not opened, error codes' errno errnojr
+      signal no_uss
+    end
+  fd=retval
+  'read' fd 'bytes 80'
+  if retval=-1 then
+    say 'bytes not read, error codes' errno errnojr
+  else
+    say "Bytes("bytes")"
+  do while bytes >< ""
+    parse var bytes subbytes '15'x bytes
+    say "  "subbytes
+  end
+  'close' fd
+  path='/tmp/ktomiak_my.file'
+  'open' path,
+         O_rdwr+O_creat+O_trunc,
+         660
+  if retval=-1 then
+    do
+      say 'rdwr file not opened, error codes' errno errnojr
+      signal no_uss
+     end
+  fd=retval
+  rec='hello world' || esc_n
+  'write' fd 'rec' length(rec)
+  if retval=-1 then
+    say 'record not written, error codes' errno errnojr
+  'close' fd
+  call syscalls 'OFF'
+
+  address TSO
+
+  "alloc file(filein)",
+    "path('/tmp/ktomiak_readdir.txt')",
+    "PATHOPTS(ORDONLY)",
+    "PATHMODE(SIRUSR,SIWUSR,SIRGRP,SIWGRP)"
+  "execio * diskr filein (finis stem hfsline."
+  if (hfsline.0 > 5) then,
+    hfsmax = 5
+  else
+    hfsmax = hfsline.0
+  if (hfsline.0 > 0) then,
+  do ix = 1 to hfsmax
+    say left(hfsline.ix,79)
+  end
+  "alloc file(fileot)",
+    "path('/tmp/ktomiak_readdir.copy')",
+    "PATHOPTS(OWRONLY,OCREAT,OTRUNC)",
+    "PATHMODE(SIRUSR,SIWUSR,SIRGRP,SIWGRP)"
+  "execio * diskw fileot (finis stem hfsline."
+  "free file(filein)"
+  "free file(fileot)"
+  exit
+no_uss:
+  say "Either there is no USS for you or some other error went down."
+  exit 4
+print_fmt_stats:
+  say "     1=Type     ("fstats.rx.st_type")"
+  say "     2=MODE     ("fstats.rx.st_mode")"
+  say "     3=INO      ('"c2x(fstats.rx.st_ino)"')"
+  say "     4=DEV      ('"c2x(fstats.rx.st_dev)"')"
+  say "     5=NLINK    ("fstats.rx.st_nlink")"
+  if (rx = 3) then,
+    do
+      say "     6=UID      ("fstats.rx.st_uid")"
+      say "     7=GID      ("fstats.rx.st_gid")"
+      say "     8=SIZE     ("fstats.rx.st_size")"
+      say "     9=ATIME    ("fstats.rx.st_atime")"
+      say "    10=MTIME    ("fstats.rx.st_mtime")"
+      say "    11=CTIME    ("fstats.rx.st_ctime")"
+      say "    12=SETUID   ("fstats.rx.st_setuid")"
+      say "    13=SETGID   ("fstats.rx.st_setgid")"
+      say "    14=MAJOR    ("fstats.rx.st_major")"
+      say "    15=MINOR    ("fstats.rx.st_minor")"
+      say "    16=AAUDIT   ("fstats.rx.st_aaudit")"
+      say "    17=UAUDIT   ("fstats.rx.st_uaudit")"
+      say "    18=BLKSIZE  ("fstats.rx.st_blksize")"
+      say "    19=CRTIME   ("fstats.rx.st_crtime")"
+      say "    20=AUDITID  ("fstats.rx.st_auditid")"
+      say "    21=CCSID    ("fstats.rx.st_ccsid")"
+      say "    22=BLOCKS   ("fstats.rx.st_blocks")"
+      say "    23=STICKY   ("fstats.rx.st_sticky")"
+      say "    24=EXTLINK  ("fstats.rx.st_extlink")"
+      say "    25=GENVALUE ("c2d(fstats.rx.st_genvalue)")"
+      say "    26=RTIME    ("fstats.rx.st_rtime")"
+      say "    27=FID      ("c2d(fstats.rx.st_fid)")"
+      say "    28=FILEFMT  ("fstats.rx.st_filefmt")"
+      say "    29=ACCESSACL("fstats.rx.st_accessacl")"
+      say "    30=FMODELACL("fstats.rx.st_fmodelacl")"
+      say "    31=DMODELACL("fstats.rx.st_dmodelacl")"
+      say "    32=?????????("fstats.rx.32")"
+    end
+  return

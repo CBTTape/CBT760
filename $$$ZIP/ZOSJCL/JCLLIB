@@ -1,0 +1,14 @@
+
+// JCLLIB
+
+Precedes the PROCLIB concatenation defined at your installation.
+
+//*
+//JOBPROC JCLLIB ORDER=(SHARE.MVSSCPU.CNTL,&SYSUID..SAMPUTIL.CNTL)
+
+//*
+//PRIVPROC JCLLIB ORDER=(ANYAPP.PROCLIB)
+
+//*
+//MYPROCS  JCLLIB ORDER=(&SYSUID..JCL.CNTL)
+

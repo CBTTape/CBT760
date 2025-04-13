@@ -1,0 +1,30 @@
+
+This dataset (sub-directory) contains JCL to invoke the programs and
+REXX code I have under a BATCH TMP process.
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------
+$$$INDEX This member
+
+CONDCODE IVP for testing %CONDCODE which shows prior steps cond code.
+FTPBLIND Invoke FTP and blindly pass sub-commands.
+FTPNETRC Invoke FTP hiding userid and password in NETRC file.
+FTPSYSFT Invoke FTP and use SYSFTPD to provide client defaults.
+HX2PR    Convert input to two hexadecimal print lines.
+HX2PR$A  Assemble and link source.
+HX2PR4   Convert input to four hexadecimal print lines.
+HX2PR4$A Assemble and link source.
+II13288  Run FTP to get some IBM tools.
+IPCSIVP  Run IPCS in batch to demonstrate some features.
+PDSLOAD  IEBUPDTE alternative preserves ISPF statistics.
+PDSLOAD$ Link object deck.
+PR2HX    Convert two print lines back to EBCDIC format.
+PR2HX$A  Assemble and link source.
+PR42HX   Convert four print lines back to EBCDIC format.
+PR42HX$A Assemble and link source.
+REXBLIND Invoke FTP and blindly pass sub-commands
+REXFTPAP Invoke REXX code that uses TCPIP REXX FTPAPI.
+REXFTPQU Invoke REXX code that QUEUEs commands and invokes FTP.
+REXFTPSK Invoke REXX code that uses TCPIP SOCKET API to do do FTP.
+URLCHECK Invoke TSO and run REXX code that uses TCPIP sockets.
+

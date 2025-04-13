@@ -1,0 +1,27 @@
+
+/*SIGNON
+
+Used to connect a remote session with JES3.
+
+Note that, unlike other JES3 statements, this statement starts
+with only one slash.
+
+/*SIGNON work-station-name {A|(blank)} {R|(blank)} +
+            passwd1 passwd2 new-passwd
+
+Column     Contents
+1-2        /*
+3-8        SIGNON
+9-15       blanks
+16-20      work-station-name, beginning in 16
+21         blank
+22         A or a blank
+23         R or a blank
+24         blank
+25-32      password1, beginning in 25
+33-34      blanks
+35-42      password2, beginning in 35
+43         blank
+44-51      new-password, beginning in 44
+52-80      blanks
+

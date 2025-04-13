@@ -1,0 +1,18 @@
+
+/*XMIT
+
+Transmits records from one node to another. I've only used it to send
+data to a VM userid.
+
+/*XMIT {Nnnnn } [ DLM=xx]
+       {nodename }
+       {nodename.userid }
+       {nodename:userid }
+       {nodename/userid }
+       {nodename(userid) }
+       {nodename.vmguestid }
+       {nodename:vmguestid }
+       {nodename/vmguestid }
+       {nodename(vmguestid)}
+       {name }
+

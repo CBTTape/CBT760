@@ -1,0 +1,229 @@
+rexx_SDSFDISK: /* We still need rexx in comment if read from SYSPROC */
+  rexxpgm_version = "01.01"
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+ Dataset:  KET2812.COR.REXX(SDSFDISK)
+ Author:   KTomiak
+ Contact:  "Kenneth Tomiak"<KenTomiak@KTomiak.org>
+ Syntax:   SDSFDISK {dsn_hlq jobname jobnumber}
+ Overview: (tell us about the code)
+
+=======================================================================
+
+ History of Modifications
+ ------------------------
+  When     Who      What you did
+  -------- -------- ---------------------------------------------------
+  20070729 KTomiak  01.01 Standardizing Rexx_Initialize routine
+  20050202 KTomiak  01.00 Original code.
+
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+  Parse Arg all_my_arguments
+  Numeric Digits 12
+
+rexx_Main_SDSFDISK:
+  return_code = rexx_Initialize()
+  If (return_code = 0) then,
+    Do
+      return_code = rexx_Process()
+    End
+  return_code = rexx_Termination()
+  Return 0
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we open any files and initialize any
+ constants we might need.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Initialize:
+  PARSE VERSION,
+    version_rexx_name,
+    version_rexx_version,
+    version_rexx_date
+  PARSE SOURCE,
+    source_host_env,
+    source_call_type,
+    source_uc_exec_name,
+    source_hostdd,
+    source_hostdsn,
+    source_nf_exec_name,
+    source_initial_cmd_env,
+    source_asid_name,
+    source_char8_user_token,
+    source_hostother
+  Address_Environment = Address()
+  job_specs = rexx_jobspecs()
+  say ""
+  say Copies("=",55)
+  say left("=" source_uc_exec_name rexxpgm_version,53) "="
+  say left("=" "executing under" source_host_env,53) "="
+  say left("=" "as a" source_call_type,53) "="
+  say left("=  on" date() "at" time()".",53) "="
+  say Copies("=",55)
+  say ""
+  return_code = 0
+  sysvar_sysuid = SYSVAR("SYSUID")
+  sysvar_sysenv = SYSVAR("SYSENV")
+  If (source_host_env >< "TSO") Then,
+    Do
+      Say "Wrong host environment" source_host_env
+      return_code = 16
+    End
+  parse var all_my_arguments,
+    dsn_hlq jobname jobnumber otherjunk
+  if (jobnumber = "") then,
+    do
+      say ""
+      say "Syntax:"
+      say "tso %"source_uc_exec_name "hlq jobname jobnumber"
+      say ""
+      jobnumber = jobname
+      jobname = dsn_hlq
+      dsn_hlq = Sysvar("SYSUID")
+    end
+  no_msg = Outtrap("NOMSGS.")
+  "FREE FILE(ISFIN)"
+  "DELETE SDSF.ISFIN"
+  "ALLOC FILE(ISFIN) DATASET(SDSF.ISFIN)",
+    "NEW CATALOG UNIT(SYSALLDA)",
+    "RECFM(F B) BLKSIZE(0) LRECL(80)",
+    "TRACKS SPACE(1 1)"
+  musthave = rc
+  if (musthave <> 0) then,
+    do
+  say "dsn_hlq("dsn_hlq") Jobname("jobname") jobnumber("jobnumber")"
+        say "Shucks, alloc ISFIN failed, rc("musthave")"
+      return 12
+    end
+  "FREE FILE(ISFOUT)"
+  "DELETE SDSF.ISFOUT"
+  "ALLOC FILE(ISFOUT) DATASET(SDSF.ISFOUT)",
+    "NEW CATALOG UNIT(SYSALLDA)",
+    "RECFM(V B A) BLKSIZE(0) LRECL(255)",
+    "TRACKS SPACE(1 1)"
+  musthave = rc
+  if (musthave <> 0) then,
+    do
+  say "dsn_hlq("dsn_hlq") Jobname("jobname") jobnumber("jobnumber")"
+      say "Shucks, ISFOUT alloc failed, rc("musthave")"
+      return 12
+    end
+  "FREE FILE(DDOUT)"
+  jobout = "'"dsn_hlq".$JOBOUT."jobname"."jobnumber"'"
+   "DELETE" jobout
+  "ALLOC FILE(DDOUT) DATASET("JOBOUT")",
+    "NEW CATALOG UNIT(SYSALLDA)",
+    "RECFM(V B A) BLKSIZE(27998) LRECL(255)",
+    "TRACKS SPACE(45 45)"
+  musthave = rc
+  if (musthave <> 0) then,
+    do
+  say "dsn_hlq("dsn_hlq") Jobname("jobname") jobnumber("jobnumber")"
+      say "Shucks, DDOUT  alloc failed, rc("musthave")"
+      return 12
+    end
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we do our processing.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Process:
+  no_msg = Outtrap("OFF")
+  Queue 'PRE' jobname
+  Queue 'OWNER *'
+  Queue 'ST'
+  Queue 'S' jobname jobnumber
+  Queue 'F' jobname
+  Queue '++S'
+  Queue 'PRINT FILE DDOUT'
+  Queue 'PRINT'
+  Queue 'PRINT CLOSE'
+  Queue 'END'
+  nq = Queued()
+  "EXECIO" nq "DISKW ISFIN (FINIS"
+      problems = 0
+/*"CALL 'SYS1.ISF.SISFLOAD(SDSF)' ''" */
+  address AttchPgm "SDSF"
+  view_rc = rc
+  if (view_rc >< 0) then,
+    do
+      say "Shucks, AttachPgm SDSF failed, rc("view_rc")"
+      problems = 1
+    end
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ In this routine we close files and finish up.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_Termination:
+  no_msg = Outtrap("NOMSGS.")
+  "FREE FILE(ISFIN)"
+  "DELETE SDSF.ISFIN"
+  "EXECIO * DISKR ISFOUT (FINIS Stem fromsdsf."
+  "FREE FILE(ISFOUT)"
+  "FREE FILE(DDOUT)"
+  if (sysvar_sysenv = "FORE") then,
+    do
+      address ispexec "Control Errors Return"
+      if (problems = 1) then,
+        address ispexec "View Dataset(sdsf.isfout)"
+      address ispexec "View Dataset("jobout")"
+      view_rc = rc
+      if (view_rc >< 0) then,
+        do
+          say "Shucks, View failed, rc("view_rc")"
+          exit 12
+        end
+    end
+  "DELETE SDSF.ISFOUT"
+  no_msg = Outtrap("OFF")
+  Return return_code
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ Place any of your subroutines and procedures below this.
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+rexx_jobspecs:
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO CVT FROM PSA                                */
+  /*---------------------------------------------------------------*/
+  PTR2PSA = 0
+  CVTPTR = STORAGE(D2X(PTR2PSA + 16),4)
+  /*---------------------------------------------------------------*/
+  /* ADDRESSABILITY TO SMCA, THEN GET SMF SYSTEM ID                */
+  /*---------------------------------------------------------------*/
+  CVTSMCA = STORAGE(D2X(C2D(CVTPTR)+197),3)
+  SMFID = STORAGE(D2X(C2D(CVTSMCA)+16),4)
+  /*---------------------------------------------------------------*/
+  /* GET JOBNAME, STEP, AND PROCEDURE                              */
+  /*---------------------------------------------------------------*/
+  PSATOLD  = STORAGE(21C,4)                    /* POINTER TO TCB   */
+  PTRTIOT  = STORAGE(D2X(C2D(PSATOLD)+12),4)   /* POINTER TO TIOT  */
+  JOBNAME  = STORAGE(D2X(C2D(PTRTIOT)),8)
+  STEPNAME = STORAGE(D2X(C2D(PTRTIOT)+8),8)
+  PROCNAME = STORAGE(D2X(C2D(PTRTIOT)+16),8)
+  Tcbjscbb = Storage(D2x(C2d(Psatold)+181),3)              /* jscb */
+  jscbssib = STORAGE(D2X(C2D(tcbjscbb)+316),4)      /* Ptr to SSIB */
+  ssibjbid = STORAGE(D2X(C2D(jscbssib)+12),8)    /* job identifier */
+  Return JOBNAME SSIBJBID STEPNAME PROCNAME
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+ describe your routines here
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+=======================================================================
+__DATA__
+=======================================================================
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+

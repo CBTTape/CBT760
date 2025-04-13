@@ -1,0 +1,80 @@
+>< ADD NAME=LIST     0101-07003-07016-2348-00004-00004-00000-KTOMIAK
+
+LIST$01  List Partitioned Directories Using DUMP and FORMAT
+LIST$02  List Non-indexed Volume Table of Contents
+
+>< ADD NAME=LIST$01  0100-07003-07003-2113-00039-00039-00000-SC26UTL
+
+Example 1: List Partitioned Directories Using DUMP and FORMAT
+
+In this example, the directory of a PDSE is listed. In addition, the
+directories of two partitioned data sets that reside on the system
+residence volume are listed.
+
+//LISTPDIR JOB ...
+//STEP1   EXEC PGM=IEHLIST
+//SYSPRINT DD  SYSOUT=*
+//DD1      DD  DISP=OLD,
+//             UNIT=diskA,
+//             VOL=SER=222222
+//DD2      DD  DISP=OLD,
+//             UNIT=diskB,
+//             VOL=REF=SYS1.NUCLEUS
+//SYSIN    DD  *
+LISTPDS  DSNAME=D42.PDSE1,VOL=diskA=222222
+LISTPDS  DSNAME=(D55.PART1,D55.PART2),FORMAT
+/*
+
+The control statements are discussed below:
+
+x) DD1 DD defines the system residence device.
+
+x) DD2 DD defines a device on which a disk volume (222222) is mounted.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The first LISTPDS statement indicates that the PDSE directory
+   belonging to data set D42.PDSE1 is to be listed. The listing is in
+   unedited (dump) format. This data set resides on volume 222222.
+
+x) The second LISTPDS statement indicates that partitioned data set
+   directories belonging to data sets D55.PART1 and D55.PART2 are to be
+   listed. The listing is in edited format. These data sets exist on
+   the system residence volume.
+
+>< ADD NAME=LIST$02  0100-07003-07003-2113-00034-00034-00000-SC26UTL
+
+Example 2: List Non-indexed Volume Table of Contents
+
+In this example, a non-indexed volume table of contents is listed in
+the first edited format. The edited listing is supplemented by an
+unedited listing of selected data set control blocks.
+
+//VTOCLIST JOB ...
+//STEP1   EXEC PGM=IEHLIST
+//SYSPRINT DD  SYSOUT=*
+//DD2      DD  DISP=OLD,
+//             UNIT=disk,
+//             VOL=SER=111111
+//SYSIN    DD  *
+LISTVTOC FORMAT,VOL=disk=111111
+LISTVTOC DUMP,VOL=disk=111111,DSNAME=(SET1,SET2,SET3)
+/*
+
+The control statements are discussed below:
+
+x) DD2 DD defines a device containing the specified volume table of
+   contents.
+
+x) SYSIN DD defines the control data set, which follows in the input
+   stream.
+
+x) The first LISTVTOC statement indicates that the volume table of
+   contents on the specified disk volume is to be listed in edited
+   form.
+
+x) The second LISTVTOC statement indicates that the data set control
+   blocks representing data sets SET1, SET2, and SET3 are to be listed
+   in unedited form.
+

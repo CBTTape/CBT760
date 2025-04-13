@@ -1,0 +1,109 @@
+rexx_sortbyhx:                /* rexx */
+  Address IsrEdit "MACRO (args)"
+  Address IspExec "CONTROL ERRORS RETURN"
+  Address IsrEdit "CAPS OFF"
+  Address IsrEdit "(mbrname) = MEMBER"
+  Address IsrEdit "(dsname,lib,volume) = DATASET"
+  sys_sysuid    = SYSVAR("sysuid")               /*  who am i?  */
+  arg.0 =  Words(args)
+  do wx = 1 to arg.0
+    arg.wx = Word(args,wx)
+  end
+  if (datatype(arg.1) >< "NUM") then begin_col = 1
+  else begin_col = arg.1
+  if (datatype(arg.2) >< "NUM") then span = 4
+  else span = arg.2
+  TSO_RC = LISTDSI("'"dsname"'" DIRECTORY SMSINFO)
+  If (TSO_RC > 4)  then,        /* RETURN CODES                     */
+                                /*  4 - Some info not returned      */
+                                /*      Do not use directory info   */
+                                /* 16 - Not successful, no data     */
+                                /*      is returned.                */
+    do
+      say "LISTDSI of" dsname "failed, rc="tso_rc
+      exit tso_rc
+    end
+  "ISREDIT (LASTLN) = LINENUM .ZLAST"
+  if (lastln > 1) then,
+    do
+     call mysort
+    end
+  exit
+
+mysort:
+  X=OUTTRAP("ON")
+  "FREE FI(SORTIN,SORTOUT,SORTMSG,SYSIN)"
+  "FREE DDNAME(SYSIN,SORTIN,SORTOUT,SORTWK01)"
+  if (datatype(sysused) >< "NUM") then,
+    sysused = sysalloc
+  "ALLOC FILE(SORTWK01) UNIT(SYSDA) SPACE("sysused",10) cylinders"
+  X=OUTTRAP("OFF")
+  recfml = length(sysrecfm)
+  myrecfm = ""
+  do rx = 1 to recfml
+    one = substr(sysrecfm,rx,1)
+    myrecfm = myrecfm||one" "
+  end
+  if (left(myrecfm,1) = "V") then begin_col = begin_col + 4
+  if (sysunits = "BLOCK") then sysunits = "TRACK"
+  "ALLOC FI(SORTIN) NEW reuse LRECL("syslrecl")",
+    sysunits"S space("sysused") recfm("myrecfm")",
+    "BLKSIZE(0)"
+
+  cx = 1
+  DO WHILE cx <= LASTLN
+    "ISREDIT (SORTIN) = LINE "cx
+     RCC = RC
+     cx = cx + 1
+     IF RCC = 0 THEN QUEUE SORTIN
+  END
+
+  QUEUE
+
+  "EXECIO * DISKW SORTIN (FINIS"
+
+  DELSTACK
+
+  "ALLOC DD(SYSIN) NEW REUSE",
+    "RECFM(F B) BLKSIZE(0) LRECL(80) tracks SPACE(1)"
+
+  QUEUE ' SORT FIELDS=('begin_col','SPAN||,
+    ',AC,A),DYNALLOC=(SWORK,3)'
+  QUEUE ' END '
+  QUEUE
+  "EXECIO * DISKW SYSIN (FINIS"
+
+  DELSTACK
+
+  "ALLOC FI(SORTOUT) NEW reuse LRECL("syslrecl")",
+    sysunits"S space("sysused") recfm("myrecfm")",
+    "BLKSIZE(0)"
+  "ALLOC FI(SORTMSG) sysout(1)"
+  nomsgs = Outtrap("alcmsgs.")
+  "ALLOC FI(SYSOUT) sysout(1)"
+  nomsgs = Outtrap("OFF")
+
+  "CALL *(SORT)"
+  sort_rc = rc
+  if (sort_rc >< 0) then,
+    do
+      say "GO TELL IT ON THE MOUNTAIN."
+  "FREE DDNAME(SYSIN,SORTIN,SORTOUT,SORTWK01,SYSOUT)"
+      return
+    end
+
+  "ISREDIT DELETE 1 .ZLAST"   /* CLEAN THE EDIT SLATE */
+   "EXECIO *  DISKR SORTOUT (STEM SRT. FINIS"
+
+    cx = 1
+    DO WHILE cx >< SRT.0 + 1
+      SORTOUT = SRT.cx
+      Lcx = RIGHT(cx-1,6,0)
+     "ISREDIT LINE_AFTER "Lcx" = (SORTOUT)"
+      cx = cx + 1
+    END
+
+   "FREE DDNAME(SYSIN,SORTIN,SORTOUT,SORTWK01,SYSOUT)"
+   X=OUTTRAP(OFF)
+   return
+

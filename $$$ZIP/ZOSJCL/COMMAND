@@ -1,0 +1,11 @@
+
+// COMMAND 'command'
+
+                                                          (column 71) |
+//          COMMAND 'START XYZ,PARM='ABC,DEF,GHI,JK',TIME=1440,REGION=4
+//             096K'
+               | (column 16)
+
+//         COMMAND     'SEND ''This message will be sent to user SCOTTC
+//             when this job is converted'',USER=(SCOTTC)'
+

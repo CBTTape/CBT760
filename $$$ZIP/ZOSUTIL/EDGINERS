@@ -1,0 +1,21 @@
+>< ADD NAME=INERS    0101-07003-07016-2346-00007-00007-00000-KTOMIAK
+
+The EDGINERS utility of DFSMSrmm is recommended instead of IEHINITT for
+labeling tapes that reside both inside and outside IBM TotalStorage
+Enterprise Automated Tape Library (3495)s.
+
+INERS$01  Write EBCDIC Labels on Three Tapes
+
+>< ADD NAME=INERS$01 0100-07003-07003-2114-00012-00012-00000-KTOMIAK
+
+//*
+//S01#01  EXEC PGM=EDGINERS
+//SYSPRINT DD  SYSOUT=*
+//SYSUT2   DD  SYSOUT=*
+//TAPE     DD  UNIT=207
+//SYSIN    DD  *
+         INIT VOLUME(C10269) LABEL(SL)
+         INIT VOLUME(C10270) LABEL(SL)
+         INIT VOLUME(C10271) LABEL(SL)
+/*
+

@@ -1,0 +1,81 @@
+
+//*====================================================================
+//*=
+//*= Give a description of what this step is meant to do.
+//*= List any non-zero CONDCODE values that are acceptable.
+//*= Consider restart and/or recovery actions if it fails.
+//*=   A failure can be an ABEND or an unacceptable CONDCODE value.
+//*=
+//*====================================================================
+// EXEC
+
+The EXEC statement identifies the program to be executed or a
+procedure to be invoked. You can have a maximum of 255 job steps.
+
+//[stepname] EXEC positional-parm[,keyword-parm]...,
+// [,symbolic-parm=value]... [comments]
+
+//             ACCT='Up to 142 characters' - I could only get 127
+//             ADDRSPC=VIRT | REAL
+//             CCSID= convert ISO/ANSI V4 tape data (LABEL=,AL|AUL)
+//             COND=
+//             DYNAMNBR=nnnn = 0 through 3273 minus DD's in the step.
+//             MEMLIMIT=nnnnn M | G | T | P - pages above the bar
+//             PARM='Up to 100 characters'
+//             PERFORM= Deprecated with WLM
+//             PGM=
+//             PROC=
+//             RD=R | RNC | NR | NC
+//             REGION=rrrr K | M If < 16M then within Private
+//             RLSTMOUT=ssss   0 - 9999 seconds
+//             TIME=(mm,ss) | NOLIMIT | 0 | MAXIMUM
+
+//A020 SET A020='12345678901234567890'
+//A040 SET A040='12345678901234567890'
+//A060 SET A060='12345678901234567890'
+//A080 SET A080='12345678901234567890'
+//A100 SET A100='12345678901234567890'
+//A120 SET A120='12345678901234567890'
+//A127 SET A127='1234567'
+//A140 SET A140='12345678901234567890'
+//A142 SET A142='12'
+//*
+//P020 SET P020='12345678901234567890'
+//P040 SET P040='12345678901234567890'
+//P060 SET P060='12345678901234567890'
+//P080 SET P080='12345678901234567890'
+//P100 SET P100='12345678901234567890'
+//*
+//STEP001 EXEC PGM=CBL3PARM,
+//             ACCT='&A020.&A040.&A060.&A080.&A100.&A120.&A127',
+//* OR
+//             ACCT='12345678901234567890123456789012345678901234567890
+//             12345678901234567890123456789012345678901234567890123456
+//             789012345678901234567',
+//* OR
+//             ACCT=(1417,J318,'D58/920','CHG=2',
+// '33.95')
+//*
+//             CCSID=1057,        <=== ISO/ANSI V4 tape data conversion
+//*
+//*            COND=              <=== SEE IF
+//*
+//             DYNAMNBR=20,
+//*
+//             MEMLIMIT=99999M,   <=== 0-99999,NOLIMIT
+//*
+//             PARM='&P020.&P040.&P060.&P080.&P100',
+//* OR
+//             PARM='12345678901234567890123456789012345678901234567890
+//             12345678901234567890123456789012345678901234567890'
+//* OR
+//             PARM=('KEY=VALUE',VALUE,KEYWORD,
+//             'NEXT-PAIR',some-more')
+//*
+//             REGION=4M,  < 16M needs to fit in private below-the-line
+//             REGION=18M  > 16M gets all below the line + some above
+//             REGION=0M,  = 0M gets everything
+//*
+//             TIME=(357912,59)  MM = 0 THROUGH 357912 (248.55 DAYS)
+//*
+

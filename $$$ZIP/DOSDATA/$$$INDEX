@@ -1,0 +1,12 @@
+
+This sub-directory contains data used by other processes in
+this collection.
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------
+$$$INDEX This member
+FTPCHRBN The 256 character set in binary with some notes
+FTPCHRMF The 256 character set in binary EBCDIC sequence
+FTPCHRPC The 256 character set in binary 8-bit ASCII sequence
+URLCHECK A list of urls that will be checked since the last run.
+

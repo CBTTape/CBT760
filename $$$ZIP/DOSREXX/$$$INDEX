@@ -1,0 +1,19 @@
+
+This sub-directory contains a collection of REXX code developed for
+Open Object REXX (OORexx) on the PC running Windows.
+
+See http://www.rexxla.org for details on OORexx.
+
+Member       Purpose of the member
+------------ ----------------------------------------------------------
+$$$INDEX     This member
+ASC2EBC.REX  Convert a file from 8-bit ASCII to EBCDIC
+CHARGRID.REX Create a file of 256 characters in a 16x16 grid
+DIR2UPDT.REX Create an IEBUPDTE stream of files in a sub-directory
+EBC2ASC.REX  Convert a file from EBCDIC to 8-bit ASCII
+IVS2DIR.REX  Convert an IEBCOPY unload to files in a sub-directory
+KETRECV.REX  Convert a TRANSMIT output file to files in a sub-directory
+KETUPDTE.REX Convert an IEBUPDTE stream into files in a sub-directory
+XMI2INM.REX  Convert a TRANSMIT output file into the internal format
+XMITINFO.REX David Alcock's code to list the TRANSMIT headers
+

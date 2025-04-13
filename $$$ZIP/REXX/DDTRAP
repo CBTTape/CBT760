@@ -1,0 +1,135 @@
+ddtrap: /* rexx */
+/*
+ DISCLAIMER: I found this code on the internet. It is poorly
+ written. It shows the pitfall of using code you find. Know
+ your source. Test. Confirm it functions as it ought to.
+
+ I found this is only useful for finding ddnames with data sets
+ allocated to it. That leaves a bunch of DDnames unaccounted for.
+ Like DD DUMMY!
+
+It is included only for the method they tried to use. Go check
+ddbylsta for a complete capture and then go check out ddbycblk
+for the quicker version.
+
+*/
+
+  parse arg find_dd JCLorDSN .
+  rc = Outtrap("ln.")                 /* open trap                  */
+  "LISTALC STATUS"
+  rc = Outtrap("OFF")                 /* close trap                 */
+  ddn# = 0
+
+/* Build DDName stack                          */
+  do trapx = 1 to ln.0                /* for each trapped line      */
+    if Left(ln.trapx,1) <> "" then,   /* DSName                     */
+      iterate                         /* pick it up later           */
+    if Substr(ln.trapx,3,1) <> " " then,   /* new DDName            */
+      do
+        ddn#       = ddn# + 1         /* DDName index               */
+        actual_ddn = Word(ln.trapx,1) /* save DDName                */
+        ddn.ddn#   = actual_ddn
+        ddname.actual_ddn = ddn#
+        ddnnbr.ddn#  = trapx
+        start.ddn# = trapx - 1        /* 1st dsn on previous line   */
+        end.ddn#   = trapx - 1        /* ...maybe the last one, too */
+      end
+    else if Left(ln.trapx,1) = " " then,     /* concatenated DSName */
+      end.ddn#     = trapx - 1        /* new end-point              */
+  end                                 /* trapx                      */
+
+  erc = ddn#
+  select
+    when ((JCLorDSN = "DSN") &,
+          (datatype(ddname.find_dd) = "NUM")) then,
+      do
+        ddnx = ddname.find_dd
+        totdsnx =  ((end.ddnx - start.ddnx) / 2) + 1
+        erc = erc";"totdsnx
+        do dsnx = start.ddnx to end.ddnx by 2
+          erc = erc";"ln.dsnx
+        end
+      end
+
+    when ((JCLorDSN = "ALC") &,
+          (datatype(ddname.find_dd) = "NUM")) then,
+      do
+        ddnx = ddname.find_dd
+        totdsnx =  ((end.ddnx - start.ddnx) / 2) + 1
+        erc = erc";"totdsnx
+      end
+
+    when ((JCLorDSN = "JCL") &,
+          (datatype(ddname.find_dd) = "NUM")) then,
+      do
+        ddnx = ddname.find_dd
+        totdsnx =  ((end.ddnx - start.ddnx) / 2) + 1
+        erc = erc";"totdsnx
+        do dsnx = start.ddnx to end.ddnx by 2
+          if (dsnx = start.ddnx) then,
+            do
+              xdsn = 1
+              erc = erc";"||,
+                "//"left(find_dd,8) "DD  DISP=SHR,DSN="ln.dsnx,
+                 "   " ddnx"."xdsn
+            end
+          else,
+            do
+              xdsn = xdsn + 1
+              erc = erc";"||,
+                "//"copies(" ",8) "DD  DISP=SHR,DSN="ln.dsnx,
+                 "   " ddnx"."xdsn
+            end
+        end
+      end
+
+    when ((JCLorDSN = "DSN") &,
+          (find_dd = "*")) then,
+      do
+        erc = ddn#
+        do ddnx = 1 to ddn#
+          find_dd = ddn.ddnx
+          ddnx = ddname.find_dd
+          erc = erc";"ddnx";"find_dd
+          totdsnx =  ((end.ddnx - start.ddnx) / 2) + 1
+          erc = erc";"totdsnx
+          thisdsn = 0
+          do dsnx = start.ddnx to end.ddnx by 2
+            thisdsn = thisdsn + 1
+            erc = erc";"thisdsn";"ln.dsnx
+          end
+        end
+      end
+
+    when ((JCLorDSN = "JCL") &,
+          (find_dd = "*")) then,
+      do
+        erc = ddn#
+        do ddnx = 1 to ddn#
+          find_dd = ddn.ddnx
+          ddnx = ddname.find_dd
+          erc = erc";"find_dd
+          totdsnx =  ((end.ddnx - start.ddnx) / 2) + 1
+          erc = erc";"totdsnx
+          do dsnx = start.ddnx to end.ddnx by 2
+            if (dsnx = start.ddnx) then,
+              do
+                xdsn = 1
+                erc = erc";"||,
+                  "//"left(find_dd,8) "DD  DISP=SHR,DSN="ln.dsnx,
+                   "   " ddnx"."xdsn
+              end
+            else,
+              do
+                xdsn = xdsn + 1
+                erc = erc";"||,
+                  "//"copies(" ",8) "DD  DISP=SHR,DSN="ln.dsnx,
+                   "   " ddnx"."xdsn
+              end
+          end
+        end
+      end
+    otherwise
+      erc = erc";0;**ERROR"
+  end
+  return erc

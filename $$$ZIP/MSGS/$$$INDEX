@@ -1,0 +1,11 @@
+
+Sorry, there are presently no members in this location.
+
+ISPF provides me a generic set of MSGIDs that I take advantage of.
+Thus I have no current need for storing static messages in a PDS
+and requiring you to add that dataset to your allocations.
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------
+$$$INDEX This member
+

@@ -1,0 +1,15 @@
+#
+# machine site login userid password pass
+#
+# Under z/OS UNIX and other unix-like operating systems:
+#   keywords should be lower case,
+#   values may be case sensitive.
+#
+# localhost
+machine 127.0.0.1 login LOCALID password LOCALPSWD
+#
+# ibm
+machine ftp.software.ibm.com login anonymous +
+password
+# password your_email_address@your_domains_mail_server.tlq
+#

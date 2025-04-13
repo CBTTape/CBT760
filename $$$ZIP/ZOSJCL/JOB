@@ -1,0 +1,120 @@
+
+// JOB
+
+//SP1KTOM  JOB (SYSPGM01,,60,9999,0,,1,,60),
+ =>            (ACCTCODE,ACCTCODE,ESTTIME,ESTLINE,ESTCARDS,FORMS,
+ =>            COPIES,LOG,LINECOUNTPERPAGE)
+
+//             'KENNETH TOMIAK',
+ =>            programmer name field can be up to 20 characters
+
+//             ADDRSPC=VIRT,
+//             ADDRSPC=REAl,
+
+//             BYTES=(######),
+//             BYTES=(######,CANCEL),
+//             BYTES=(######,DUMP),
+//             BYTES=(######,WARNING),
+
+//             CARDS=(######),
+//             CARDS=(######,CANCEL),
+//             CARDS=(######,DUMP),
+//             CARDS=(######,WARNING),
+
+//             CCSID=#####,  1-65535
+
+//             CLASS=x,      JOB CLASS
+ =>  Class for JES2 selection criteria
+
+
+//             COND=((CODE,OPERATOR),(CODE,OPERATOR)),
+                      <= CODE 0 - 4095
+                      <= OPERATOR gt, ge, eq, lt, lt, ne
+
+//             GROUP=XXXXXXXX, RACF GROUP
+
+//             JESLOG=SPIN,
+//             JESLOG=NOSPIN,
+//             JESLOG=SUPPRESS,
+
+//             LINES=(######),
+//             LINES=(######,CANCEL),
+//             LINES=(######,DUMP),
+//             LINES=(######,WARNING),
+
+//             MEMLIMIT=NOLIMIT,
+//             MEMLIMIT=#####x
+                  <= X = M, G, T, P
+
+//             MSGCLASS=X,
+ =>  Output class for unspecified SYSOUT= statements.
+
+//             MSGLEVEL=(1,1),
+ =>  MSGLEVEL Defaults to (1,1) or as installation defined.
+     I tried an invalid combination and the system will
+     default it to the installation's default values. Check
+     JES2PARM on your system. Coded as (statements,messages)
+     (statements,
+      0 = Print jobcard, comments, and JECL up to the first EXEC
+      1 = All JCL, JES2 or JES3 control statements, procedure
+          statements, and IEF653I messages.
+      2 = JCL and JES2 or JES3 control statements.
+     messages)
+      ,0 = Only JCL messages.
+      ,1 = JCL, JES, operator, and SMS messages.
+
+//             NOTIFY=&SYSUID
+ =>  NOTIFY either a valid userid, garbage to clog up
+     SYS1.BRODCAST, or &SYSUID, the default, to notify whoever
+     submitted the job.
+
+//             PAGES=(######),
+//             PAGES=(######,CANCEL),
+//             PAGES=(######,DUMP),
+//             PAGES=(######,WARNING),
+
+//             PASSWORD=(OLD,NEW),
+
+//             PERFORM=###,
+
+//             PRTY=##,     0 - 15
+
+//             RD=R,        RESTART, CHECKPOINTS ALLOWED
+//             RD=RNC,      RESTART, NO CHECKPOINTS ALLOWED
+//             RD=NR,       NO RESTART, CHECKPOINTS ALLOWED
+//             RD=NC,       NO RESTART, NO CHECKPOINTS ALLOWED
+
+//             REGION=#######k,  IN KILOBYTES
+//             REGION=####M,     IN MEGABYTES
+
+//             RESTART(STEPNAME,PROCSTEPNAME,CHECKPOINTID),
+
+//             SECLABEL=,
+
+//             SCHENV=,
+
+//             TIME=1440,          = Forever or until you IPL
+//             TIME=NOLIMIT,       = Less confusing way to say forever
+//             TIME=MAXIMUM,       = 357,912 minutes
+//             TIME=(MMMMMM,SS),
+ =>  Minutes = 1 - 357912       (5,965 hours 12 minutes or
+                                 248 days 13 hours 12 minutes)
+     Seconds = 1 - 59
+
+//             TYPRUN=COPY,   Copies to sysout
+//             TYPRUN=JCLHOLD,   Hold before JCL processing
+ =>                              Before PROC expansion
+//             TYPRUN=HOLD,   MAKE SOMEONE RELEASE IT
+//             TYPRUN=SCAN,   JUST SIMPLE SYNTAX CHECKING
+
+//             USER=whobeu
+
+//KTOMIAKH   JOB (0700,MID),'KET.SHARE.MVSE',                           00010000
+//             CLASS=A,MSGCLASS=T,MSGLEVEL=(1,1),                       00020000
+//             NOTIFY=&SYSUID,REGION=6M,TIME=400                        00030000
+//*                                                                     00040001
+//* SOURCE: DSN=SHARE##.S2820.CNTL(JOBC4SHR)                            00040000
+//* AUTHOR: YOUR NAME <YOUREMAIL@YOURDOMAIN>                            00060000
+//* REMARK: THIS JOB ....................................               00070003
+//*                                                                     00040000
+

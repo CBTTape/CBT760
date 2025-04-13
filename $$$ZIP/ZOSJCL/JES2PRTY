@@ -1,0 +1,10 @@
+
+/*PRIORITY #    Where # is in the range 0 - 15
+
+An antiquated method of trying to influence when your job gets
+selected to execute.
+
+It must precede the JOB statement that it applies to.
+
+/*PRIORITY 8
+//MYJOB JOB (acct),'programmer name',...

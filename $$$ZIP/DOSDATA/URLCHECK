@@ -1,0 +1,10 @@
+#
+# Source: DATA(URLCHECK)
+# Author: Unknown - found on the web when OS/2 was used more.
+# Notes:  I once found it as coming with the PC based IBM Object REXX.
+#
+# This is 255 characters wide. It helps preserve the LRECL I want.                                                                                                                                                                                         EOR!
+#
+http://www.sitename.com
+http://www.sitename.com/doclib/filename.doc
+#http://www.sitename.com

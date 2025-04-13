@@ -1,0 +1,252 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--                                                                 -->
+<!-- Version       | TimeStamp         | Description of change       -->
+<!-- ------------- | ----------------- | --------------------------- -->
+<!-- 1.0.0 KTomiak | 20070802 21:37:42 | Original version            -->
+<!--                                                                 -->
+
+<html>
+ <!---
+ Author: Kenneth E Tomiak
+ updt2htm.pl Copyright (c) 02007 by Kenneth E Tomiak
+ --->
+
+<head>
+ <title>
+ zosutil.seq -  Examples
+ </title>
+
+ <!--META_START-->
+
+ <meta HTTP-EQUIV="Content-Type" content="text/html ; charset=iso8859-1">
+ <meta name="ROBOTS" content="INDEX, FOLLOW">
+ <meta name="abstract" content="Web pages for files in zosutil.seq">
+ <meta name="Keywords" content="zosutil.seq">
+ <meta name="owner" content="Author of zosutil.seq">
+ <meta name="author" content="d:\home\ktomiak\PERL\updt2htm.pl">
+ <meta name="modified" content="20070802">
+ <meta name="review" content="20071231">
+ <meta name="security" content="public">
+ <meta name="ms.locale" content="EN-US">
+ <meta name="Generator" content="Kenneth Tomiak's perl program d:\home\ktomiak\PERL\updt2htm.pl">
+
+ <!--META_END-->
+
+</head>
+<BODY BGCOLOR="#FFFFFF" LINK="#000066" ALINK="#000088">
+
+ <A NAME="pgtop"></A>
+
+ <center>
+ <h1>
+ <a href="../zosutil.seq.html">zosutil.seq</a> -  Examples
+ </h1>
+ </center>
+
+<hr noshade size="4" color="#66CCCC">
+
+<pre>
+./ ADD NAME=$$$INDEX 0666-07209-07209-1503-00001-00001-00000-DIR2UPDT
+
+This dataset (sub-directory) contains the beginning of a project to
+have some useful samples showing how to use various utilities.
+
+Member   Purpose of the member
+-------- --------------------------------------------------------------
+$$$INDEX This member
+ADRDSSU  DFSMSdss - DATA SET SERVICES
+AMASPZAP Super Zap for wizards only - you break it you fired
+AMBLIST  List lmod, obj, lpa
+BATCH    Ways to run TSO, ISPF, and USS as batch jobs
+BMC4DB2  BMC DB2 Utilities
+CPPUPDTE The supported IPOUPDTE, mass JCL changer
+CUNMITG1 UNICODE translation services
+DFHCSDUP CICS CSD Update
+DITTO    Add on data duplication utility
+DSNTEP2  DB2 Dynamic SQL - DML
+DSNTIAD  DB2 Dynamic SQL - DDL
+DSNTIAUL DB2 Dynamic Unload
+EDGINERS DFHRMM (IBM TAPE SUBSYSTEM SOFTWARE)
+FDR      Innovations Fast Dump Restore solution
+FTP      File Transfer Programs - TCP/IP, Direct Connect, Netview/FTP
+HCD      Hardware Configuration Dialog and HCM setup jobs
+ICKDSF   Device Support Facilities
+IDCAMS   Access Method Services
+IEBCOMPR Compare data
+IEBCOPY  Library Copy
+IEBDG    Test Data Generator
+IEBEDIT  Edit Job Stream
+IEBGENER Sequential Copy/Generate Data Set
+IEBIMAGE Create Printer Image
+IEBPTPCH Print-Punch
+IEBUPDTE Update Data Set
+IEFBR14  And why you shouldn't be using it
+IEHATLAS See ICKDSF instead
+IEHINITT Initialize Tape
+IEHLIST  List System Data
+IEHMOVE  Move System Data
+IEHPROGM Program Maintenance
+IEWBLINK Linkage Editor
+IFASMFDP System Management Facilities Dump Program
+IFHSTATR List ESV Data
+IPCS     Interactive Problem Control System (SVC dump processor)
+ISRSUPC  ISPF SuperC Compare
+IXCMIAPU Couple data set utility
+JOBCARD  JOBCARD sample
+RACF     RACF data base unload
+SDSF     Spool Display and Search Facility
+SMPE     System Maintenance Program/ Extended
+SORT     IBM SORT, SYNCSORT
+SRCHFOR  Finds strings in members of a PDS
+TRSMAIN  TRSMAIN for compressing and uncompressing
+
+
+=======================================================================
+
+The original concept was good, the design was left unassigned, the
+contributions were few, and the bulk of the samples come from the
+outdated UTILITIES manual. I have been updating them to work in
+an SMS environment and with how z/OS works these days.
+
+  Know how and where to look for samples and examples:
+
+  - SYS1.SAMPLIB
+  - Other products hlq.**.*samp
+  - In manuals
+      SC26-7414-02 z/OS DFSMSdfp Utilities
+  - On the web (see below)
+
+  Know the difference between a sample and an example.
+
+  - A sample is complete code that worked somewhere at sometime.
+
+  - An example is a theoretical snippet that may not work as shown
+    and may never have ever been in any running code.
+
+The organization (naming standards) of the members is still undergoing
+a trial and error process to come up with a way to quickly identify
+the utility and the purpose. I had been leaning towards many members,
+using the first three characters of the utility name and up to five
+characters to show a minor characteristic. Dan Denver, a co-worker,
+shared his HSM hints member with me and I am now of the belief I should
+have one member per component.
+
+And even this design may change if I get around to writing the
+%UTILITY edit macro to embed a utility STEP, similar to how the
+MODEL command works.
+
+On the web:
+===========
+In addition to making softcopy documents available on CD-ROM, IBM
+provides access to unlicensed z/OS softcopy documents on the Internet.
+To find z/OS documents on the Internet, first go to the z/OS home page:
+http://www.ibm.com/servers/eserver/zseries/zos
+
+Now in knowing how to look, start at the beginning:
+
+On January 16th, 2007 I was able to navigate to books this way
+http://www.ibm.com
+(I was redirected to http://www.ibm.com/us)
+Find the 'Products' link under the IBM logo
+Find the 'system z (Mainframe)' link under Systems & Servers
+Find the 'Operating systems' link under Mainframe servers
+Find the /z/OS' link
+Find the 'Library' link
+Find the VxRy link for the level of the system you are using.
+Find the Element or feature you need (MVS)
+
+Brought me to:
+http://www-03.ibm.com/servers/eserver/zseries/zos/bkserv/r7pdf/mvs.html
+and for the JCL User's Guide:
+http://publibz.boulder.ibm.com/epubs/pdf/iea2b540.pdf
+and under DFSMS for the DFSMSdfp Utilities Manual:
+http://publibz.boulder.ibm.com/epubs/pdf/dgt2u120.pdf
+
+Since websites and their links change, it is more important to
+know how to find them than to rely on a static link off some other
+web site's page. Even the instructions above may now be out of date.
+The point of having the instructions above is to show how one might
+go about finding information.
+
+=======================================================================
+
+</pre>
+<hr noshade size="4" color="#66CCCC">
+<h2></h2>
+<hr noshade size="4" color="#66CCCC">
+<h2>Categories</h2>
+<a href="$$$INDEX.html">$$$INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ADRDSSU.html">ADRDSSU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMASPZAP.html">AMASPZAP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMBLIST.html">AMBLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BATCH.html">BATCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BMC4DB2.html">BMC4DB2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CPPUPDTE.html">CPPUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CUNMITG1.html">CUNMITG1</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DFHCSDUP.html">DFHCSDUP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DITTO.html">DITTO</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTEP2.html">DSNTEP2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAD.html">DSNTIAD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAUL.html">DSNTIAUL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="EDGINERS.html">EDGINERS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FDR.html">FDR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FTP.html">FTP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="HCD.html">HCD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ICKDSF.html">ICKDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IDCAMS.html">IDCAMS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOMPR.html">IEBCOMPR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOPY.html">IEBCOPY</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBDG.html">IEBDG</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBEDIT.html">IEBEDIT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBGENER.html">IEBGENER</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBIMAGE.html">IEBIMAGE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBPTPCH.html">IEBPTPCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBUPDTE.html">IEBUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEFBR14.html">IEFBR14</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHATLAS.html">IEHATLAS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHINITT.html">IEHINITT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHLIST.html">IEHLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHMOVE.html">IEHMOVE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHPROGM.html">IEHPROGM</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEWBLINK.html">IEWBLINK</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFASMFDP.html">IFASMFDP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFHSTATR.html">IFHSTATR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IPCS.html">IPCS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ISRSUPC.html">ISRSUPC</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IXCMIAPU.html">IXCMIAPU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="JOBCARD.html">JOBCARD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="RACF.html">RACF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SDSF.html">SDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SMPE.html">SMPE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SORT.html">SORT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SRCHFOR.html">SRCHFOR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="TRSMAIN.html">TRSMAIN</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="zosutil.seq.html">INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="../index.html">Up one level</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+
+<hr noshade size="4" color="#CCCC66">
+
+<A NAME="pgbottom"></A>
+<hr noshade size="4">
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+document.write("<b>" + location.href + "</b>")
+// -->
+</SCRIPT>
+
+<hr noshade size="4">
+<b> updt2htm.pl Copyright:</b> &copy; 02007 by Kenneth E Tomiak
+<br>
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+var d = new Date(document.lastModified)
+document.write("<b>Last modified:</b> " + d)
+// -->
+</SCRIPT>
+<hr noshade size="4">
+
+</body>
+</html>

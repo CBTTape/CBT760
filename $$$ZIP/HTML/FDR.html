@@ -1,0 +1,549 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--                                                                 -->
+<!-- Version       | TimeStamp         | Description of change       -->
+<!-- ------------- | ----------------- | --------------------------- -->
+<!-- 1.0.0 KTomiak | 20070802 21:37:42 | Original version            -->
+<!--                                                                 -->
+
+<html>
+ <!---
+ Author: Kenneth E Tomiak
+ updt2htm.pl Copyright (c) 02007 by Kenneth E Tomiak
+ --->
+
+<head>
+ <title>
+ zosutil.seq - FDR Examples
+ </title>
+
+ <!--META_START-->
+
+ <meta HTTP-EQUIV="Content-Type" content="text/html ; charset=iso8859-1">
+ <meta name="ROBOTS" content="INDEX, FOLLOW">
+ <meta name="abstract" content="Web pages for files in zosutil.seq">
+ <meta name="Keywords" content="zosutil.seq">
+ <meta name="owner" content="Author of zosutil.seq">
+ <meta name="author" content="d:\home\ktomiak\PERL\updt2htm.pl">
+ <meta name="modified" content="20070802">
+ <meta name="review" content="20071231">
+ <meta name="security" content="public">
+ <meta name="ms.locale" content="EN-US">
+ <meta name="Generator" content="Kenneth Tomiak's perl program d:\home\ktomiak\PERL\updt2htm.pl">
+
+ <!--META_END-->
+
+</head>
+<BODY BGCOLOR="#FFFFFF" LINK="#000066" ALINK="#000088">
+
+ <A NAME="pgtop"></A>
+
+ <center>
+ <h1>
+ <a href="../zosutil.seq.html">zosutil.seq</a> - FDR Examples
+ </h1>
+ </center>
+
+<hr noshade size="4" color="#66CCCC">
+
+<pre>
+./ ADD NAME=FDR      0666-07209-07209-1455-00001-00001-00000-DIR2UPDT
+>< ADD NAME=FDR      0101-07010-07016-2327-00027-00027-00000-KTOMIAK
+
+Innovation: FDR
+
+Simulation
+It is possible and advisable to test all jobs by using
+the SIM statement. This will run through the  process
+and report on what action would be taken, without moving any
+data. To simulate a compakt job you simply replace the CPK
+statement with SIM, so in the example below:
+
+CPK DUMP=YES,VOL=V03904,SIZEKEEP=0,
+would become
+SIM DUMP=YES,VOL=V03904,SIZEKEEP=0,
+
+
+FDR$01  Disk mapping
+FDR$02  Compacting
+FDR$03  Fast compact
+FDR$04  Mess with VTOC, VTOIX, VVDS using data from a backup
+FDR$05  Reports
+FDR$06  ABR Reports
+FDR$07  Backup by using DFSMS Storagepools
+FDR$08  Move entire volume
+FDR$09  Copy datasets
+FDR$10  Move datasets
+
+
+>< ADD NAME=FDR$01   0100-07010-07010-1842-00033-00033-00000-KTOMIAK
+Disk mapping
+The MAP statement will map out the track locations on disk volumes,
+or from full FDR backups of disk volumes. You can either map individual
+volumes, or all the volumes in an SMS storage pool with a single control
+statement. These reports were very useful if you had a faulty track on
+an old disk and you wanted to know exactly which dataset was goosed.
+A CPK MAP will report on any VTOC errors or inconsistencies that it
+finds. Also the summary report provides some useful information on
+the state of the disks and the datasets thereon. Sample JCL is
+
+
+Map using a live dasd volume
+
+//STEP1    EXEC PGM=FDRCPK
+//SYSPRINT DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//SYSIN    DD *
+  MAP   VOL=volser
+or
+ STORGRP=poolname
+
+
+Map using a backup as input
+
+
+//STEP1    EXEC PGM=FDRCPK
+//SYSPRINT DD SYSOUT=*
+//TAPE1    DD DISP=OLD,DSN=FDRABR.Vvolser.C1014200
+//SYSUDUMP DD SYSOUT=*
+//SYSIN    DD *
+  MAP   FROMDD=TAPE1
+/*
+
+>< ADD NAME=FDR$02   0100-07010-07010-1844-00017-00017-00000-KTOMIAK
+
+
+This sample JCL will leave 10% of free space in all files for growth
+and release the rest, unless the file is allocated without secondary
+extents, in which case it is not processed
+
+//CPKRLSE EXEC PGM=FDRCPK,REGION=0M
+//SYSPRINT DD SYSOUT=*
+//SYSMAP DD SYSOUT=*
+//SYSSUMM DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//SYSIN DD *
+COMPAKT TYPE=RLSE,VOL=(TSO*,TEST*),
+PSRLSE=ALL,PORLSE=ALL,VSRLSE=ALL,NOSECOND=NORLSE,%FREE=10
+/*
+//
+
+>< ADD NAME=FDR$03   0100-07010-07010-1844-00044-00044-00000-KTOMIAK
+
+A FASTCPK of a disk should take less than 3 minutes, compared to the
+10 minutes for the full CPK. With FASTCPK you are processing active
+volumes. FASTCPK works and is very effective, but you need to make
+sure you understand the implications of working on active volumes
+before you start. Be aware that some system utilities read the VTOC
+once to find their data, then access that data directly from its
+track location. This means that if you move the datasets with the
+utility active, it loses its files and crashes. Utilities that
+spring to mind are IMS and CICS. I tend to be nervous about the
+entire utility, but it is probably just the journals that are the
+problem. In this example, LOG=YES means that FDRCPK will issues
+messages to the SYSLOG to keep the operators informed of progress.
+FASTCPK will always write a recovery log so you can recover
+automatically from operating system or the job fails.
+UNABLE=IGNORE means ignore recoverable errors. The
+SELECT DSN=..,POS=KEEP
+statements mean that FDRCPK will not attempt to move files fitting
+these patterns. This is one way to avoid unmovable datasets.
+By default, a FASTCPK will use DSNENQ=USE, which means that it
+will attempt to get exclusive use of all files on the disk, and
+will exclusively hold those files it gets until the end of the
+job. Compaktor will not try to move files that are in use. You
+may think that this will resolve issues with direct access files,
+because if those files were in use then they would be ENQd and
+Compaktor could not move them. However, applications like IMS
+and CICS have a habit of holding journal files without an ENQ,
+so this is not an assured way to avoid problems. You need to
+ensure that Compakt does not move these files as shown in the
+example below. Some sample JCL for a compakt of a single volume
+
+//STEP1    EXEC PGM=FDRCPK
+//SYSPRINT DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//SYSIN    DD *
+  CPK   TYPE=FASTCPK,VOL=volser,
+     LOG=YES,UNABLE=IGNORE
+  SELECT   DSN=CICP.**,POS=KEEP
+  SELECT   DSN=HSM.**,POS=KEEP
+  SELECT   DSN=MVS.**,POS=KEEP
+
+
+
+
+>< ADD NAME=FDR$04   0100-07010-07010-1846-00045-00045-00000-KTOMIAK
+
+If you have errors in your VTOC then FDRCPK will automatically
+fix them. You can also use FDRCPK to increase the size of the
+VTOC, VVDS or VTOC Index, but you need a full dump compakt for
+this so you must specify DUMP=YES in your control statements
+Sample JCL
+
+//COMPAKT EXEC PGM=FDRCPK
+//SYSPRINT DD SYSOUT=*
+//SYSMAP DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//TAPE1 DD UNIT=CART,DISP=(,CATLG),
+//            DSN=DMB.V03904,VOL=(,,,99)
+//SYSIN DD *
+DUMP TYPE=FDR,DATA=USED,DSNENQ=USE
+ CPK DUMP=YES,VOL=V03904,SIZEKEEP=0,
+ VTOC=COMPAKT,OVERRIDE=YES
+SELECT ***VTOC,SIZE=40,POS=BEGIN
+SELECT DSN=SYS1.VTOCIX.**,POS=VTOC
+SELECT DSN=SYS1.VVDS.**,POS=VTOC
+
+If your VVDS is in multiple extents it can cause performance
+problems. You can consolidate your VVDS into a single extent
+with FDRCPK, but you need to use the override parameter as
+FDRCPK considers a VVDS as unmovable. You need exclusive use
+of the VVDS to do this, so it is safest to vary the disk
+offline to any other sharing LPARS before running the job.
+Sample JCL would be
+
+//COMPAKT EXEC PGM=FDRCPK
+//SYSPRINT DD SYSOUT=*
+//SYSMAP DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//TAPE1 DD UNIT=CART,DISP=(,CATLG),
+//            DSN=DMB.V03904,VOL=(,,,99)
+//SYSIN DD *
+DUMP TYPE=FDR,DATA=USED,DSNENQ=USE
+ CPK DUMP=YES,VOL=V03904,SIZEKEEP=0,
+SELECT DSN=SYS1.VVDS.**,POS=VTOC,OVERRIDE=YES
+
+
+
+
+
+
+>< ADD NAME=FDR$05   0100-07010-07010-1849-00126-00126-00000-KTOMIAK
+
+This is a report that I use if a storage pool is running out of
+space. It will report on old data in a storage pool giving its
+last referenced data and the SMS management class. You will
+need to adjust the Julian date in the LRDATE exclusion clause
+to get the data that you are interested in.
+
+//REPORT   EXEC PGM=FDREPORT,REGION=0M
+//SYSPRINT DD SYSOUT=*
+//ABRMAP   DD SYSOUT=*
+//ABRSUM   DD SYSOUT=*
+//SYSIN    DD *
+ XSELECT STORGRP=poolname
+ XEXCLUDE LRDATE<05.210
+ REPORT FIELD=(DSN,CLUSTER,LRDATE,VOL,MGMTCLAS,SIZEINFO)
+ SORT    FIELD=(LRDATE)
+ PRINT
+//
+
+The report is sorted by last referenced data so older data is
+more obvious. The 'xselect' and 'exclude' parameters give you
+a lot of flexibility in selecting files or disks. As an example,
+
+XSELECT XDSN=INP/.|+AB*.**,vol=P+*
+
+will select datasets with a high level qualifier starting INP
+that is exactly four characters long (the / represents any one
+character), the second qualifier starts with any alphabetic
+character (|) then any numeric character (+) then exactly 'AB'
+then anything that pads the second qualifier out to a maximum
+of eight characters. Finally, the '**' means any valid set of
+characters and levels up to the maximum allowed by z/OS. So
+INP2.A6ABZ#.UNIT.TEST will be selected, while INP.ARABZ#.UNIT.TEST
+will not be selected (because the HLQ has only three characters
+and because character 2 in the second qualifier is not numeric).
+XSELECT also works on volumes. VOL=/AB* means select any volume
+starting with an alphabetic character, with the second and
+third characters 'AB'. The next report looks at a problem
+storage pool from the other angle. It lists out all data that
+was created today. It is useful to know this if a pool suddenly
+starts running out of space because it can tell you who to
+blame. The 'SIZEINFO' parameter will list out the SIZE of
+each file in tracks and also SIZEFREE and percentage free.
+You can specifically ask for the size in bytes if you want.
+I am excluding various system files and also the
+XEXCLUDE XDSN=**.INDEX, DSORG=EF parameter will exclude
+all VSAM files that end in .INDEX. The reason for this is
+that these files never get their update bit set, so they
+will clog up the report.
+
+//SYSIN    DD *
+ XSELECT STORGRP=(LNVLRGPD),CRDATE.EQ.2005118
+ XEXCLUDE XDSN=**VTOC
+ XEXCLUDE XDSN=**ABR
+ XEXCLUDE XDSN=SYS1
+ XEXCLUDE XDSN=FDRABR.**
+ XEXCLUDE XDSN=**.INDEX, DSORG=EF
+ REPORT FIELD=(DSN,SIZEINFO,MGMTCLAS)
+ PRINT  DATEFORMAT=DDMMYYYY
+ SORT   FIELD=DSN
+
+VSAM reports
+If you want to know these things, then FDReport will tell
+you about VSAM clusters  that have a high number of CA and
+CI splits, or that are on an excessive number of extents.
+For example this report will list out problem VSAM files
+that have more than 80 extents, OR more that 50 CA splits,
+OR more than 100 CI splits.
+
+XSELECT XDSN=(AXP.**,AYP.**,CIT.**),DSORG=EF,VOL=/P*,NOEPV.GT.80
+XSELECT XDSN=(AXP.**,AYP.**,CIT.**),DSORG=EF,VOL=/P*,CASPLIT.GT.50
+XSELECT XDSN=(AXP.**,AYP.**,CIT.**),DSORG=EF,VOL=/P*,CISPLIT.GT.100
+REPORT FIELD=(CLUSTER,DSN,VOL,CASPLIT,CISPLIT,CISIZE,CICA,NOEPV)
+SORT FIELD=(CLUSTER,DSN)
+PRINT ENABLE=AUTOSTACK,SORTALLOC=YES
+
+HSM Migration reports
+FDReport will report on both its own FDRABR migration and
+also on DFHSM Migration. See the DFHSM section for details
+on DFHSM. The report below is reading the DFHSM MCDS. This
+is specified in the MCDSDD DD name. It will report on all
+migrated datasets with a high qualifier of DRP, and will
+tell you how big the file is, which volume it was on, the
+date it was migrated and the number of days since migrated.
+It will also tell you how many times each file has been
+migrated (NTMIGRAT, useful to detect thrashing) the
+management class, and finally 'DSSN' will tell you which
+migration level the file is on
+
+//MCDSDD   DD DISP=SHR,DSN=your.mcds.name
+//SYSIN    DD *
+ TITLE     LINE='HSM INFO'
+ XSELECT   XDSN=DRP.**
+ REPORT FIELD=(DSN,VOL,SIZE,ADATE,NTMIGRAT,ADAYS,DSSN,MGMTCLAS)
+ PRINT DATATYPE=MCDS
+
+Here's an example of an FDReport that I used to increase the
+retention of datasets that were already migrated by DFHSM.
+The customer wanted all her XVN.PROD files that already have
+a five year retention retained for 10 years instead. This
+meant building a list of all migrated files with a specific
+management class and changing that class. FDReport will find
+the files for you, then build the control statements to
+change the management class. The PUNCH statement tell
+FDReport to format an output list. The <NAME> bit in the
+ALTER statement is a system variable that will substitute
+the database name. A courageous person would run this job with
+the SYSPUNCH file feeding straight into a second IDCAMS step
+to just change the classes, but I prefer to check the output
+first then run the changes later.
+
+//REPORT   EXEC PGM=FDREPORT,REGION=0M
+//SYSPRINT DD SYSOUT=*
+//SYSPUNCH DD DSN=YOUR.OUTPUT.FILE,DISP=OLD
+//MCDSDD   DD DISP=SHR,DSN=YOUR.MCDS
+//ABRMAP   DD SYSOUT=*
+//ABRSUM   DD SYSOUT=*
+//SYSIN    DD *
+ XSELECT   XDSN=XVN.PROD.**,MGMTCLAS=YEAR5
+  REPORT FIELD=(DSN,MGMTCLAS)
+ PUNCH  FDRLIB=MASK
+ PRINT  RPTYPE=SELPCH,DATATYPE=MCDS
+//MASK     DD  *
+ ALTER <NAME> MGMTCLAS(YEAR10)
+
+
+>< ADD NAME=FDR$06   0100-07010-07010-1850-00019-00019-00000-KTOMIAK
+
+ABR Backup reports
+You can report on available ABR backups for any dataset,
+disk or storage pool. The example below will list out all
+backups for storage pool 'CICSPROD', giving you the creation
+data, generation and cycle numbers, and also the tape volser
+and file sequence number
+
+//REPORT   EXEC PGM=FDREPORT,REGION=0M
+//SYSPRINT DD SYSOUT=*
+//ABRMAP   DD SYSOUT=*
+//ABRSUM   DD SYSOUT=*
+//SYSIN    DD *
+ XSELECT STORGRP=CICSPROD
+ REPORT FIELD=(VOL,CRDATE,BKGEN,BKCYCLE,BKVOL,BKFILENO)
+ PRINT
+/*
+//
+
+>< ADD NAME=FDR$07   0100-07010-07010-1851-00035-00035-00000-KTOMIAK
+
+if you use SMS, then backup by storagepool. Example JCL is
+
+//STEP1    EXEC PGM=FDRABR
+//TAPE1    DD DSN=&&TEMP,UNIT=3590,DISP=(MOD,KEEP)
+//SYSPRINT DD SYSOUT=*
+//SYSPRIN1 DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//SYSIN    DD *
+  DUMP     TYPE=FDR,DSNENQ=USE,ENQERR=NO
+  MOUNT    VOL=volser
+  MOUNT    STORGRP=poolname
+
+If you are backing up a large storage pool, you can use
+multiple TAPE DD statements so you write to more than
+one tape drive concurrently. If you do this, then every
+TAPEx statement must have matching SYSPRINx statement
+
+//TAPE1    DD DSN=&&TEMP,UNIT=3590,DISP=(MOD,KEEP)
+//TAPE2    DD DSN=&&TEMP,UNIT=3590,DISP=(MOD,KEEP)
+//SYSPRINT DD *
+//SYSPRIN1 DD SYSOUT=*
+//SYSPRIN2 DD SYSOUT=*
+
+
+
+
+
+
+
+
+
+
+
+
+>< ADD NAME=FDR$08   0100-07010-07010-1852-00015-00015-00000-KTOMIAK
+
+If you want to move a complete volume from one address to
+another, it is easiest to do this with PGM=FDR combined
+with the COPY STATEMENT. Sample JCL is
+
+//COPY       EXEC  PGM=FDR,REGION=0M
+//SYSPRINT    DD   SYSOUT=*
+//SYSPRIN1    DD   SYSOUT=*
+//SYSUDUMP    DD   SYSOUT=*
+//DISK1       DD   UNIT=3390,DISP=OLD,VOL=SER=SOURCE
+//TAPE1      DD   UNIT=3390,DISP=OLD,VOL=SER=TARGET
+//SYSIN      DD   *
+    COPY     TYPE=FDR,CPYVOLID=YES,CONFMESS=NO
+/*
+
+>< ADD NAME=FDR$09   0100-07010-07010-1853-00035-00035-00000-KTOMIAK
+
+Copying datasets with FDRCOPY
+PGM=FDRCOPY has two options, MOVE and COPY, which should
+be self explanatory. To take a copy of a file called
+ISP.ACCTS.TSAD.INPUT run the following job
+
+//STEP1    EXEC PGM=FDRCOPY
+//SYSPRINT DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//SYSIN    DD *
+ COPY  TYPE=DSF
+ SELECT CATDSN=ISP.ACCTS.TSAD.INPUT,
+   NEWNAME=ISP.ACCTS.TSAD.INPUT.COPY
+
+
+This will move all datasets (except system files like
+the VTOC, VTOCIX, VVDS and ABR initialisation dataset)
+from volume DA1245 to volume DA4567. You need to
+specify an output volume, but if the data is SMS
+managed, SMS will intervene and pick its own target
+disks.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+>< ADD NAME=FDR$10   0100-07010-07010-1854-00012-00012-00000-KTOMIAK
+
+To drain an SMS managed volume DA1245, change
+its SMS status to DISNEW, then run the following job
+
+//STEP1    EXEC PGM=FDRCOPY
+//SYSPRINT DD SYSOUT=*
+//SYSUDUMP DD SYSOUT=*
+//SYSIN    DD *
+ MOVE      TYPE=DSF
+ SELECT    ALLDSN,VOL=DA1245,NVOL=DA4567
+/*
+
+</pre>
+<hr noshade size="4" color="#66CCCC">
+<h2>FDR</h2>
+<a href="FDR$FDR.html">FDR$FDR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<h2>Categories</h2>
+<a href="$$$INDEX.html">$$$INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ADRDSSU.html">ADRDSSU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMASPZAP.html">AMASPZAP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMBLIST.html">AMBLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BATCH.html">BATCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BMC4DB2.html">BMC4DB2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CPPUPDTE.html">CPPUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CUNMITG1.html">CUNMITG1</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DFHCSDUP.html">DFHCSDUP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DITTO.html">DITTO</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTEP2.html">DSNTEP2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAD.html">DSNTIAD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAUL.html">DSNTIAUL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="EDGINERS.html">EDGINERS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FDR.html">FDR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FTP.html">FTP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="HCD.html">HCD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ICKDSF.html">ICKDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IDCAMS.html">IDCAMS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOMPR.html">IEBCOMPR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOPY.html">IEBCOPY</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBDG.html">IEBDG</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBEDIT.html">IEBEDIT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBGENER.html">IEBGENER</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBIMAGE.html">IEBIMAGE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBPTPCH.html">IEBPTPCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBUPDTE.html">IEBUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEFBR14.html">IEFBR14</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHATLAS.html">IEHATLAS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHINITT.html">IEHINITT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHLIST.html">IEHLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHMOVE.html">IEHMOVE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHPROGM.html">IEHPROGM</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEWBLINK.html">IEWBLINK</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFASMFDP.html">IFASMFDP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFHSTATR.html">IFHSTATR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IPCS.html">IPCS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ISRSUPC.html">ISRSUPC</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IXCMIAPU.html">IXCMIAPU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="JOBCARD.html">JOBCARD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="RACF.html">RACF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SDSF.html">SDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SMPE.html">SMPE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SORT.html">SORT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SRCHFOR.html">SRCHFOR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="TRSMAIN.html">TRSMAIN</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="zosutil.seq.html">INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="../index.html">Up one level</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+
+<hr noshade size="4" color="#CCCC66">
+
+<A NAME="pgbottom"></A>
+<hr noshade size="4">
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+document.write("<b>" + location.href + "</b>")
+// -->
+</SCRIPT>
+
+<hr noshade size="4">
+<b> updt2htm.pl Copyright:</b> &copy; 02007 by Kenneth E Tomiak
+<br>
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+var d = new Date(document.lastModified)
+document.write("<b>Last modified:</b> " + d)
+// -->
+</SCRIPT>
+<hr noshade size="4">
+
+</body>
+</html>

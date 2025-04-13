@@ -1,0 +1,190 @@
+>< ADD NAME=FTP      0104-07003-07112-1824-00003-00050-00000-KTOMIAK
+
+FTP$01    A whole bunch of things you might be able to do
+FTP$02    Sample NETRC used by FTP
+FTP$03    Sample SYSFTPD from SEZAINST.
+FTP$04    Using a DDNAME as input
+FTP$05    Using NUM ON, yes you can! And continuation character.
+
+The record length and block size of the output data set can be any size.
+If the logical record length of the output data set is less than 100
+bytes, some messages could be truncated or wrapped around to the next
+line. If you create INPUT and OUTPUT data sets, use the following
+guidelines:
+
+//INPUT
+= Specify the INPUT data set:
+- Record format=FB.
+- Logical record length=2080. The logical record length of the input
+  data set can be any value in the range 80-2080.
+- Block size is a multiple of logical record length.
+
+//OUTPUT is the real DDname to use, it will also accept //SYSPRINT
+= Specify the OUTPUT data set:
+- Record format=FB.
+- Logical record length=160.
+- Block size is a multiple of 160.
+
+//NETRC
+= NETRC data set can be via DD or a z?OS UNIX file
+The user_id.NETRC data set (/$HOME/.netrc, in z/OS UNIX) provides you
+with an alternative to specifying your user_id and password as FTP
+parameters when you want to FTP to a remote host. The following example
+shows you how to specify the user_id.NETRC data set:
+
+machine mvs1.tcp.raleigh.ibm.com login user28 password user28
+machine 9.67.112.25 login user28
+MACHINE FEDC:BA98:7654:3210:FEDC:BA98:7654:3210 LOGIN user28
+
+The keywords machine, login, and password must be lowercase and the
+variables user_ID and password might be case sensitive, depending on the
+remote host. (For example, when using UNIX or AIX hosts, user_ID and
+password are case sensitive.)
+
+//SYSFTPD
+= NOT YOUR z/OS FTP SERVER defaults. Too many people point to their
+  TCPPARMS(FTPDATA) member. That is for the server, go browse
+  SEZAINST(FTCDATA). That "C" means CLIENT. Make a copy in your data
+  set and then make all the changes you want.
+
+//ANYDD
+= You can reference a DDname instead of a catalogued data set.
+>< ADD NAME=FTP$01   0101-07003-07003-2114-00054-00054-00000-KTOMIAK
+
+//STEP001 EXEC PGM=FTP,PARM='-v (EXIT TIMEOUT 72',REGION=2M
+//SYSFTPD  DD  DISP=SHR,DSN=&SYSUID..CNTL(FTPUSERP)
+//*  sysftpd   copy SYS1.SEZAINST(EZAFTPAC) and tailor as needed
+//NAMES    DD  DISP=SHR,DSN=&SYSUID..NAMES.TEXT
+//NETRC    DD  DISP=SHR,DSN=&SYSUID..NETRC.DATA
+//OUTPUT   DD  SYSOUT=*,DCB=(RECFM=FB,BLKSIZE=0,LRECL=147)
+//INPUT    DD  *
+host.to.connect.to
+myuserid.there
+mycurrentpassword.there
+pwd
+cwd 'myuserid'
+pwd
+cd 'myuserid'
+pwd
+lpwd
+lcd 'myuserid.xmitdsn'
+dir
+ls
+sendsite
+quote site umask 755
+quote site chmod ugo+x \tmp\filename
+quote site recfm=fb blksize=3120 lrecl=80
+locsite volser=zglbos unit=sysallda
+locsite tracks primary=100 secondary=50
+bin
+ascii
+ebcdic
+rest
+LOCSTat
+NOop
+STAtus
+SYstem
+TSO ping some.hostname.org
+TSO listc entry('share.mvsscpu.cntl')
+TSO submit 'myuserid.CNTL(ftpjob)'
+quote site filetype=JES
+put 'myuserid.CNTL(CANCELME)'
+GET J01148.X 'some.dataset.name(IV2C301J)'
+DEBug
+pwd
+QUIt
+DELE  fred
+MKDIR fred
+DELE george
+LMKDIR george
+!      ; can only be used under unix system services (open edition)
+ACcount
+CLose
+Open
+PAss
+User
+/*
+>< ADD NAME=FTP$02   0101-07057-07112-1812-00011-00011-00000-KTOMIAK
+#
+# machine site login userid password pass
+#
+#
+# Under USS the keywords should be lower case,
+# values may be case sensitive.
+#
+# ibm
+machine ftp.software.ibm.com login anonymous +
+password your.email@address.goes.here
+#
+>< ADD NAME=FTP$03   0101-07112-07126-1640-00791-00033-00000-KTOMIAK
+;
+; Now really, if you can copy this member from your system, all I will
+; give you is the hint where you can get it from your system.
+;
+; Too many ignorant people believe they should point to the
+; TCPPARMS(FTPDATA) member used by their FTP daemon. This is
+; where you get parameters for your client! They are not the same.
+;
+; Help break the bad habit and use the correct parameters.
+;
+;***********************************************************************
+;                                                                      *
+;   Name of File:             SEZAINST(FTCDATA)                        *
+;                                                                      *
+;   Descriptive Name:         FTP.DATA  (for FTP Client)               *
+;                                                                      *
+;   SMP/E Distribution Name:  EZAFTPAC                                 *
+;                                                                      *
+;   Copyright:    Licensed Materials - Property of IBM                 *
+;                                                                      *
+;                 "Restricted Materials of IBM"                        *
+;                                                                      *
+;                 5694-A01                                             *
+;                                                                      *
+;                 (C) Copyright IBM Corp. 1977, 2006                   *
+;                                                                      *
+;                 US Government Users Restricted Rights -              *
+;                 Use, duplication or disclosure restricted by         *
+;                 GSA ADP Schedule Contract with IBM Corp.             *
+;                                                                      *
+;   Status:       CSV1R8                                               *
+;                                                                      *
+;***********************************************************************
+>< ADD NAME=FTP$04   0100-07112-07112-1818-00012-00012-00000-KTOMIAK
+
+//STEP001 EXEC PGM=FTP,PARM='-v (EXIT TIMEOUT 72',REGION=2M
+//OUTPUT   DD  SYSOUT=*,DCB=(RECFM=FB,BLKSIZE=0,LRECL=147)
+//ANYDD    DD  DISP=SHR,DSN=SHARE.MVSSCP.UTL.CNTL(FTP$04)
+//INPUT    DD  *
+host.to.connect.to
+myuserid.there
+mycurrentpassword.there
+put //DDNAME:ANYDD \u\ktomiak\this.is.zos.unix.txt
+quit
+/*
+
+>< ADD NAME=FTP$05   0100-07112-07112-1824-00024-00024-00000-KTOMIAK
+                                                                        00010000
+//STEP001 EXEC PGM=FTP,PARM='-v (EXIT TIMEOUT 72',REGION=2M             00020000
+//OUTPUT   DD  SYSOUT=*,DCB=(RECFM=FB,BLKSIZE=0,LRECL=147)              00030000
+//INPUT    DD  *                                                        00040000
+;  Comment lines start wtih a semi-colon in column 1                    00050000
+;  If you choose to use NUM ON, you must end every line with a          00060000
+;  semi-colon. The line ends after a valid command. So the              00070000
+;  semi-colon can be in any column. Leave one out and the line          00080000
+;  numbers get passed as part of the command.                           00090000
+;                                                                       00100000
+;  I like to have at least one space before my semi-colon.              00110000
+;                                                                       00120000
+;  Did you notice the lcd command uses the continuation character?      00121000
+;                                                                       00123000
+host.to.connect.to ;                                                    00130000
+myuserid.there ;                                                        00140000
+mycurrentpassword.there ;                                               00150000
+lcd + ;                                                                 00160000
+\u\ktomiak ;                                                            00170000
+dir ;                                                                   00180000
+quit ;                                                                  00190000
+/*                                                                      00200000
+//                                                                      00210000
+                                                                        00220000

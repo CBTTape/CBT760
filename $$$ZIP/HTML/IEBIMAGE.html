@@ -1,0 +1,1385 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--                                                                 -->
+<!-- Version       | TimeStamp         | Description of change       -->
+<!-- ------------- | ----------------- | --------------------------- -->
+<!-- 1.0.0 KTomiak | 20070802 21:37:42 | Original version            -->
+<!--                                                                 -->
+
+<html>
+ <!---
+ Author: Kenneth E Tomiak
+ updt2htm.pl Copyright (c) 02007 by Kenneth E Tomiak
+ --->
+
+<head>
+ <title>
+ zosutil.seq - IEBIMAGE Examples
+ </title>
+
+ <!--META_START-->
+
+ <meta HTTP-EQUIV="Content-Type" content="text/html ; charset=iso8859-1">
+ <meta name="ROBOTS" content="INDEX, FOLLOW">
+ <meta name="abstract" content="Web pages for files in zosutil.seq">
+ <meta name="Keywords" content="zosutil.seq">
+ <meta name="owner" content="Author of zosutil.seq">
+ <meta name="author" content="d:\home\ktomiak\PERL\updt2htm.pl">
+ <meta name="modified" content="20070802">
+ <meta name="review" content="20071231">
+ <meta name="security" content="public">
+ <meta name="ms.locale" content="EN-US">
+ <meta name="Generator" content="Kenneth Tomiak's perl program d:\home\ktomiak\PERL\updt2htm.pl">
+
+ <!--META_END-->
+
+</head>
+<BODY BGCOLOR="#FFFFFF" LINK="#000066" ALINK="#000088">
+
+ <A NAME="pgtop"></A>
+
+ <center>
+ <h1>
+ <a href="../zosutil.seq.html">zosutil.seq</a> - IEBIMAGE Examples
+ </h1>
+ </center>
+
+<hr noshade size="4" color="#66CCCC">
+
+<pre>
+./ ADD NAME=IEBIMAGE 0666-07209-07209-1457-00001-00001-00000-DIR2UPDT
+>< ADD NAME=IMAGE    0101-07003-07016-2345-00028-00028-00000-KTOMIAK
+
+IMAGE$01  Build a New 3800 Forms Control Buffer Module
+IMAGE$02  Replace a 3800 Forms Control Buffer Module
+IMAGE$03  Replace a 3800 Forms Control Buffer Module
+IMAGE$04  Build a New 3800 Forms Control Buffer Module
+IMAGE$05  Replace the 3800 Forms Control Buffer Module STD3
+IMAGE$06  Build a New 3800 Forms Control Buffer Module for
+IMAGE$07  Build a 4248 Forms Control Buffer Module
+IMAGE$08  Build a New Copy Modification Module
+IMAGE$09  Build a New Copy Modification Module from an Existing
+IMAGE$10  Add a New Character to a Character Arrangement Table
+IMAGE$11  Build a New Character Arrangement Table Module from an
+IMAGE$12  Build Graphic Characters in a Character Arrangement
+IMAGE$13  Delete Graphic References From a Character
+IMAGE$14  List the World Trade National Use Graphics Graphic
+IMAGE$15  Build a Graphic Character Modification Module from the
+          Character Modification Module World Trade GRAFMOD
+IMAGE$16  Build a New Graphic Character Modification Module and
+          Modify a Character Arrangement Table to Use It
+IMAGE$17  Build a Graphic Character Modification Module from
+          Multiple Sources
+IMAGE$18  Define and Use a Character in a Graphic Character
+          Modification Module
+IMAGE$19  List a Library Character Set Module
+IMAGE$20  Build a Library Character Set Module
+IMAGE$21  Build a Library Character Set Module and Modify a
+IMAGE$22  Build a Library Character Set Module from Multiple
+
+>< ADD NAME=IMAGE$01 0100-07003-07003-2113-00039-00039-00000-SC26UTL
+
+Example 1: Build a New 3800 Forms Control Buffer Module
+
+3800 Model 1
+
+In this example, the vertical spacing and channel codes for an 11-inch
+form are specified, and the module is added to the SYS1.IMAGELIB data
+set as a new member.
+
+//FCBMOD1 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         FCB  CH1=1,CH12=80,LPI=8
+         NAME IJ
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) CH1=1 specifies channel 1 code for line 1, allowing for positioning
+   at line 1.
+
+x) CH12=80 specifies channel 12 code for line 80, allowing for
+   positioning at line 80 and a unit exception indication at line 80
+   (the last printable line on the page.)
+
+x) LPI=8 specifies that the entire form is to be at a vertical spacing
+   of 8 lines per inch. Because the SIZE parameter is omitted, the form
+   length defaults to 11 inches. Because there are 10 inches of
+   printable space in an 11-inch form, 80 lines are printed at 8 lines
+   per inch.
+
+x) The name of the new FCB module is IJ; it is stored as a member of
+   the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$02 0100-07003-07003-2113-00043-00043-00000-SC26UTL
+
+Example 2: Replace a 3800 Forms Control Buffer Module
+
+3800 Model 1
+
+In this example, the size and channel codes for a 5-1/2 inch form are
+specified, and the module is added to the SYS1.IMAGELIB data set as a
+replacement for an existing member. The new module is added to the end
+of the data set; the name in the data set's directory is updated so
+that it points to the new module; the old module can no longer be
+accessed through the data set's directory.
+
+//FCBMOD2 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         FCB  CH1=(1,7,13,20),CH12=26,SIZE=55
+         NAME S55(R)
+
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) CH1=(1,7,13,20) specifies channel 1 code for printable line 1, line
+   7, line 13, and line 20.
+
+x) CH12=26 specifies channel 12 code for printable line 26.
+
+x) SIZE=55 specifies the length of the form as 55 tenths of an inch, or
+   5-1/2 inches.
+
+x) Because the LPI parameter is omitted, the vertical spacing defaults
+   to 6 lines per inch. Because there are 4-1/2 inches of printable
+   lines in a 5-1/2 inch form, there are 27 print lines on this form.
+
+x) The name of the FCB module is S55, and it replaces an existing FCB
+   module of the same name. The new FCB module is stored as a member of
+   the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$03 0100-07003-07003-2113-00050-00050-00000-SC26UTL
+
+Example 3: Replace a 3800 Forms Control Buffer Module
+
+3800 Model 1
+
+In this example, the vertical spacing, channel codes, and size for a
+form are specified, and the module is added to the SYS1.IMAGELIB data
+set as a replacement for an existing member. The new module is added to
+the end of the data set; the name in the data set's directory is
+updated so that it points to the new module; the old module can no
+longer be accessed through the data set's directory.
+
+//FCBMOD3 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         FCB  CH1=1,CH2=4,CH5=11,SIZE=35,LPI=((6,2),(8,3),(6,4),(8,9))
+         NAME HL(R)
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) CH1=1 specifies channel 1 code for printable line 1.
+
+x) CH2=4 specifies channel 2 code for line 4.
+
+x) CH5=11 specifies channel 5 code for line 11.
+x) LPI=((6,2),(8,3),(6,4),(8,9)) specifies vertical spacing for the
+   first 18 printable lines in the form: (6,2) specifies lines 1
+   through 2 are at a vertical spacing of 6 lines per inch, and take up
+   2/6 inch. (8,3) specifies lines 3 through 5 are at a vertical
+   spacing of 8 lines per inch, and take up 3/8 inch. (6,4) specifies
+   lines 6 through 9 are at a vertical spacing of 6 lines per inch, and
+   take up 4/6 inch. (8,9) specifies lines 10 through 18 are at a
+   vertical spacing of 8 lines per inch, and take up 1-1/8 inch.
+
+x) SIZE=35 specifies the length of the form as 35 tenths of an inch, or
+   3-1/2 inches. Because there are 2-1/2 inches of printable space on
+   a 3-1/2 inch form, and because the LPI parameter specifies vertical
+   spacing for 2-1/2 inches of lines, the vertical spacing of all lines
+   in the form is accounted for.
+
+x) The name of the FCB module is HL; it replaces an existing module of
+   the same name. The new FCB module is stored as a member of the
+   SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$04 0100-07003-07003-2113-00046-00046-00000-SC26UTL
+
+Example 4: Build a New 3800 Forms Control Buffer Module
+
+3800 Model 1
+
+In this example, the vertical spacing, channel codes, and length of a
+form are specified, and the module is added to the SYS1.IMAGELIB data
+set as a new member.
+
+//FCBMOD4 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         FCB  CH1=1,CH6=33,SIZE=70,LPI=((8,32),(12,2))
+         NAME TGT
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) CH1=1 specifies channel 1 code for printable line 1.
+
+x) CH6=33 specifies channel 6 code for line 33.
+
+x) LPI=((8,32),(12,2)) specifies that the first 32 printable lines of
+   the form are to be at a vertical spacing of 8 lines per inch, and
+   the next 2 printable lines are to be at a vertical spacing of 12
+   lines per inch.
+
+x) SIZE=70 specifies that the length of the form is 70 tenths of an
+   inch, or 7 inches. Because there are 6 inches of printable lines in
+   a 7-inch form and the LPI parameter specifies 32 lines at 8 lines
+   per inch, or 4 inches, and 2 lines at 12 lines per inch, or 1/6
+   inch, the vertical spacing for the remaining 1-5/6 inches defaults
+   to 6 lines per inch.
+
+   Therefore, the form consists of lines 1 through 32 at 8 lines per
+   inch, lines 33 through 34 at 12 lines per inch, and lines 35 through
+   45 at 6 lines per inch, with channel codes at line 1 and line 33.
+
+x) The name of the new FCB module is TGT; it is stored as a member of
+   the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$05 0100-07003-07003-2113-00036-00036-00000-SC26UTL
+
+Example 5: Replace the 3800 Forms Control Buffer Module STD3
+
+3800 Model 1
+
+In this example, an FCB module is defined that uses ISO paper sizes,
+replacing the IBM-supplied module named STD3. This must be done before
+the dump-formatting routines that print high-density dumps can print
+them at 8 lines per inch on that printer.
+
+//FCBMOD5 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         FCB  CH1=1,CH12=88,LPI=(8,88),SIZE=120
+         NAME STD3(R)
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) CH1=1 specifies channel 1 code for printable line 1; CH12=88
+   specifies channel 12 code for line 88.
+
+x) LPI=(8,88) specifies that all 88 printable lines of the form are to
+   be at a vertical spacing of 8 lines per inch.
+
+x) SIZE=120 specifies that the length of the form is 120 tenths of an
+   inch, or 12 inches, which is the longest ISO paper size.
+
+x) The name of the new FCB module is STD3; it is to replace the
+   existing module of that same name on SYS1.IMAGELIB.
+
+>< ADD NAME=IMAGE$06 0100-07003-07003-2113-00050-00050-00000-SC26UTL
+
+Example 6: Build a New 3800 Forms Control Buffer Module for
+Additional ISO Paper Sizes
+
+3800 Model 3
+
+In this example, an FCB module is defined that uses ISO paper sizes and
+has the ISO Paper Sizes Additional Feature installed.
+
+//FCBMOD JOB ... 72
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         FCB   CH1=1,CH12=75,SIZE=85,                                  X
+               LPI=((10,35),(12,4),(10,35),(6,1)
+         NAME  ARU
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) CH1=1 specifies channel 1 code for line 1, allowing for positioning
+   at line 1.
+
+x) Ch12=75 specifies channel 12 code for line 75, allowing for
+   positioning at line 75 and a unit exception indication at 75 (the
+   last printable line on the page.)
+
+x) LPI=((10,35),(12,4),(10,35),(6,1)) specifies vertical spacing for
+   the entire printable area on the form. The last printable line on
+   the form must have vertical spacing of 6 lines per inch. The sum of
+   the lines allocated must be a multiple of 1/2.
+
+   EXAMPLES
+
+   (10,35)=3 1/2"
+   (12,4)=2/6"
+   (6,1)=1/6"
+   31/2+2/6+31/2+1/6=71/2
+   which is a multiple of 1/2
+
+x) SIZE=85 specifies the length of the form as 85 tenths of an inch, or
+   8-1/2 inches, although the printable area is 7-1/2 inches.
+
+x) The name of the new FCB module is ARU; it is stored as a member of
+   the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$07 0100-07003-07003-2113-00055-00055-00000-SC26UTL
+
+Example 7: Build a 4248 Forms Control Buffer Module
+
+In this example, a new 4248 default FCB module is built using an
+existing FCB module as a model. The new module, NEW1, is added to
+SYS1.IMAGELIB as a new member. The existing module, OLD1, remains
+unchanged. OLD1 may be a 4248 FCB called FCB4OLD1, or it may be a 3211
+FCB called FCB2OLD1. (If both modules existed, FCB4OLD1 would be used.)
+
+//FCBMOD7 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         OPTION DEVICE=4248
+         INCLUDE OLD1
+         FCB  COPYP=67,PSPEED=M,DEFAULT=YES
+         NAME NEW1
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) DEVICE=4248 on the OPTION statement specifies that this module is to
+   be created for the 4248 printer.
+
+x) The INCLUDE statement specifies that a copy of the existing module
+   OLD1 is to be used as a basis for the new module, NEW1.
+
+x) COPYP=67 indicates that the horizontal copy feature should be
+   activated, and that horizontal copies should begin printing in the
+   67th print position from the left margin. This setting overrides any
+   COPYP value previously set in module OLD1; it applies to module
+   NEW1, but does not change the value set in OLD1.
+
+   Note that the value 67 divides a 132-hammer printer into two equal
+   copy areas for two equally-sized horizontal copies. With COPYP=67, a
+   maximum of 66 bytes can be sent to the printer.
+
+x) PSPEED=M indicates that the printer speed should be set to medium
+   (3000 LPM). This setting overrides any PSPEED value previously set
+   in module OLD1; it applies to module NEW1, but does not change the
+   value set in OLD1.
+
+x) DEFAULT=YES indicates that this module, NEW1, should become a
+   default FCB module for this installation.
+
+x) Because these parameters are not specified, the values of LINES,
+   SIZE, LPI, and CHx default to the values which already exist in
+   module OLD1.
+
+x) The NAME statement indicates that this module should be called NEW1.
+
+>< ADD NAME=IMAGE$08 0100-07003-07003-2113-00064-00064-00000-SC26UTL
+
+Example 8: Build a New Copy Modification Module
+
+3800 Model 1
+
+In this example, a copy modification module that contains four
+modification segments is built. The module is added to the SYS1.IMAGELIB
+data set as a new member.
+
+//COPMOD1 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+COPY1    COPYMOD COPIES=(1,1),LINES=(1,1),POS=50,                      X
+               TEXT=(C,'CONTROLLER'S COPY')
+COPY2A   COPYMOD COPIES=(2,1),LINES=(1,1),POS=50,                      X
+               TEXT=(C,'SHIPPING MANAGER'S COPY')
+COPY2B   COPYMOD COPIES=(2,1),LINES=(34,3),POS=75,                     X
+               TEXT=(10C,' ')
+COPYALL  COPYMOD COPIES=(1,4),LINES=(58,1),POS=35,                     X
+               TEXT=((C,'***'),(C,'CONFIDENTIAL'),(3X,'5C'))
+         NAME RTO1
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) The COPY1 COPYMOD statement specifies text that applies to each page
+   of the first copy of the output data set: LINES=(1,1) and POS=50
+   specify that the text is to be on the first printable line of each
+   page, starting at the 50th print position from the left.
+
+   The TEXT parameter identifies each page of the copy as being the
+   "Controller's Copy".
+
+x) The COPY2A COPYMOD statement specifies text that applies to each
+   page of the second copy of the output data set. The text is to be on
+   the first line of each page, at the 50th print position from the
+   left, with each page of the copy being the "Shipping Manager's
+   Copy".
+
+x) The COPY2B COPYMOD statement specifies that part of the second
+   copy's output data set text is to be blanked out, so that the first,
+   third, and subsequent copies contain information that is not printed
+   on the second copy. The blank area is to be on lines 34, 35, and 36,
+   beginning at the 75th print position from the left. The text on
+   lines 34, 35, and 36, between print positions 75 and 84, is to be
+   blank (that is, the character specified between the TEXT parameter's
+   single quotation marks is a blank).
+
+x) The COPYALL COPYMOD statement specifies text that applies to the
+   first four copies of the output data set. This example assumes that
+   no more than four copies are printed each time the job that produces
+   the output data set is processed. The text is to be on the 58th line
+   on each page, at the 35th print position from the left. The legend
+   "***CONFIDENTIAL***" is to be on each page of the copy. Note that
+   the text can be coded in both character and hexadecimal format.
+
+x) The name of the copy modification module is RTO1; it is stored as a
+   member of the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$09 0100-07003-07003-2113-00058-00058-00000-SC26UTL
+
+Example 9: Build a New Copy Modification Module from an Existing
+Copy
+
+3800 Model 3
+
+In this example, a copy of an existing copy modification module, RTO1,
+is used as the basis for a new copy modification module. The new module
+is added to the SYS1.IMAGELIB data set as a new member. The existing
+module, RTO1, remains unchanged and available for use.
+
+//COPMOD2 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         INCLUDE RTO1,DELSEG=1
+         OPTION OVERRUN=8,DEVICE=3800M3
+         COPYMOD COPIES=(2,3),LINES=(52,6),POS=100,                    X
+               TEXT=(X,'40404040404040405C5C')
+         NAME  AP
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) The INCLUDE statement specifies that a copy of the copy modification
+   module named RTO1 is used as a basis for the new module, and that
+   the first modification segment of RTO1 is to be deleted from the
+   copy.
+
+x) OVERRUN=8 in the OPTION statement specifies that the IEBIMAGE
+   program is to print a warning message if the copy modification could
+   cause a line overrun condition when printing at 6 and 8 lines per
+   inch. The program is also to suppress any warning messages that
+   apply to printing at 10 and 12 lines per inch. DEVICE=3800M3 in the
+   OPTION statement specifies 3800 Model 3 compatibility mode
+   processing.
+
+x) The COPYMOD statement specifies text that applies to each page of
+   the second, third, and fourth copies of the output data set:
+   LINES=(52,6) and POS=100 specify that the text is to be on the 52nd
+   line and repeated for the 53rd through 57th lines of each page,
+   starting at the 100th print position from the left.
+
+
+   The TEXT statement specifies the text in hexadecimal form: eight
+   blanks followed by two asterisks (in this example, the assumption is
+   made that X'40' prints as a blank and that X'5C' prints as an
+   asterisk; in actual practice, the character arrangement table used
+   with the copy modification module might translate X'40' and X'5C' to
+   other printable characters).
+
+x) The name of the new copy modification module is AP; it is stored as
+   a member of the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$10 0100-07003-07003-2113-00046-00046-00000-SC26UTL
+
+Example 10: Add a New Character to a Character Arrangement Table
+Module
+
+3800 Model 3
+
+In this example, an IBM-supplied character arrangement table module is
+modified to include another character, and then added to the
+SYS1.IMAGELIB data set as a replacement for the IBM-supplied module.
+
+//CHARMOD1 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         INCLUDE GF10
+         OPTION DEVICE=3800M3
+         TABLE LOC=((2A,2A),(6A,2A),(AA,2A),(EA,2A))
+         NAME GF10(R)
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) The INCLUDE statement specifies that a copy of the character
+   arrangement table named GF10 is to be used as a basis for the new
+   module.
+
+x) The OPTION statement with the DEVICE parameter specifies 3800 Model
+   3 compatibility mode processing.
+
+x) The TABLE statement specifies updated information for four
+   translation table entries: X'2A', X'6A', X'AA', and X'EA'. (These
+   four locations are unused in the IBM-supplied GF10 table.) Each of
+   the four translation table entries is to point to the '2A' (43rd
+   character) position in the first WCGM, which contains the scan
+   pattern for a lozenge.
+
+x) The name of the character arrangement table is GF10, and it is
+   stored as a new module in the SYS1.IMAGELIB data set. The data set's
+   directory is updated so that the name GF10 points to the new module;
+   the old GF10 module can no longer be accessed through the data set's
+   directory.
+
+>< ADD NAME=IMAGE$11 0100-07003-07003-2113-00043-00043-00000-SC26UTL
+
+Example 11: Build a New Character Arrangement Table Module from an
+Existing Copy
+
+3800 Model 3
+
+In this example, an existing character arrangement table module is
+copied and used as a basis for a new module. The new character
+arrangement table is identical to the old one, except that it uses the
+Gothic 15-pitch character set instead of Gothic 10-pitch.
+
+//CHARMOD2 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         INCLUDE A11
+         OPTION  DEVICE=3800M3
+         TABLE   CGMID=87
+         NAME    A115
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) The INCLUDE statement specifies that a copy of the character
+   arrangement table named A11 is to be used as a basis for the new
+   module. The A11 character arrangement table translates 8-bit data
+   codes to printable characters in the Gothic 10-pitch character set.
+
+x) The OPTION statement with the DEVICE parameter specifies 3800 Model
+   3 compatibility mode processing.
+
+x) The TABLE statement specifies a new character set identifier, X'87',
+   which is the identifier for the Gothic 15-pitch character set. No
+   other changes are made to the character arrangement table. The new
+   table calls for characters in the Gothic 15-pitch character set.
+
+x) The name of the new character arrangement table is A115; it is
+   stored as a member of the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$12 0100-07003-07003-2113-00054-00054-00000-SC26UTL
+
+Example 12: Build Graphic Characters in a Character Arrangement
+Table Module
+
+3800 Model 1
+
+In this example, an existing character arrangement table module is
+copied and used as the basis for a new module that will include
+user-designed characters of a graphic character modification module.
+The new module is then added to the SYS1.IMAGELIB data set.
+
+//CHARMOD3 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         INCLUDE ONB
+         TABLE   GCMLIST=ONB1,LOC=((6F,2F,1),(7C,3C,1),(6A,2A,0))
+         NAME    ONBZ
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) The INCLUDE statement specifies that a copy of the character
+   arrangement table named ONB is to be used as a basis for the new
+   module. ONB refers to two WCGMs.
+
+x) The TABLE statement identifies a graphic character modification
+   module and stipulates the translation table entries for each of its
+   segments:
+
+   GCMLIST=ONB1 identifies the graphic character modification module
+   named ONB1. The LOC parameter specifies the translate table entry
+   location, character position, and WCGM number for each segment of
+   the module:
+
+     The first segment corresponds to the 8-bit data code X'6F'. The
+     segments' scan pattern is to be loaded at character position X'2F'
+     (that is, the 48th character position) in the second WCGM.
+
+     The second segment corresponds to the 8-bit data code X'7C'. The
+     segment's scan pattern is to be loaded at character position X'3C'
+     (that is, the 61st character position) in the second WCGM.
+
+     The third segment corresponds to the 8-bit data code X'6A'. The
+     segment's scan pattern is to be loaded at character position X'2A'
+     (that is, the 43rd character position) in the first WCGM.
+
+x) The name of the new character arrangement table is ONBZ; it is
+   stored as a new module in the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$13 0100-07003-07003-2113-00051-00051-00000-SC26UTL
+
+Example 13: Delete Graphic References From a Character
+Arrangement Table Module
+
+3800 Model 3
+
+In this example, an existing character arrangement table module is
+copied and used as a basis for a new one. The new character arrangement
+table deletes references to all graphic character modification modules
+and resets the translate table entries that were used to point to
+character positions for the segments of a graphic character
+modification module.
+
+//CHARMOD4 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         INCLUDE ZYL
+         OPTION  DEVICE=3800M3
+         TABLE   GCMLIST=DELETE,LOC=((6A),(6B))
+         NAME    ZYLA
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) The INCLUDE statement specifies that a copy of the character
+   arrangement table named ZYL is to be used as a basis for the new
+   module.
+
+x) The OPTION statement with the DEVICE parameter specifies 3800 Model
+   3 compatibility mode processing.
+
+x) The TABLE statement deletes references to graphic character
+   modification modules and resets two translation table entries:
+
+     GCMLIST=DELETE specifies that all names of graphic character
+     modification modules included with the module when the ZYL
+     character arrangement table was copied are to be reset to blanks
+     (X'40').
+
+     The LOC parameter identifies two locations in the translation
+     table, X'6A' and X'6B', that are to be set to X'FF' (the default
+     value when no character position or WCGM values are specified).
+
+x) The name of the new character arrangement table is ZYLA; it is
+   stored as a member of the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$14 0100-07003-07003-2113-00029-00029-00000-SC26UTL
+
+Example 14: List the World Trade National Use Graphics Graphic
+Character Modification Module
+
+3800 Model 1
+
+In this example, each segment of the IBM-supplied graphic character
+modification module containing the World Trade National Use Graphics is
+printed. Each segment is unique, although the scan patterns for some
+segments are identical to other segment's scan patterns with only the
+8-bit data code being different.
+
+//GRAFMOD1 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(SHR),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         GRAPHIC
+         NAME *
+/*
+
+The control statements are discussed below:
+
+x) DISP=SHR is coded because the library is not being updated.
+
+x) The World Trade National Use Graphics graphic character modification
+   module is identified with the pseudonym of "*". The scan pattern of
+   each of the characters in the module is printed.
+
+>< ADD NAME=IMAGE$15 0100-07003-07003-2113-00039-00039-00000-SC26UTL
+
+Example 15: Build a Graphic Character Modification Module from the
+Character Modification Module World Trade GRAFMOD
+
+3800 Model 3
+
+In this example, a graphic character modification module is built. Its
+characters are segments copied from the World Trade National Use
+Graphics graphic character modification module. (See the IBM 3800
+Printing Subsystem Programmer's Guide for the EBCDIC assignments for
+the characters.) The new module is stored in the SYS1.IMAGELIB system
+data set.
+
+//GRAFMOD2 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         OPTION DEVICE=3800M3
+        GRAPHIC REF=((24),(25),(26),(27),(28),(31),(33),(35),(38),(40))
+         NAME CSTW
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) DEVICE=3800M3 in the OPTION statement specifies 3800 Model 3
+   compatibility mode module format.
+
+x) By not specifying the GCM keyword, the GRAPHIC statement identifies
+   the World Trade National Use Graphics graphic character modification
+   module. Ten of its segments are to be copied and used with the new
+   module.
+
+x) The name of the graphic character modification module is CSTW; it is
+   stored as a new module in the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$16 0100-07003-07003-2113-00085-00085-00000-SC26UTL
+
+Example 16: Build a New Graphic Character Modification Module and
+Modify a Character Arrangement Table to Use It
+
+3800 Model 3
+
+In this example, a graphic character modification module is built. The
+module contains one user-designed character, a reverse 'E', whose 8-bit
+data code is designated as X'E0' and whose pitch is 10. An existing
+character arrangement table is then modified to include the reverse E.
+
+//GRAFMOD3 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         OPTION DEVICE=3800M3
+         GRAPHIC ASSIGN=(E0,10)
+XXXXXXXXXXXXXXX SEQ=10
+XXXXXXXXXXXXXXX SEQ=11
+XXXXXXXXXXXXXXX SEQ=12
+XXXX SEQ=13
+XXXX SEQ=14
+XXXX SEQ=15
+XXXX SEQ=16
+XXXX SEQ=17
+XXXX SEQ=18
+XXXX SEQ=19
+XXXXXXXXXXXXX SEQ=20
+XXXXXXXXXXXXX SEQ=21
+XXXXXXXXXXXXX SEQ=22
+XXXX SEQ=23
+XXXX SEQ=24
+XXXX SEQ=25
+XXXX SEQ=26
+XXXX SEQ=27
+XXXX SEQ=28
+XXXX SEQ=29
+XXXXXXXXXXXXXXX SEQ=30
+XXXXXXXXXXXXXXX SEQ=31
+XXXXXXXXXXXXXXX SEQ=32
+         NAME    BODE
+         INCLUDE GS10
+         OPTION  DEVICE=3800M3
+         TABLE   CGMID=(83,FF),GCMLIST=BODE,LOC=(E0,03,1)
+         NAME    RE10
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) DEVICE=3800M3 in the OPTION statement preceding the GRAPHIC
+   statement specifies 3800 Model 3 compatibility mode processing.
+
+x) The GRAPHIC statement's ASSIGN parameter establishes the 8-bit data
+   code, X'E0', and the width, 10-pitch, for the user-designed
+   character. The data statements that follow the GRAPHIC statement
+   describe the character's scan pattern.
+
+x) The name of the graphic character modification module is BODE, and
+   it is stored as a new module in the SYS1.IMAGELIB data set.
+
+x) The INCLUDE statement specifies that a copy of the GS10 character
+   arrangement table is to be used as the basis for the new table.
+
+x) The TABLE statement specifies the addition of the reverse E to that
+   copy of the GS10 table.
+
+x) CGMID=(83,FF) specifies the character set identifier X'83' for the
+   Gothic-10 set (which is the set already used by the GS10 table) and
+   specifies X'FF' as a character set identifier to allow accessing of
+   the second WCGM without loading it.
+
+x) GCMLIST=BODE identifies the graphic character modification module
+   containing the reverse E for inclusion in the table. LOC=(E0,03,1)
+   specifies that the reverse E, which has been assigned the 8-bit data
+   code X'E0', is to be loaded into position X'03' in the second WCGM.
+   Because this second WCGM is otherwise unused, any position in it
+   could have been used for the reverse E.
+
+x) The new character arrangement table is named RE10; it is stored as a
+   new module in the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$17 0100-07003-07003-2113-00067-00067-00000-SC26UTL
+
+Example 17: Build a Graphic Character Modification Module from
+Multiple Sources
+
+3800 Model 1
+
+In this example, a graphic character modification module is created.
+Its contents come from three different sources: nine segments are copied
+from an existing module with the INCLUDE statement; the GRAPHIC
+statement is used to select another segment to be copied; the GRAPHIC
+statement is also used to establish characteristics for a user-designed
+character. The new graphic character modification module, when built, is
+added to the SYS1.IMAGELIB.
+
+//GRAFMOD4 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         INCLUDE CSTW,DELSEG=3
+         GRAPHIC REF=(1,6A),GCM=BODE,ASSIGN=9A
+******** SEQ=06
+********** SEQ=07
+**** **** SEQ=08
+*** *** SEQ=09
+*** **** SEQ=10
+*** ****** SEQ=11
+*** ****** SEQ=12
+*** **** SEQ=13
+*** **** SEQ=14
+*** *** SEQ=15
+*** *** SEQ=16
+*** **** **** SEQ=17
+*** ******* SEQ=18
+*** ***** SEQ=19
+         NAME JPCK
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) The INCLUDE statement specifies that a copy of the graphic character
+   modification module named CSTW is to be included with the new
+   module. All segments of CSTW, except the third segment (as a result
+   of DELSEG=3), are to be copied into the new module and become the
+   module's first through ninth modification segments.
+
+x) The GRAPHIC statement specifies the module's tenth and eleventh
+   segments:
+
+   REF=(1,6A) and GCM=BODE specify that the 10th segment of the new
+   module is to be obtained by copying the first segment from the
+   graphic character modification module named BODE. In addition, the
+   segment's 8-bit data code is to be changed so that its character is
+   identified with the code X'6A'.
+
+   ASSIGN=9A specifies that the new module's 11th segment is a
+   user-designed character whose 8-bit data code is X'9A' and whose
+   width is 10-pitch (the default when no pitch value is specified).
+   The GRAPHIC statement is followed by data statements that specify the
+   character's scan pattern.
+
+x) The name of the graphic character modification module is JPCK, it is
+   stored as a new module in the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$18 0100-07003-07003-2113-00137-00137-00000-SC26UTL
+
+Example 18: Define and Use a Character in a Graphic Character
+Modification Module
+
+3800 Model 3
+
+In this example, a graphic character modification module containing a
+user-designed character is built. Next, a format character arrangement
+table is modified to include that new character. Then, a copy
+modification module is created to print the new character enclosed in a
+box of format characters. Finally, the result is tested to allow
+comparison of the output with the input.
+
+//CHAR JOB ...
+//BUILD   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         OPTION  DEVICE=3800M3
+STEP1    GRAPHIC ASSIGN=5C
+XXX XXX SEQ=01
+XXX XXX SEQ=02
+XXX XXX SEQ=03
+XXX XXX SEQ=04
+XXXXXXXXXXXXXXXXXXXXXXX SEQ=05
+XXXXXXXXXXXXXXXXXXXXXXX SEQ=06
+XXXXXXXXXXXXXXXXXXXXXXX SEQ=07
+XXX XXX SEQ=08
+XXX XXX SEQ=09
+XXX XXX SEQ=10
+XXX XXX SEQ=11
+SEQ=12
+SEQ=13
+SEQ=14
+XXXXXXXXXXXXXXXXXXXXXXX SEQ=15
+XXXXXXXXXXXXXXXXXXXXXXX SEQ=16
+XXXXXXXXXXXXXXXXXXXXXXX SEQ=17
+XXX XXX XXX SEQ=18
+XXX XXX XXX SEQ=19
+XXX XXX XXX SEQ=20
+XXX XXX XXX SEQ=21
+XXXX XXXXX XXXX SEQ=22
+XXXX XXXXXXX XXXX SEQ=23
+XXXXXXXXXXXXXXXXXXX SEQ=24
+XXXXX XXXXXX SEQ=25
+SEQ=26
+SEQ=27
+SEQ=28
+XXXXXXXXXXXXXXXXXXXXXXX SEQ=29
+XXXXXXXXXXXXXXXXXXXXXXX SEQ=30
+XXXXXXXXXXXXXXXXXXXXXXX SEQ=31
+XXXXXXX SEQ=32
+XXXXXXXXXXXXXXXXXX SEQ=33
+XXXXXXXXXXXXXXXX SEQ=34
+XXXXXXXXXXXXXXXX SEQ=35
+XXXXXXXXXXXXXXXXXX SEQ=36
+XXXXXXX SEQ=37
+XXXXXXXXXXXXXXXXXXXXXXX SEQ=38
+XXXXXXXXXXXXXXXXXXXXXXX SEQ=39
+XXXXXXXXXXXXXXXXXXXXXXX SEQ=40
+         NAME    AIBM
+STEP2    OPTION  DEVICE=3800M3
+         INCLUDE FM10
+         TABLE   GCMLIST=AIBM,LOC=(5C,2C)
+         NAME    BIBM
+STEP3    OPTION  DEVICE=3800M3
+         COPYMOD COPIES=1,LINES=58,POS=5,TEXT=(C,'W6X')
+         COPYMOD COPIES=1,LINES=59,POS=5,TEXT=(C,'7*7')
+         COPYMOD COPIES=1,LINES=60,POS=5,TEXT=(X,'E9F6E8')
+         NAME    CIBM
+/*
+//TEST   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*,CHARS=(GF10,BIBM),MODIFY=(CIBM,1)
+//SYSIN    DD  *
+         OPTION  DEVICE=3800M3
+         GRAPHIC
+         NAME    AIBM
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) The GRAPHIC statement's ASSIGN parameter specifies that the 8-bit
+   data code for the user-designed character is X'5C' and the width is
+   10-pitch (the default when no pitch is specified). The GRAPHIC
+   statement is followed by data statements that specify the
+   character's scan pattern for vertical line spacing of 6 lines per
+   inch.
+
+x) The name of the graphic character modification module is AIBM, and
+   it is stored as a new module in SYS1.IMAGELIB.
+
+x) At STEP2, the INCLUDE statement specifies that a copy of the FM10
+   character arrangement table is to be used as a basis for the new
+   module.
+
+x) The TABLE statement identifies the graphic character modification
+   module named AIBM, created in the previous step. The TABLE
+   statement's LOC parameter specifies the translation table entry
+   location (the character's 8-bit data code) of X'5C' and the position
+   (X'2C') where that character is to be loaded into the WCGM.
+
+x) The name of the new character arrangement table, which is added to
+   SYS1.IMAGELIB, is BIBM.
+
+x) At STEP3, the three COPYMOD statements specify text that is to be
+   placed on lines 58, 59, and 60 of the first copy of the output data
+   set, starting at print position 5 on each line. When used with the
+   BIBM character arrangement table, the characters W, 6, and X print as
+   a top left corner, horizontal line segment, and top right corner, all
+   in line weight 3. The characters 7, *, and 7 print as a weight-3
+   vertical line segment on both sides of the user-designed character
+   built at STEP1 (the asterisk has the EBCDIC assignment 5C, which
+   addresses that character). The hexadecimal E9, F6, and E8 complete
+   the line-weight-3 Format box around the character.
+
+x) The name of the copy modification module is CIBM; it is stored as a
+   new module on SYS1.IMAGELIB.
+
+x) At TEST, the EXEC statement calls for another execution of the
+   IEBIMAGE program to test the modules just created. On the SYSPRINT DD
+   statement the BIBM character arrangement table is the second of two
+   specified, and the CIBM copy modification module is specified with a
+   table reference character of 1, to use that BIBM table.
+
+x) The GRAPHIC statement with no operand specified calls for printing
+   of the module, AIBM, specified with the NAME statement that follows
+   it. Each page of the output listing for this IEBIMAGE run has a small
+   image of the modification printed in the lower left corner.
+
+x) The OPTION statement with the DEVICE parameter at STEP1, STEP2, and
+   STEP3 specifies 3800 Model 3 compatibility mode module format and
+   processing considerations.
+
+>< ADD NAME=IMAGE$19 0100-07003-07003-2113-00021-00021-00000-SC26UTL
+
+Example 19: List a Library Character Set Module
+
+3800 Model 1
+
+In this example, each segment of a library character set is printed.
+The scan pattern of each of the characters in the module is printed.
+
+//LIBMOD1 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(SHR),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         CHARSET
+         NAME    83
+/*
+
+The control statements are discussed below:
+
+x) NAME specifies the name of the library character set (83).
+
+>< ADD NAME=IMAGE$20 0100-07003-07003-2113-00042-00042-00000-SC26UTL
+
+Example 20: Build a Library Character Set Module
+
+3800 Model 3
+
+In this example, a library character set module is built. Its
+characters are segments copied from the World Trade National Use
+Graphics graphic character modification module. For the listing of all
+the segments of that module, see IBM 3800 Printing Subsystem
+Programmer's Guide. The EBCDIC assignments for the characters are
+replaced by WCGM-location codes. The new module is stored in the
+SYS1.IMAGELIB system data set.
+
+//LIBMOD2 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         OPTION DEVICE=3800M3
+         CHARSET REF=((24,01),(25,02),(26,03),(27,04),(28,05),         X
+               (31,06),(33,07),(35,08),(38,09),(40,0A))
+         NAME  73
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) DEVICE=3800M3 in the OPTION statement specifies 3800 Model 3
+   compatibility mode module format.
+
+x) By not specifying the GCM keyword or a library character set ID, the
+   CHARSET statement identifies the World Trade National Use Graphics
+   graphic character modification module. Ten of its segments are to be
+   copied and used with the new module. For example, the 24th segment
+   is to be copied and assigned the WCGM location 01. See the REF
+   parameter (24,01).
+
+x) The name of the library character set module is 73, and it is stored
+   as a new module in the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$21 0100-07003-07003-2113-00082-00082-00000-SC26UTL
+
+Example 21: Build a Library Character Set Module and Modify a
+Character Arrangement Table to Use It
+
+3800 Model 3
+
+In this example, a library character set module is built. The module
+contains one user-designed character, a reverse 'E', whose 6-bit
+WCGM-location code is designated as X'03', and whose pitch is 10. An
+existing character arrangement table is then modified to include the
+reverse E.
+
+//LIBMOD3 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         OPTION  DEVICE=3800M3
+         CHARSET ASSIGN=(03,10)
+XXXXXXXXXXXXXXX SEQ=10
+XXXXXXXXXXXXXXX SEQ=11
+XXXXXXXXXXXXXXX SEQ=12
+XXXX SEQ=13
+XXXX SEQ=14
+XXXX SEQ=15
+XXXX SEQ=16
+XXXX SEQ=17
+XXXX SEQ=18
+XXXX SEQ=19
+XXXXXXXXXXXXX SEQ=20
+XXXXXXXXXXXXX SEQ=21
+XXXXXXXXXXXXX SEQ=22
+XXXX SEQ=23
+XXXX SEQ=24
+XXXX SEQ=25
+XXXX SEQ=26
+XXXX SEQ=27
+XXXX SEQ=28
+XXXX SEQ=29
+XXXXXXXXXXXXXXX SEQ=30
+XXXXXXXXXXXXXXX SEQ=31
+XXXXXXXXXXXXXXX SEQ=32
+         NAME    73
+         INCLUDE GS10
+         OPTION  DEVICE=3800M3
+         TABLE   CGMID=(83,73),LOC=(E0,03,1)
+         NAME    RE10
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) DEVICE=3800M3 in the OPTION statement specifies 3800 Model 3
+   compatibility mode module format and processing considerations.
+
+x) The CHARSET statement's ASSIGN parameter establishes the 6-bit
+   WCGM-location code, X'03', and the width, 10-pitch, for the
+   user-designed character. The data statements that follow the CHARSET
+   statement describe the character's scan pattern.
+
+x) The name of the library character set module is 73, and it is stored
+   as a new module in the SYS1.IMAGELIB data set.
+
+x) The INCLUDE statement specifies that a copy of the GS10 character
+   arrangement table is to be used as the basis for the new table.
+
+x) The TABLE statement specifies the addition of the library character
+   set containing the reverse E to that copy of the GS10 table.
+   CGMID=(83,73) specifies the character set identifier X'83' for the
+   Gothic-10 set (which is the set already used by the GS10 table) and
+   specifies X'73' as a character set identifier to allow loading of
+   the second WCGM with the library character set 73.
+
+x) LOC=(E0,03,1) specifies that the reverse E, which has been assigned
+   the WCGM location 03 in the second WCGM, is to be referenced by the
+   EBCDIC code X'E0'.
+
+x) The new character arrangement table is named RE10; it is stored as a
+   new module in the SYS1.IMAGELIB data set.
+
+>< ADD NAME=IMAGE$22 0100-07003-07003-2113-00067-00067-00000-SC26UTL
+
+Example 22: Build a Library Character Set Module from Multiple
+Sources
+
+3800 Model 1
+
+In this example, a library character set module is created. Its
+contents come from three different sources: 62 segments are copied from
+an existing module with the INCLUDE statement; the CHARSET statement is
+used to select another segment to be copied; a second CHARSET statement
+is used to establish characteristics for a user-designed character. The
+new library character set module, when built, is added to the
+SYS1.IMAGELIB.
+
+//LIBMOD4 JOB ...
+//STEP1   EXEC PGM=IEBIMAGE
+//SYSUT1   DD  DISP=(OLD),DSN=SYS1.IMAGELIB
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+         INCLUDE 33,DELSEG=(3,4)
+         CHARSET REF=(1,02),GCM=BODE,ASSIGN=03
+******** SEQ=06
+********** SEQ=07
+**** **** SEQ=08
+*** *** SEQ=09
+*** **** SEQ=10
+*** ****** SEQ=11
+*** ****** SEQ=12
+*** **** SEQ=13
+*** **** SEQ=14
+*** *** SEQ=15
+*** *** SEQ=16
+*** **** **** SEQ=17
+*** ******* SEQ=18
+*** ***** SEQ=19
+         NAME    53
+/*
+
+The control statements are discussed below:
+
+x) The SYSUT1 DD statement includes DISP=OLD to ensure that no other
+   job can modify the data set while this job is executing.
+
+x) The INCLUDE statement specifies that a copy of the library character
+   set module named 33 is to be included with the new module. All
+   segments of 33, except the third and fourth segments (as a result of
+   DELSEG=3,4), are to be copied into the new module and become the
+   basis for the new module.
+
+x) The CHARSET statement specifies the module's third and fourth
+   segments:
+
+   REF=(1,02) and GCM=BODE specify that the third segment of the new
+   module is to be obtained by copying the first segment from the
+   graphic character modification module named BODE. The segment's
+   6-bit WCGM-location code is to be set so that its character is
+   identified with the code X'02'.
+
+   ASSIGN=03 specifies that the new module's fourth segment is a
+   user-designed character whose 6-bit WCGM-location code is X'03' and
+   whose width is 10-pitch (the default when no pitch value is
+   specified). The CHARSET statement is followed by data statements
+   that specify the character's scan pattern.
+
+x) The name of the library character set module is 53, it is stored as
+   a new module in the SYS1.IMAGELIB data set.
+
+</pre>
+<hr noshade size="4" color="#66CCCC">
+<h2>IEBIMAGE</h2>
+<a href="IEBIMAGE$IEBIMAGE.html">IEBIMAGE$IEBIMAGE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<h2>Categories</h2>
+<a href="$$$INDEX.html">$$$INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ADRDSSU.html">ADRDSSU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMASPZAP.html">AMASPZAP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMBLIST.html">AMBLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BATCH.html">BATCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BMC4DB2.html">BMC4DB2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CPPUPDTE.html">CPPUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CUNMITG1.html">CUNMITG1</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DFHCSDUP.html">DFHCSDUP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DITTO.html">DITTO</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTEP2.html">DSNTEP2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAD.html">DSNTIAD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAUL.html">DSNTIAUL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="EDGINERS.html">EDGINERS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FDR.html">FDR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FTP.html">FTP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="HCD.html">HCD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ICKDSF.html">ICKDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IDCAMS.html">IDCAMS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOMPR.html">IEBCOMPR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOPY.html">IEBCOPY</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBDG.html">IEBDG</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBEDIT.html">IEBEDIT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBGENER.html">IEBGENER</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBIMAGE.html">IEBIMAGE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBPTPCH.html">IEBPTPCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBUPDTE.html">IEBUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEFBR14.html">IEFBR14</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHATLAS.html">IEHATLAS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHINITT.html">IEHINITT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHLIST.html">IEHLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHMOVE.html">IEHMOVE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHPROGM.html">IEHPROGM</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEWBLINK.html">IEWBLINK</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFASMFDP.html">IFASMFDP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFHSTATR.html">IFHSTATR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IPCS.html">IPCS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ISRSUPC.html">ISRSUPC</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IXCMIAPU.html">IXCMIAPU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="JOBCARD.html">JOBCARD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="RACF.html">RACF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SDSF.html">SDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SMPE.html">SMPE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SORT.html">SORT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SRCHFOR.html">SRCHFOR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="TRSMAIN.html">TRSMAIN</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="zosutil.seq.html">INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="../index.html">Up one level</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+
+<hr noshade size="4" color="#CCCC66">
+
+<A NAME="pgbottom"></A>
+<hr noshade size="4">
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+document.write("<b>" + location.href + "</b>")
+// -->
+</SCRIPT>
+
+<hr noshade size="4">
+<b> updt2htm.pl Copyright:</b> &copy; 02007 by Kenneth E Tomiak
+<br>
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+var d = new Date(document.lastModified)
+document.write("<b>Last modified:</b> " + d)
+// -->
+</SCRIPT>
+<hr noshade size="4">
+
+</body>
+</html>

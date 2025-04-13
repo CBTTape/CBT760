@@ -1,0 +1,445 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--                                                                 -->
+<!-- Version       | TimeStamp         | Description of change       -->
+<!-- ------------- | ----------------- | --------------------------- -->
+<!-- 1.0.0 KTomiak | 20070802 21:37:42 | Original version            -->
+<!--                                                                 -->
+
+<html>
+ <!---
+ Author: Kenneth E Tomiak
+ updt2htm.pl Copyright (c) 02007 by Kenneth E Tomiak
+ --->
+
+<head>
+ <title>
+ zosutil.seq - ICKDSF Examples
+ </title>
+
+ <!--META_START-->
+
+ <meta HTTP-EQUIV="Content-Type" content="text/html ; charset=iso8859-1">
+ <meta name="ROBOTS" content="INDEX, FOLLOW">
+ <meta name="abstract" content="Web pages for files in zosutil.seq">
+ <meta name="Keywords" content="zosutil.seq">
+ <meta name="owner" content="Author of zosutil.seq">
+ <meta name="author" content="d:\home\ktomiak\PERL\updt2htm.pl">
+ <meta name="modified" content="20070802">
+ <meta name="review" content="20071231">
+ <meta name="security" content="public">
+ <meta name="ms.locale" content="EN-US">
+ <meta name="Generator" content="Kenneth Tomiak's perl program d:\home\ktomiak\PERL\updt2htm.pl">
+
+ <!--META_END-->
+
+</head>
+<BODY BGCOLOR="#FFFFFF" LINK="#000066" ALINK="#000088">
+
+ <A NAME="pgtop"></A>
+
+ <center>
+ <h1>
+ <a href="../zosutil.seq.html">zosutil.seq</a> - ICKDSF Examples
+ </h1>
+ </center>
+
+<hr noshade size="4" color="#66CCCC">
+
+<pre>
+./ ADD NAME=ICKDSF   0666-07209-07209-1454-00001-00001-00000-DIR2UPDT
+>< ADD NAME=DSF      0102-07017-07051-2303-00004-00008-00000-KTOMIAK
+
+DSF$01   Initialize a non-SMS volume
+DSF$02   Add IPLTEXT
+DSF$03   Initialize a SMS volume
+DSF$04   Disable indexed vtoc (convert to osvtoc)
+DSF$05   Enable Indexed vtoc
+DSF$06   Standard "small" vtoc 1-3-3-8
+
+>< ADD NAME=DSF$01   0102-07017-07037-2304-00018-00116-00000-KTOMIAK
+
+//INITVOL EXEC PGM=ICKDSF
+//DD4VOL   DD  DISP=OLD,UNIT=SYSDA,VOL=SER=NEWVOL
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+  /*  DESCRIPTION OF WHAT VOLUME IS FOR.                            */
+  INIT     DDNAME(DD4VOL) -
+           MAP -
+         NOCHECK -
+         NORECLAIM -
+         NOVERIFY    /* OR VERIFY(OLDVOL) */ -
+           PURGE -
+         NOVALIDATE -
+           VOLID(NEWVOL) -
+           VTOC(0,1,44) -
+           INDEX(3,0,5)
+/*
+//
+
+======================================================================
+
+INITIALIZE DASD VOLUMES WITH ICKDSF
+
+       3 3 9 0                                   15 TRKS/CYL
+MOD DSCB/TRK IDX/TRK MAXIDX MAXVTOC   VVDS    MAXCYLS  MAXTRKS
+  1    50      21        17     328      ?       1113    16695
+  2    50      21        33     655      ?       2226    33390
+  3    50      21        50     983      ?       3339    50085
+  9    50      21       150    2944      ?      10017   150255
+ 27    50      21       491    9828      ?      32760   491400
+
+IF YOU DON'T MAKE THEM BIG ENOUGH THEN YOU CAN'T GET AS MANY SMALL
+DATASETS ON THE VOLUME.
+
+======================================================================
+
+ SOME THOUGHTS, MAY BE MYTH
+
+ CYL 0 TRK 0 IS THE LABEL
+ VTOC SHOULD END ON A CYLINDER BOUNDARY
+           VTOC(0,1,44) -
+                    |= SIZE IN TRACKS
+                  |=== TRACK TO BEGIN AT WITHIN CYLINDER
+                |===== CYLINDER TO BEGIN AT
+ INDEXED VTOC SHOULD IMMEDIATELY FOLLOW
+           INDEX(3,0,5)
+                     |= SIZE IN TRACKS
+                   |=== TRACK TO BEGIN AT WITHIN CYLINDER
+                 |===== CYLINDER TO BEGIN AT
+   MAKES IT EASY TO CALCULATE, TAKE (VTOC SIZE IN TRACKS + 1) / 15
+ VVDS SHOULD IMMEDIATELY FOLLOW THE IXVTOC
+   ALLOCATE ONE IF YOU WILL HAVE MANY SMALL CLUSTERS ON THE VOLUME
+
+ IN DAYS OF TRUE 3390 SPINDLES YOU WOULD PLACE THESE THREE SPECIAL
+ AREAS IN THE MIDDLE OF THE VOLUME SO ARM MOVEMENT WAS MINIMIZED.
+ FROM ACCESSING THE VTOC, IXVTOC, VVDS TO ACTUAL DATA WAS NEVER MORE
+ THAN HALF A PLATTER'S DISTANCE.
+
+ NOWADAYS, DASD ARRAYS USE 3.5 INCH DRIVES AND SOFTWARE SO THIS IS
+ NO LONGER THE CONCERN.
+
+ SIZING A VTOC AND IXVTOC BASED ON MAXIMUM CAPACITY AND ADHERING
+ TO THE CYLINDER BOUNDARY CONCERN:
+
+======================================================================
+
+ A VOLUME FOR JES SPOOL WON'T NEED MUCH
+ VTOC SHOULD END ON A CYLINDER BOUNDARY, SO 0,1,14 FILLS THE 1ST CYL,
+ USES 14 TRACKS. REALLY DOESN'T NEED TO HOLD MORE THAN FOUR ENTRIES.
+   1) THE VTOC ITSELF
+   2) THE IXVTOC,
+   3) A CHECKPOINT DATASET,
+   4) ONE HASPACE DATASET.
+
+           VTOC(0,1,14) -
+           INDEX(1,0,5)
+
+======================================================================
+
+ A VOLUME FOR JES SPOOL WON'T NEED MUCH
+ VTOC SHOULD END ON A CYLINDER BOUNDARY, SO 0,1,14 FILLS THE 1ST CYL,
+ USES 14 TRACKS. REALLY DOESN'T NEED TO HOLD MORE THAN FOUR ENTRIES.
+   1) THE VTOC ITSELF
+   2) THE IXVTOC,
+   3) A CHECKPOINT DATASET,
+   4) ONE HASPACE DATASET.
+
+           VTOC(0,1,14) -
+           INDEX(1,0,5)
+
+======================================================================
+
+ STEPPING UP EACH VOLUME TYPE PLUS CYLINDER BOUNDARIES
+   3390-1  VTOC(0,1,314)  IXVTOC(21,0,15)
+   3390-2  VTOC(0,1,644)  IXVTOC(43,0,30)
+   3390-3  VTOC(0,1,974)  IXVTOC(65,0,45)
+   3390-9  VTOC(0,1,2939) IXVTOC(196,0,150)
+   3390-27 VTOC(0,1,9824) IXVTOC(655,0,480)
+
+ YOU CAN SEE FROM THE TABLE UP ABOVE AND THESE STATEMENTS THAT IF
+ YOU WANT TO USE THE LARGEST SIZE AND HIT CYLINDER BOUNDARIES YOU
+ WILL NEED TO MAKE SOME ADJUSTMENTS. LIKE THESE:
+
+   3390-1  VTOC(0,2,328)  IXVTOC(22,13,17)
+   3390-2  VTOC(0,5,655)  IXVTOC(44,12,33)
+   3390-3  VTOC(0,7,983)  IXVTOC(66,10,50)
+   3390-9  VTOC(0,11,2944) IXVTOC(197,0,150)
+   3390-27 VTOC(0,12,9828) IXVTOC(656,0,480)
+
+ TRY IT FIRST, I'M DOING THE MATH AND COULD BE OFF BY A TRACK.
+
+ FOR A 3390-1, 328 TRACKS WOULD NEED TO END AT 330, SO 330-328=2.
+ THUS I USED 0,2,328. 330 / 15 = 22. 13+17 = 30. SO 22,13,17.
+
+/*
+//
+>< ADD NAME=DSF$02   0100-07017-07017-0114-00016-00016-00000-KTOMIAK
+
+//IPLTEXT  EXEC PGM=ICKDSF
+//SYSPRINT DD SYSOUT=*
+//VSDD     DD DISP=OLD,UNIT=SYSDA,VOL=SER=FTVL2A
+//IPLTXT   DD DSN=SYS1.SAMPLIB(IPLRECS),DISP=SHR,
+//            UNIT=SYSDA,VOL=SER=FTVL2A
+//         DD DSN=SYS1.SAMPLIB(IEAIPL00),DISP=SHR,
+//            UNIT=SYSDA,VOL=SER=FTVL2A
+//SYSIN    DD  *
+  REFORMAT DNAME(VSDD)
+         NOVERIFY
+         NOBOOT
+           IPL(IPLTXT,OBJ)
+/*
+//
+
+>< ADD NAME=DSF$03   0100-07051-07051-2308-00118-00118-00000-KTOMIAK
+
+//INITVOL EXEC PGM=ICKDSF
+//DD4VOL   DD  DISP=OLD,UNIT=SYSDA,VOL=SER=NEWVOL
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+  /*  DESCRIPTION OF WHAT VOLUME IS FOR.                            */
+  INIT -
+         NOCHECK -
+           DDNAME(DD4VOL) -
+           INDEX(3,0,5) -
+           MAP -
+           PURGE -
+         NORECLAIM -
+           STORAGEGROUP(stogroupname) -
+         NOVALIDATE -
+         NOVERIFY    /* OR VERIFY(OLDVOL) */ -
+           VOLID(NEWVOL) -
+           VTOC(0,1,44)
+/*
+//
+
+======================================================================
+
+INITIALIZE DASD VOLUMES WITH ICKDSF
+
+       3 3 9 0                                   15 TRKS/CYL
+MOD DSCB/TRK IDX/TRK MAXIDX MAXVTOC   VVDS    MAXCYLS  MAXTRKS
+  1    50      21        17     328      ?       1113    16695
+  2    50      21        33     655      ?       2226    33390
+  3    50      21        50     983      ?       3339    50085
+  9    50      21       150    2944      ?      10017   150255
+ 27    50      21       491    9828      ?      32760   491400
+
+IF YOU DON'T MAKE THEM BIG ENOUGH THEN YOU CAN'T GET AS MANY SMALL
+DATASETS ON THE VOLUME.
+
+======================================================================
+
+ SOME THOUGHTS, MAY BE MYTH
+
+ CYL 0 TRK 0 IS THE LABEL
+ VTOC SHOULD END ON A CYLINDER BOUNDARY
+           VTOC(0,1,44) -
+                    |= SIZE IN TRACKS
+                  |=== TRACK TO BEGIN AT WITHIN CYLINDER
+                |===== CYLINDER TO BEGIN AT
+ INDEXED VTOC SHOULD IMMEDIATELY FOLLOW
+           INDEX(3,0,5)
+                     |= SIZE IN TRACKS
+                   |=== TRACK TO BEGIN AT WITHIN CYLINDER
+                 |===== CYLINDER TO BEGIN AT
+   MAKES IT EASY TO CALCULATE, TAKE (VTOC SIZE IN TRACKS + 1) / 15
+ VVDS SHOULD IMMEDIATELY FOLLOW THE IXVTOC
+   ALLOCATE ONE IF YOU WILL HAVE MANY SMALL CLUSTERS ON THE VOLUME
+
+ IN DAYS OF TRUE 3390 SPINDLES YOU WOULD PLACE THESE THREE SPECIAL
+ AREAS IN THE MIDDLE OF THE VOLUME SO ARM MOVEMENT WAS MINIMIZED.
+ FROM ACCESSING THE VTOC, IXVTOC, VVDS TO ACTUAL DATA WAS NEVER MORE
+ THAN HALF A PLATTER'S DISTANCE.
+
+ NOWADAYS, DASD ARRAYS USE 3.5 INCH DRIVES AND SOFTWARE SO THIS IS
+ NO LONGER THE CONCERN.
+
+ SIZING A VTOC AND IXVTOC BASED ON MAXIMUM CAPACITY AND ADHERING
+ TO THE CYLINDER BOUNDARY CONCERN:
+
+======================================================================
+
+ A VOLUME FOR JES SPOOL WON'T NEED MUCH
+ VTOC SHOULD END ON A CYLINDER BOUNDARY, SO 0,1,14 FILLS THE 1ST CYL,
+ USES 14 TRACKS. REALLY DOESN'T NEED TO HOLD MORE THAN FOUR ENTRIES.
+   1) THE VTOC ITSELF
+   2) THE IXVTOC,
+   3) A CHECKPOINT DATASET,
+   4) ONE HASPACE DATASET.
+
+           VTOC(0,1,14) -
+           INDEX(1,0,5)
+
+======================================================================
+
+ A VOLUME FOR JES SPOOL WON'T NEED MUCH
+ VTOC SHOULD END ON A CYLINDER BOUNDARY, SO 0,1,14 FILLS THE 1ST CYL,
+ USES 14 TRACKS. REALLY DOESN'T NEED TO HOLD MORE THAN FOUR ENTRIES.
+   1) THE VTOC ITSELF
+   2) THE IXVTOC,
+   3) A CHECKPOINT DATASET,
+   4) ONE HASPACE DATASET.
+
+           VTOC(0,1,14) -
+           INDEX(1,0,5)
+
+======================================================================
+
+ STEPPING UP EACH VOLUME TYPE PLUS CYLINDER BOUNDARIES
+   3390-1  VTOC(0,1,314)  IXVTOC(21,0,15)
+   3390-2  VTOC(0,1,644)  IXVTOC(43,0,30)
+   3390-3  VTOC(0,1,974)  IXVTOC(65,0,45)
+   3390-9  VTOC(0,1,2939) IXVTOC(196,0,150)
+   3390-27 VTOC(0,1,9824) IXVTOC(655,0,480)
+
+ YOU CAN SEE FROM THE TABLE UP ABOVE AND THESE STATEMENTS THAT IF
+ YOU WANT TO USE THE LARGEST SIZE AND HIT CYLINDER BOUNDARIES YOU
+ WILL NEED TO MAKE SOME ADJUSTMENTS. LIKE THESE:
+
+   3390-1  VTOC(0,2,328)  IXVTOC(22,13,17)
+   3390-2  VTOC(0,5,655)  IXVTOC(44,12,33)
+   3390-3  VTOC(0,7,983)  IXVTOC(66,10,50)
+   3390-9  VTOC(0,11,2944) IXVTOC(197,0,150)
+   3390-27 VTOC(0,12,9828) IXVTOC(656,0,480)
+
+ TRY IT FIRST, I'M DOING THE MATH AND COULD BE OFF BY A TRACK.
+
+ FOR A 3390-1, 328 TRACKS WOULD NEED TO END AT 330, SO 330-328=2.
+ THUS I USED 0,2,328. 330 / 15 = 22. 13+17 = 30. SO 22,13,17.
+
+/*
+//
+>< ADD NAME=DSF$04   0100-07021-07021-2316-00011-00011-00000-KTOMIAK
+
+//OSVTOC  EXEC PGM=ICKDSF
+//SYSPRINT DD  SYSOUT=*
+//volser   DD  DISP=OLD,UNIT=SYSALLDA,VOL=SER=volser
+//SYSIN    DD *
+  BUILDIX -
+    DDNAME(volser) -
+    OSVTOC -
+    PURGE
+/*
+
+>< ADD NAME=DSF$05   0101-07021-07051-2309-00013-00013-00000-KTOMIAK
+
+//IXVTOC  EXEC PGM=ICKDSF
+//SYSPRINT DD  SYSOUT=*
+//HOSPITAL DD  DUMMY
+//volser   DD  DISP=(NEW,KEEP),DSN=SYS1.VTOCIX.volser,
+//             UNIT=3390,SPACE=(TRK,30,,CONTIG),
+//             VOL=SER=volser
+//SYSIN    DD  *
+  BUILDIX -
+    DDNAME(volser) -
+    IXVTOC
+/*
+
+>< ADD NAME=DSF$06   0102-07051-07051-2313-00012-00026-00000-BRIANP
+
+//DSFINIT EXEC PGM=ICKDSF,PARM='NOREPLYU'
+//SYSPRINT DD  SYSOUT=*
+//volser   DD  DISP=old,unit=sysallda,vol=ser=volser
+//SYSIN    DD  *
+  INIT    -
+    DDNAME(volser) -
+    index(0,4,3) -
+
+    VERIFY(oldser) -
+    VOLID(newvol) -
+    vtoc(0,7,8)
+/*
+//* IDCAMS
+//AMSVVDS EXEC PGM=IDCAMS,REGION=2M
+//SYSPRINT DD  SYSOUT=*
+//SYSIN    DD  *
+  define cluster( -
+    name(sys1.vvds.vnewvol) -
+    volume(newvol) -
+    trk(3 3) -
+    nonindexed -
+  )
+/*
+//
+
+</pre>
+<hr noshade size="4" color="#66CCCC">
+<h2>ICKDSF</h2>
+<a href="ICKDSF$ICKDSF.html">ICKDSF$ICKDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<h2>Categories</h2>
+<a href="$$$INDEX.html">$$$INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ADRDSSU.html">ADRDSSU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMASPZAP.html">AMASPZAP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="AMBLIST.html">AMBLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BATCH.html">BATCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="BMC4DB2.html">BMC4DB2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CPPUPDTE.html">CPPUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="CUNMITG1.html">CUNMITG1</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DFHCSDUP.html">DFHCSDUP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DITTO.html">DITTO</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTEP2.html">DSNTEP2</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAD.html">DSNTIAD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="DSNTIAUL.html">DSNTIAUL</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="EDGINERS.html">EDGINERS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FDR.html">FDR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="FTP.html">FTP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="HCD.html">HCD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ICKDSF.html">ICKDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IDCAMS.html">IDCAMS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOMPR.html">IEBCOMPR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBCOPY.html">IEBCOPY</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBDG.html">IEBDG</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBEDIT.html">IEBEDIT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBGENER.html">IEBGENER</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBIMAGE.html">IEBIMAGE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBPTPCH.html">IEBPTPCH</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEBUPDTE.html">IEBUPDTE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEFBR14.html">IEFBR14</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHATLAS.html">IEHATLAS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHINITT.html">IEHINITT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHLIST.html">IEHLIST</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHMOVE.html">IEHMOVE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEHPROGM.html">IEHPROGM</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IEWBLINK.html">IEWBLINK</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFASMFDP.html">IFASMFDP</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IFHSTATR.html">IFHSTATR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IPCS.html">IPCS</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ISRSUPC.html">ISRSUPC</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="IXCMIAPU.html">IXCMIAPU</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="JOBCARD.html">JOBCARD</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="RACF.html">RACF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SDSF.html">SDSF</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SMPE.html">SMPE</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SORT.html">SORT</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="SRCHFOR.html">SRCHFOR</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="TRSMAIN.html">TRSMAIN</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="zosutil.seq.html">INDEX</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+<a href="../index.html">Up one level</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<hr noshade size="4" color="#66CCCC">
+
+<hr noshade size="4" color="#CCCC66">
+
+<A NAME="pgbottom"></A>
+<hr noshade size="4">
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+document.write("<b>" + location.href + "</b>")
+// -->
+</SCRIPT>
+
+<hr noshade size="4">
+<b> updt2htm.pl Copyright:</b> &copy; 02007 by Kenneth E Tomiak
+<br>
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+var d = new Date(document.lastModified)
+document.write("<b>Last modified:</b> " + d)
+// -->
+</SCRIPT>
+<hr noshade size="4">
+
+</body>
+</html>

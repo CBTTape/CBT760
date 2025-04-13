@@ -1,0 +1,46 @@
+#!/bin/sh
+#######################################################################
+#
+# Source: SHELL(java5)
+# Author: "Kenneth E Tomiak" <CBT_Ken@KTomiak.biz>
+# Guide:  This script will prepend java5 to the PATH variable
+#         and then invoke the compiler with all of the passed
+#         arguments.
+# Syntax: java5 {any valid java arguments}
+#
+# History:
+#   Date     Your-id  What you changed
+# ---------- -------- -------------------------------------------------
+# 2007-01-17 KTomiak  Added displays to aid in debugging
+# 2007-01-16 KTomiak  Updated to use java Version 1.5
+#
+#######################################################################
+echo "Script name is: $0."
+echo "Date: `date`."
+if [ $# = 0 ]
+  then
+    echo "You must pass some arguments to $0."
+  else
+    if [ $# = 1 ]
+      then
+        echo "You passed $# argument."
+        echo "It is: $@"
+      else
+        echo "You passed $# arguments."
+        echo "They are: $@"
+    fi
+    export PATH=/etc/java/J5.0/bin:$PATH
+    echo "Please be patient, I'm passing control to java 1.5 now,"
+    java $@
+    let "mystate = $?"
+    if [ $mystate = 0 ]
+      then
+        echo "Good job, it worked."
+      else
+        echo "The java compiler ended with Status($mystate)."
+        echo "Whatever went wrong wasn't my fault."
+        echo "$0 will exit with status($mystate), too."
+    fi
+fi
+echo "Done."
+exit $mystate

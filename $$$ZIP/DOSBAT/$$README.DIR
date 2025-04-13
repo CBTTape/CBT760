@@ -1,0 +1,43 @@
+
+Filename            Purpose of script or file
+------------------- ---------------------------------------------------
+$$README.BAT        Obvious to PC users to try and run it.
+$$README.DIR        This file of brief comments of what is in this dir
+BAT.BAT             Show bat files in any directory
+DIR2UPDT.BAT        Turn directory into IEBUPDTE stream
+FTPBACKUP.BAT       Submit special backup and retrieve files
+FTPBKUP             Sample JOB
+FTPCANCEL.BAT       Submit a cancel command for yourself
+FTPCD.BAT           Login and chdir
+FTPCDUC.BAT         Convert parm to upper case, login, chdir
+FTPSETCONFIG.BAT    Set name of configuration file to use
+FTPIBM.BAT          Initial variable configuration for IBM software
+FTPGETASCII.BAT     Get one file in ASCII mode
+FTPGETBINARY.BAT    Get one file in binary mode
+FTPIVP.BAT          Exercise FTP with IEBCOPY output
+FTPLOGIN.BAT        Login
+FTPMGETASCII.BAT    Multiple get in ASCII mode
+FTPMGETBINARY.BAT   Multiple get in binary mode
+FTPMKDIR            Create a new directory (PDSE)
+FTPMPUTASCII80.BAT  Multiple put ASCII lrecl 80
+FTPMPUTBINARY80.BAT Multiple put binary lrecl80
+FTPPUTASCII80.BAT   Single put ASCII lrecl 80
+FTPPUTBINARY80.BAT  Single put binary lrecl 80
+FTPSCRIPT.BAT       FTP with a script
+FTPSCRIPT.TXT       Sample FTP script
+FTPSETUP.BAT        Sample creating PDSE and loading them
+FTPSETCONFIG.BAT    Name which configuration setting bat file to use
+FTPSETATTRIBUTES.BAT Add quote site subcommands for ALLOC
+FTPSGD.BAT          Standard Global Disclaimer
+FTPSUBMIT.BAT       Submit and job and get the output
+HOSTDEFAULT.BAT     Default variable configuration file
+IEBBKUP             Sample JOB to IEBCOPY a PDS to backup
+IEBREST             Sample JOB to IEBCOPY backup to a PDS
+II13288.BAT         Get some IBM tools
+MBR2UPDT.BAT        Append individual file to stream
+OOREXX.BAT          Run a REXX program from new PATH
+PARMSALL.BAT        Show difference in getting all parms
+PARMSIVP.BAT        Demonstrate changing case of parms
+PARMSLOW.BAT        Turn parms into lowercase
+PARMSUP.BAT         Turn parms into uppercase
+Z9999999            Place holder as last member

@@ -1,0 +1,73 @@
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+/* Show all the SQL Control Area fields.                             */
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
+show_sqlca:
+  Say TIME() ">>ERROR>>",
+      "sqlcode="sqlcode,
+      "sqlerrmc="sqlerrmc,
+      "sqlerrp="sqlerrp
+      Say TIME() ">>ERROR>>",
+      "sqlerrd.1="sqlerrd.1,
+      "  .2="sqlerrd.2,
+      "  .3="sqlerrd.3,
+      "  .4="sqlerrd.4,
+      "  .5="sqlerrd.5,
+      "  .6="sqlerrd.6
+  Say TIME() ">>ERROR>>",
+      "sqlwarn.0="sqlwarn.0,
+      "  .1="sqlwarn.1,
+      "  .2="sqlwarn.2,
+      "  .3="sqlwarn.3,
+      "  .4="sqlwarn.4,
+      "  .5="sqlwarn.5,
+      "  .6="sqlwarn.6,
+      "  .7="sqlwarn.7,
+      "  .8="sqlwarn.8,
+      "  .9="sqlwarn.9,
+      "  .10="sqlwarn.10
+  Say TIME() ">>ERROR>>",
+      "sqlstate="sqlstate
+
+  SQL_ERRD = ""
+  Do I = 1 To 6
+    SQL_ERRD = SQL_ERRD||D2C(SQLERRD.I,4)
+  End
+  SQL_WARN = ""
+  Do I = 0 To 10
+    SQL_WARN = SQL_WARN||LEFT(SQLWARN.I,1)
+  End
+  SQLCA = 'SQLCA   '||D2C(136,4)||D2C(SQLCODE,4)||D2C(70,2),
+    ||LEFT(SQLERRMC,70)||'DSN     '||,
+    SQL_ERRD||SQL_WARN||LEFT(SQLSTATE,5)
+/*   If the length is beyond DSNTIAR possible values (72-240), reset */
+  If MSG_LEN < 72 | MSG_LEN > 240 Then,
+    MSG_LEN = 120  /* Outside scope */
+  If MSG_LEN = "MSG_LEN" Then,
+    MSG_LEN = 120  /* Default msg length 120 */
+  DB2_ERR_MSG = D2C(MSG_LEN * 12,2) || COPIES(' ',MSG_LEN * 12)
+  DB2_ERR_LEN = D2C(MSG_LEN,4)
+                     /* Execute DSNTIAR program with SQLCA/Parm data */
+  Address LINKPGM "DSNTIAR SQLCA DB2_ERR_MSG DB2_ERR_LEN"
+  If RC < 5 Then,
+    Do
+      If RC = 4 Then Say "DSNTIAR RC=4 Message Area Truncated"
+      S_POS = 3           /* Bypass the length bytes in Message Area */
+      Do I = 1 to 12            /* Loop through all lines of message */
+        MSG_TEXT = Substr(DB2_ERR_MSG,S_POS,MSG_LEN) /* Pick out text */
+        MSG_TEXT = Strip(MSG_TEXT,T," ")   /* Remove trailing blanks */
+        If MSG_TEXT > " " Then Say MSG_TEXT  /* Echo msg to terminal */
+        Else            Iterate    /* Some msg lines are blank, skip */
+        S_POS = S_POS + MSG_LEN   /* Skip to next "line" of MSG data */
+     End I
+    End
+  Else,
+    Do   /* If DSNTIAR fails for any reason, print SQLCA info anyway */
+      Say "Call to DSNTIAR - Failed. RC=" RC
+      Say 'SQLCODE ='SQLCODE; Say 'SQLERRM ='SQLERRMC
+      Say 'SQLERRP ='SQLERRP; Say 'SQLSTATE='SQLSTATE
+      XX = "SQLERRD ="
+      Do I = 1 to 6 ; XX = XX||SQLERRD.I||',';End;Say XX
+      XX = "SQLWARN ="
+      Do I = 0 to 10; XX = XX||SQLWARN.I||',';End;Say XX
+    End
+  Return

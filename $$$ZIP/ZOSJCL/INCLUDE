@@ -1,0 +1,9 @@
+
+// INCLUDE
+
+Pulls in JCL from a member of your JCLLIB specification or the
+concatenation of PROCLIBs as defined by your installation.
+
+//MYPROCS JCLLIB ORDER=(MYSYS.IVPLIB,SYS1.PROCLIB)
+//INC1    INCLUDE MEMBER=JES2INC
+

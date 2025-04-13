@@ -1,0 +1,13 @@
+
+/*NOTIFY
+
+Use to direct where NOTIFY messages are sent. If you submit a job on
+SYSTEMA with a /*ROUTE XEQ SYSTEMB and want to be notified on SYSTEMC,
+then add /*NOTIFY SYSTEMC.URUSRID.
+
+/*NOTIFY {nodename.userid }
+         {nodename:userid }
+         {nodename/userid }
+         {nodename(userid)}
+         {userid }
+

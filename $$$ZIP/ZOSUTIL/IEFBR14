@@ -1,0 +1,110 @@
+>< ADD NAME=BR14     0102-07016-07051-2314-00006-00008-00000-KTOMIAK
+
+BR14$01   BR14 DOING NOTHING
+BR14$02   BR14 ALLOCATING A NEW DATASET
+BR14$03   DELETING A DATASET
+BR14$04   MOD,DELETE BECAUSE YOU WEE TOO LAZY TO DELETE IT
+BR14$05   CARRY ALONG A CANCEL COMMAND
+BR14$06   BR14 ALLOCATING A NEW DATASET WITH LARGEST CONTIGUOUS AREA
+
+>< ADD NAME=BR14$01  0100-07010-07010-2253-00004-00004-00000-KTOMIAK
+
+//*
+//BR14    EXEC PGM=IEFBR14,PARM='&ALLSYMBOLICS'
+
+>< ADD NAME=BR14$02  0101-07010-07010-2256-00007-00016-00000-KTOMIAK
+
+IEFBR14 has been used for years as a way to run a program that
+should not abend. It allowed people to allocate new datasets,
+conditionally managing a dataset, and even delete a dataset.
+
+It makes more sense to me to allocate the new dataset
+in the step you use it in. There you can code RLSE:
+//     space=(typ,(pri,sec),RLSE)
+which frees unused space when you close/free the data set.
+
+//*
+//BR14    EXEC PGM=IEFBR14
+//OKUSE    DD  DISP=(NEW,CATLG),DSN=SOME.DSN,
+//             UNIT=disk,SPACE=(TRK,(20,20))
+
+
+>< ADD NAME=BR14$03  0100-07010-07010-2309-00020-00020-00000-KTOMIAK
+
+IEFBR14 has been used for years as a way to run a program that
+should not abend. It allowed people to allocate new datasets,
+conditionally managing a dataset, and even delete a dataset.
+
+//*
+//STEP1   EXEC PGM=IEFBR14
+//OKUSE    DD  DISP=(NEW,PASS),DSN=SHARE##.DSN,
+//             UNIT=SYSDA,SPACE=(TRK,(10,0))
+//*
+//S1       IF (STEP1.RC = 0) THEN
+//STEP2   EXEC PGM=IEFBR14
+//OKUSE    DD  DISP=(OLD,DELETE),DSN=SHARE##.DSN,
+//             UNIT=SYSDA,VOL=REF=*.STEP1.OKUSE
+//        ELSE
+//STEP3   EXEC PGM=IEFBR14
+//OKUSE    DD  DISP=(OLD,CATLG),DSN=SHARE##.DSN,
+//             UNIT=SYSDA,VOL=REF=*.STEP1.OKUSE
+//        ENDIF
+//
+>< ADD NAME=BR14$04  0101-07010-07010-2254-00006-00019-00000-KTOMIAK
+
+With the advent of System Managed Storage as a discipline in the 1980's
+there came better and safer ways of managing datasets. Since there is
+no good reason to use IEFBR14 to allocate a dataset with a
+DISP=(MOD,DELETE) just to delete it if it did exist, you should go look
+at the AMS* members for the better way.
+
+Stop complaining about slow performance if you are using this method.
+You are forcing the system to do I/O on a disk volume to allocate a
+dataset and then turn around and do I/O to delete the dataset.
+That is not efficient.
+
+See the AMS# members for a cleaner way to delete a data set.
+
+//*
+//BR14    EXEC PGM=IEFBR14,PARM='&ALLSYMBOLICS'
+//POORUSE  DD  DISP=(MOD,DELETE),DSN=SOME.DSN,
+//             UNIT=disk,SPACE=(400,(20,20))
+
+>< ADD NAME=BR14$05  0100-07021-07021-2308-00023-00023-00000-KTOMIAK
+
+From time to time I end up running a rexx exec I amdeveloping and
+it gets hung up where I can't cancel out of it. I keep a member in
+my pds named cancelme that I can submit using ftp.
+
+//jobname job (),'',....
+//*
+//        COMMAND 'C U=MYUSERID'
+//*
+//BR14    EXEC PGM=IEFBR14
+//
+
+From another system or your desktop:
+
+ftp mainframe.hostname.or.ip.address
+your_userid
+your_password
+quote set filetype=jes
+put cancelme
+quit
+
+Of course if your installation does not allow you to submit commands
+in this fashion then you call someone who can cancel you.
+>< ADD NAME=BR14$06  0100-07051-07051-2318-00013-00013-00000-KTOMIAK
+
+IEFBR14 has been used for years as a way to run a program that
+should not abend. It allowed people to allocate new datasets,
+conditionally managing a dataset, and even delete a dataset.
+
+//*
+//STEP1   EXEC PGM=IEFBR14
+//HASPACE  DD  DISP=(NEW,KEEP),DSN=SYS1.HASPACE,
+//             DSNTYPE=LARGE,                        <=== THE TRICK #1
+//             UNIT=SYSALLDA,vol=ser=spool#,
+//             SPACE=(CYL,1,,MXIG)                   <=== THE TRICK #2
+//*
+

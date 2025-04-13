@@ -1,0 +1,297 @@
+>< ADD NAME=SMPE     0104-07016-07017-0021-00006-00013-00000-KTOMIAK
+
+SMPE$01   RSU Philosophy
+SMPE$02   Receive from network
+SMPE$03   - control card for ORDRSRVR
+SMPE$04   - control card for MYCLIENT
+SMPE$05   Apply check
+SMPE$06   Apply
+SMPE$07   Accept check
+SMPE$08   Accept
+SMPE$09   Report errsysmods
+SMPE$10   Compare zones
+SMPE$11   Reject purge
+
+>< ADD NAME=SMPE$01  0100-07016-07016-2158-00098-00098-00000-KTOMIAK
+http://www-03.ibm.com/servers/eserver/zseries/zos/servicetst/getserv.html
+
+Consolidated Service Test and the RSU
+
+Getting an RSU
+
+Do the following to obtain and install the service we're recommending:
+
+1) Order a current preventive service deliverable that supports RSU.
+   IBM recommends that you use ShopzSeries to place your service order
+   for the z/OS and OS/390 platforms.  Effective with SMP/E V3.4, you
+   can also use SMP/E Internet Service Retrieval to order preventive
+   service, with options to specify:
+
+  .) Critical service
+  .) Recommended service, which includes Recommended Service Update
+     SOURCEID (RSUyynn) and all PTFs that resolve HIPER problems or PTFs
+     in error (critical service)
+  .) All service includes all currently available PTFs.
+
+2) SMP/E RECEIVE the PTFs and RSU assign statements into the global
+   zone.
+
+3) Get and receive the latest Enhanced HOLDDATA . Use the instructions
+   on the Enhanced HOLDDATA for z/OS and OS/390 for instructions on
+   getting the Enhanced HOLDDATA.
+
+   For a list of PTFs included in the service package, see one of the
+   following:
+
+  .) When you order a current preventive service deliverable, the list
+     of PTFs will be included in the order.
+  .) Find the PTFs included in an RSU package by selecting the
+     RSUyymm.txt file for the RSU you're interested in. For complete
+     information on ++ASSIGN statements and Enhanced HOLDDATA, see the
+     Enhanced HOLDDATA for z/OS and OS/390.
+
+   For a list of PTFs that we could not include in CST testing because
+   of unresolved PE fixes, see:
+
+  .) Excluded service for sourceid RSU0612, which includes all service
+     through the end of September 2006 and PE resolution and
+     HIPER/Security/Integrity/Pervasive PTFs and their associated
+     requisites and supersedes through the end of November 2006, is
+     included in our CST quarterly report.
+
+   Some of these excluded PTFs have an RSU sourceid assigned to them.
+   You must evaluate whether these PTFs should be applied in your
+   environment.  If you choose to exclude these PTFs, then your SMP/E
+   APPLY must specify EXCLUDE for each of these PTFs.
+
+4) Run an SMP/E APPLY CHECK as follows to identify any requisite
+   service and additional holds, such as HOLDSYS(DOC), that may need to
+   be resolved before APPLY processing:
+
+   APPLY CHECK XZREQ
+     GROUPEXTEND(NOAPARS,NOUSERMODS)
+     SOURCEID(RSU*)
+     BYPASS(HOLDSYSTEM,HOLDUSER).
+
+   Resolve any holds and RECEIVE any requisite service identified by
+   this APPLY CHECK before proceeding to the next step. Be sure to
+   specify the GROUPEXTEND option to include any requisite PTFs required
+   by the maintenance being installed.
+
+5) Run an SMP/E APPLY as follows:
+
+   APPLY XZREQ
+     GROUPEXTEND(NOAPARS,NOUSERMODS)
+     SOURCEID(RSU*)
+     BYPASS(HOLDSYSTEM,HOLDUSER).
+
+   Be sure to specify the GROUPEXTEND option to include any requisite
+   PTFs required by the maintenance being installed.
+
+6) Run the following SMP/E REPORT ERRSYSMODS command to identify any
+   missing HIPER or PE fixes:
+
+   REPORT ERRSYSMODS ZONES(tgtzone1, tgtzone2) NOPUNCH.
+
+   SMP/E checks the target zones, tgtzone1 and tgtzone2, to see if any
+   APPLYed SYSMODs are now being held due to error. This includes PTFs
+   that are PE and product FMIDs that are held due to missing fixes to
+   HIPER APARs. Because NOPUNCH is specified, this command generates
+   only the Exception SYSMOD Report.
+
+7) Analyze any missing HIPER and PE-fixing service identified in the
+   REPORT ERRSYSMODS output to determine the likelihood of your hitting
+   the problem based on your workloads and environment.
+
+8) Install (RECEIVE and APPLY) any missing HIPER and PRP PTFs that
+   you've determined to be critical in your environment. Note that
+   applying additional HIPER and PRP service will result in a service
+   level which has not been completely CST tested.
+
+9) SMP/E ACCEPT CHECK and ACCEPT the PTFs to add them to the
+   distribution libraries.
+
+>< ADD NAME=SMPE$02  0103-07016-07017-0013-00043-00035-00000-KTOMIAK
+
+//*
+//RECEIVE EXEC PGM=GIMSMP
+//SMPCSI   DD  DISP=SHR,DSN=your.global.zone.csi
+//SMPNTS   DD  PATHDISP=KEEP,PATH='/u/smpe/smpnts/'
+//ORDRSRVR DD  DISP=SHR,DSN=SHARE.MVSSCP.UTL.CNTL(SMPE$03)
+//MYCLIENT DD  DISP=SHR,DSN=SHARE.MVSSCP.UTL.CNTL(SMPE$04)
+//SMPCNTL  DD  *
+SET
+  BOUNDARY(GLOBAL)
+.
+  RECEIVE
+    SYSMODS
+    HOLDDATA
+    ORDER(                   /* Place an order for service */
+      ORDERSERVER(ORDRSRVR)
+      CLIENT(MYCLIENT)
+      FORTGTZONES(tgtzne)   /* ..for this target zone      */
+      CONTENT(
+        /* see below                                       */
+      )
+    )
+  .
+/*
+//
+
+   CONTENT(           /* use one of the four options below */
+     ALL
+     CRITICAL
+     RECOMMENDED
+     PTFS(        /* Get these PTFs, and any pre-reqs      */
+       UK17765
+       UK17372
+     )
+
+>< ADD NAME=SMPE$03  0101-07016-07016-2204-00006-00005-00000-KTOMIAK
+  <ORDERSERVER
+    url="https://eccgw01.boulder.ibm.com/services/projects/ecc/ws/"
+    keyring="key_owners_userid/RCVPTFS"
+    certificate="SMPE Client Certificate">
+  </ORDERSERVER>
+>< ADD NAME=SMPE$04  0100-07016-07016-2159-00004-00004-00000-KTOMIAK
+  <CLIENT
+    javahome="/usr/lpp/java/J1.4"
+    classpath="/usr/lpp/smp/classes">
+  </CLIENT>
+>< ADD NAME=SMPE$05  0103-07017-07056-1912-00020-00018-00000-KTOMIAK
+
+//*
+//APPCK   EXEC PGM=GIMSMP
+//SMPCSI   DD  DISP=SHR,DSN=your.global.zone.csi
+//SMPLOG   DD  DUMMY
+//SMPLOGA  DD  DUMMY
+//SMPCNTL  DD  *
+SET
+  BOUNDARY(tgtzne)
+.
+  APPLY CHECK
+    GROUPEXTEND(NOAPARS,NOUSERMODS)
+    BYPASS(HOLDSYSTEM,HOLDUSER)
+    sourceid(rsu*,hiper,smccor,smcrec)
+  .
+/*
+//
+
+>< ADD NAME=SMPE$06  0104-07017-07056-1912-00018-00016-00000-KTOMIAK
+
+//*
+//APPLY   EXEC PGM=GIMSMP
+//SMPCSI   DD  DISP=SHR,DSN=your.global.zone.csi
+//SMPCNTL  DD  *
+SET
+  BOUNDARY(tgtzne)
+.
+  APPLY
+    GROUPEXTEND(NOAPARS,NOUSERMODS)
+    BYPASS(HOLDSYSTEM,HOLDUSER)
+    sourceid(rsu*,hiper,smccor,smcrec)
+  .
+/*
+//
+
+>< ADD NAME=SMPE$07  0104-07017-07056-1912-00020-00018-00000-KTOMIAK
+
+//*
+//ACCCK   EXEC PGM=GIMSMP
+//SMPCSI   DD  DISP=SHR,DSN=your.global.zone.csi
+//SMPLOG   DD  DUMMY
+//SMPLOGA  DD  DUMMY
+//SMPCNTL  DD  *
+SET
+  BOUNDARY(dlibzne)
+.
+  ACCEPT CHECK
+    GROUPEXTEND(NOAPARS,NOUSERMODS)
+    BYPASS(HOLDSYSTEM,HOLDUSER)
+    sourceid(rsu*,hiper,smccor,smcrec)
+  .
+/*
+//
+
+>< ADD NAME=SMPE$08  0103-07017-07056-1912-00020-00016-00000-KTOMIAK
+
+//*
+//ACCEPT  EXEC PGM=GIMSMP
+//SMPCSI   DD  DISP=SHR,DSN=your.global.zone.csi
+//SMPCNTL  DD  *
+SET
+  BOUNDARY(dlibzne)
+.
+  ACCEPT
+    GROUPEXTEND(NOAPARS,NOUSERMODS)
+    BYPASS(HOLDSYSTEM,HOLDUSER)
+    sourceid(rsu*,hiper,smccor,smcrec)
+  .
+/*
+//
+
+>< ADD NAME=SMPE$09  0103-07017-07056-1912-00020-00016-00000-KTOMIAK
+
+//*
+//ERRSYSM EXEC PGM=GIMSMP
+//SMPCSI   DD  DISP=SHR,DSN=your.global.zone.csi
+//SMPCNTL  DD  *
+SET
+  BOUNDARY(GLOBAL)
+.
+  REPORT
+    ERRSYSMODS
+    ZONES(tgtzone1, tgtzone2)
+    NOPUNCH
+  .
+/*
+//
+
+>< ADD NAME=SMPE$10  0101-07017-07056-1911-00026-00024-00000-KTOMIAK
+
+//*
+//XZNCMPR EXEC PGM=GIMSMP
+//SMPCSI   DD  DISP=SHR,DSN=your.global.zone.csi
+//SMPLOG   DD  DUMMY            <== No reason to log this
+//SMPCNTL  DD  *
+SET
+  BOUNDARY (GLOBAL)
+.
+  REPORT                    /* First zone 1 to zone 2  */
+    SYSMODS
+    INZONE(DB4TT)
+    COMPAREDTO(DB4ZT)
+    NOPUNCH
+  .
+  REPORT                    /* Next, zone 2 to zone 1  */
+    SYSMODS
+    INZONE(DB4ZT)
+    COMPAREDTO(DB4tT)
+    NOPUNCH
+  .
+/*
+//
+
+>< ADD NAME=SMPE$11  0101-07017-07056-1911-00025-00022-00000-KTOMIAK
+
+//*
+//RJCTPRG EXEC PGM=GIMSMP
+//SMPCSI   DD  DISP=SHR,DSN=your.global.zone.csi
+//SMPCNTL  DD  *
+SET
+  BOUNDARY (GLOBAL)
+.
+  REJECT
+    PURGE
+    PTFS
+    TARGETZONE(DB4ZT)
+  .
+  REJECT
+    PURGE(dlibzne)
+  .
+  REJECT
+    FUNCTIONS
+  .
+/*
+//
+
